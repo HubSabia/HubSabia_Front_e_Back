@@ -1,9 +1,7 @@
 <template>
-  <!-- O 'v-if' garante que o modal só existe no DOM quando está visível -->
   <div v-if="modelValue" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <header class="modal-header">
-        <!-- MUDANÇA: O título agora é dinâmico, dependendo do modo (criação ou edição) -->
         <h3>{{ isEditMode ? 'Editar Campanha' : 'Criar Nova Campanha' }}</h3>
         <button class="close-btn" @click="closeModal">×</button>
       </header>
@@ -12,6 +10,12 @@
           <label for="nome">Nome da Campanha</label>
           <input type="text" id="nome" v-model="formData.nome" required>
         </div>
+        
+        <div class="form-group">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" v-model="formData.descricao" rows="3"></textarea>
+        </div>
+
         <div class="form-group-row">
           <div class="form-group">
             <label for="periodo_inicio">Data de Início</label>
@@ -22,9 +26,21 @@
             <input type="date" id="periodo_fim" v-model="formData.periodo_fim" required>
           </div>
         </div>
-        <div class="form-group">
-          <label for="publico_alvo">Público-Alvo</label>
-          <input type="text" id="publico_alvo" v-model="formData.publico_alvo">
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="publico_alvo">Público-Alvo</label>
+            <input type="text" id="publico_alvo" v-model="formData.publico_alvo">
+          </div>
+          
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" v-model="formData.status">
+              <option>Planejada</option>
+              <option>Ativa</option>
+              <option>Concluída</option>
+              <option>Cancelada</option>
+            </select>
+          </div>
         </div>
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
@@ -36,44 +52,35 @@
 </template>
 
 <script setup>
-// MUDANÇA: Importamos 'computed' para criar uma propriedade que reage a mudanças.
 import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
 
-// MUDANÇA: Adicionamos a prop 'campaignToEdit' para receber os dados da campanha a ser editada.
 const props = defineProps({
   modelValue: Boolean,
   campaignToEdit: {
     type: Object,
-    default: null // Se for nulo, estamos em modo de criação.
+    default: null
   }
 });
 
-// MUDANÇA: Adicionamos o evento 'campaign-updated' para notificar o componente pai sobre a edição.
 const emit = defineEmits(['update:modelValue', 'campaign-created', 'campaign-updated']);
 
-// 'formData' agora é inicializado como um objeto vazio, pois será preenchido pelo 'watch'.
 const formData = ref({});
 
-// MUDANÇA: 'isEditMode' é uma propriedade reativa que nos diz se estamos editando ou criando.
-// Ela retorna 'true' se 'campaignToEdit' tiver um objeto, e 'false' caso contrário.
 const isEditMode = computed(() => !!props.campaignToEdit);
 
 const closeModal = () => {
   emit('update:modelValue', false);
 };
 
-// MUDANÇA: A função de envio agora lida com os dois cenários.
 const handleSubmit = async () => {
   try {
     if (isEditMode.value) {
-      // Cenário de EDIÇÃO: Faz uma requisição PUT para a rota de edição.
       const response = await apiClient.put(`/campanhas/${props.campaignToEdit._id}`, formData.value);
-      emit('campaign-updated', response.data); // Notifica o pai com os dados atualizados.
+      emit('campaign-updated', response.data);
     } else {
-      // Cenário de CRIAÇÃO: Mantém a lógica original, com uma requisição POST.
       const response = await apiClient.post('/campanhas', formData.value);
-      emit('campaign-created', response.data); // Notifica o pai com os dados da nova campanha.
+      emit('campaign-created', response.data);
     }
     alert('Campanha salva com sucesso!');
     closeModal();
@@ -83,7 +90,6 @@ const handleSubmit = async () => {
   }
 };
 
-// MUDANÇA: Uma pequena função para converter a data do banco para o formato que o <input type="date"> aceita (YYYY-MM-DD).
 const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -93,21 +99,18 @@ const formatDateForInput = (dateString) => {
     return `${year}-${month}-${day}`;
 }
 
-// MUDANÇA: O 'watch' agora é mais inteligente. Ele preenche ou limpa o formulário quando o modal abre.
 watch(() => props.modelValue, (isOpening) => {
   if (isOpening) {
     if (isEditMode.value) {
-      // Se estamos editando, copia os dados da prop 'campaignToEdit' para o formulário.
-      // Usamos a função de formatação para as datas.
       formData.value = {
         ...props.campaignToEdit,
         periodo_inicio: formatDateForInput(props.campaignToEdit.periodo_inicio),
         periodo_fim: formatDateForInput(props.campaignToEdit.periodo_fim)
       };
     } else {
-      // Se estamos criando, limpa o formulário (lógica original).
       formData.value = {
         nome: '',
+        descricao: '',
         periodo_inicio: '',
         periodo_fim: '',
         publico_alvo: '',
@@ -119,7 +122,15 @@ watch(() => props.modelValue, (isOpening) => {
 </script>
 
 <style scoped>
-/* Seu CSS não precisa de nenhuma alteração. Ele continua o mesmo. */
+.form-group textarea, .form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  font-family: inherit;
+  font-size: inherit; 
+}
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -157,6 +168,9 @@ watch(() => props.modelValue, (isOpening) => {
 }
 .form-group { margin-bottom: 1rem; }
 .form-group-row { display: flex; gap: 1rem; }
+.form-group-row > .form-group {
+    flex: 1; 
+}
 .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
 .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; }
 .modal-footer {
