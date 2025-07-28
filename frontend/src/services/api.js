@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Cria uma instância do axios com a URL base da sua API
 const apiClient = axios.create({
-    baseURL: 'https://hubsabia-backend-vdl8.onrender.com/api/auth/login', // A base de todas as suas rotas de API
+    baseURL: 'https://hubsabia-backend-vdl8.onrender.com/api', // A base de todas as suas rotas de API
     headers: {
         'Content-Type': 'application/json'
     }

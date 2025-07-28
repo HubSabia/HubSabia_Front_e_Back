@@ -28,53 +28,46 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'; // Removemos onMounted e getCurrentInstance por enquanto
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+// MUDANÇA 1: Importamos o apiClient em vez de usar fetch
+import apiClient from '@/services/api';
 
-// MUDANÇA 1: Mudamos 'username' para 'email' para corresponder ao backend
 const email = ref(""); 
 const password = ref("");
 const router = useRouter();
 
-// MUDANÇA 2: Substituímos a função inteira pela nossa lógica de API
 const handleLogin = async () => {
-  // Verificação básica no frontend
   if (!email.value || !password.value) {
     alert("Por favor, preencha o e-mail e a senha.");
     return;
   }
 
   try {
-    // Faz a chamada real para a nossa API de backend
-    const response = await fetch('https://hubsabia-backend-vdl8.onrender.com/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Usamos .value para pegar os dados das refs do Vue
-      body: JSON.stringify({ 
-        email: email.value, 
-        password: password.value
-      }),
+    // MUDANÇA 2: Usamos o apiClient para a chamada de login.
+    // Ele já conhece a baseURL ('.../api'), então só precisamos passar o resto do caminho.
+    const response = await apiClient.post('/auth/login', { 
+      email: email.value, 
+      password: password.value 
     });
 
-    const data = await response.json();
+    // MUDANÇA 3: Com axios, os dados da resposta estão em 'response.data'
+    const data = response.data;
 
-    // Se a resposta não for OK (ex: status 400), lança um erro
-    if (!response.ok) {
-      throw new Error(data.msg || 'Erro ao fazer login.');
+    // A lógica de sucesso continua a mesma
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      router.push("/dashboard");
+    } else {
+      // Caso a API não retorne um token por algum motivo
+      throw new Error('Token não recebido da API.');
     }
 
-    // Se o login for bem-sucedido:
-    // 1. Salva o token no armazenamento local do navegador
-    localStorage.setItem('authToken', data.token);
-
-    // 2. Redireciona o usuário para o dashboard
-    router.push("/dashboard");
-
   } catch (error) {
-    // Se ocorrer um erro, mostra a mensagem para o usuário
-    alert(error.message);
+    // A lógica de erro agora pega as mensagens de erro do axios
+    console.error("Falha no login:", error);
+    const errorMessage = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
+    alert(errorMessage);
   }
 };
 </script>
