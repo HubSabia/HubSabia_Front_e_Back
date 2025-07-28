@@ -46,7 +46,7 @@ const handleLogin = async () => {
 
   try {
     // Faz a chamada real para a nossa API de backend
-    const response = await fetch('https://hubsabia-backend-vdl8.onrender.com', {
+    const response = await fetch('https://hubsabia-backend-vdl8.onrender.com/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
