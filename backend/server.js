@@ -29,6 +29,8 @@ mongoose.connect(process.env.MONGO_URI)
 // Registra as rotas para autenticação e campanhas.
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/campanhas', require('./routes/campanhas'));
+app.use('/api/chatbots', require('./routes/chatbots'));
+app.use('/api/editais', require('./routes/editais'));
 
 // Rota de teste inicial para verificar se a API está online.
 app.get('/', (req, res) => {
