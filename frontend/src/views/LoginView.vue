@@ -17,11 +17,22 @@
         </div>
         <div class="form-actions">
            <a href="#" class="forgot-password">Esqueci minha senha</a>
-           <button type="submit" class="btn btn-primary login-button">Entrar</button>
+           
+           <!-- MUDANÇA 1: O botão agora está desabilitado e com texto dinâmico durante o carregamento -->
+           <button type="submit" class="btn btn-primary login-button" :disabled="isLoading">
+             {{ isLoading ? 'Entrando...' : 'Entrar' }}
+           </button>
         </div>
          <div class="create-account-link">
             Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
         </div>
+
+        <!-- MUDANÇA 2: A mensagem de carregamento que você pediu, na área da linha vermelha -->
+        <div v-if="isLoading" class="loading-container">
+          <div class="spinner"></div>
+          <p>Buscando usuário, por favor aguarde...</p>
+        </div>
+
       </form>
     </div>
   </div>
@@ -30,12 +41,14 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-// MUDANÇA 1: Importamos o apiClient em vez de usar fetch
 import apiClient from '@/services/api';
 
 const email = ref(""); 
 const password = ref("");
 const router = useRouter();
+
+// MUDANÇA 3: Adicionamos uma variável reativa para controlar o estado de carregamento
+const isLoading = ref(false);
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -43,150 +56,85 @@ const handleLogin = async () => {
     return;
   }
 
+  // MUDANÇA 4: A lógica de carregamento agora envolve a chamada da API
+  isLoading.value = true; // Inicia o carregamento
+
   try {
-    // MUDANÇA 2: Usamos o apiClient para a chamada de login.
-    // Ele já conhece a baseURL ('.../api'), então só precisamos passar o resto do caminho.
     const response = await apiClient.post('/auth/login', { 
       email: email.value, 
       password: password.value 
     });
-
-    // MUDANÇA 3: Com axios, os dados da resposta estão em 'response.data'
+    
     const data = response.data;
 
-    // A lógica de sucesso continua a mesma
     if (data.token) {
       localStorage.setItem('authToken', data.token);
       router.push("/dashboard");
     } else {
-      // Caso a API não retorne um token por algum motivo
       throw new Error('Token não recebido da API.');
     }
 
   } catch (error) {
-    // A lógica de erro agora pega as mensagens de erro do axios
     console.error("Falha no login:", error);
     const errorMessage = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
     alert(errorMessage);
+  } finally {
+    isLoading.value = false; // Finaliza o carregamento, seja com sucesso ou erro
   }
 };
 </script>
 
 <style scoped>
-.login-view {
-  width: 100%;
+/* Seus estilos originais... */
+.login-view { width: 100%; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f2f5; }
+.login-card { background: #ffffff; padding: 40px 50px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1); width: 100%; max-width: 450px; text-align: center; }
+.logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; gap: 15px; }
+.logo-img { height: 50px; background-color: var(--sidebar-bg, #212529); padding: 5px; border-radius: 4px; }
+.institution-name { font-size: 1.1rem; font-weight: 600; color: var(--sidebar-bg, #212529); line-height: 1.3; text-align: left; }
+.login-title { margin-bottom: 30px; color: #333; font-weight: 600; font-size: 1.4rem; }
+.form-group { margin-bottom: 20px; text-align: left; }
+.form-group label { display: block; margin-bottom: 8px; color: #495057; font-weight: 500; font-size: 0.9rem; }
+.form-group input { width: 100%; padding: 12px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+.form-group input:focus { outline: none; border-color: var(--primary-color, #007bff); box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
+.form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 20px; }
+.forgot-password { font-size: 0.85rem; color: var(--primary-color, #007bff); text-decoration: none; }
+.forgot-password:hover { text-decoration: underline; }
+.login-button { padding: 10px 25px; }
+.create-account-link { margin-top: 25px; font-size: 0.9rem; color: #6c757d; }
+.create-account-link a { color: var(--primary-color, #007bff); text-decoration: none; font-weight: 500; }
+.create-account-link a:hover { text-decoration: underline; }
+
+/* --- MUDANÇA 5: Novos estilos para o estado de carregamento --- */
+.login-button:disabled {
+  background-color: #0056b3; /* Um azul um pouco mais escuro/cinzento */
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-container {
+  margin-top: 20px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 100vh;
-  background-color: #f0f2f5; /* Light grey background */
+  gap: 10px;
+  color: #6c757d;
 }
 
-.login-card {
-  background: #ffffff;
-  padding: 40px 50px;
-  border-radius: 8px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 450px;
-  text-align: center;
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: var(--primary-color, #007bff);
+  animation: spin 1s ease infinite;
 }
 
-.logo-area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 25px;
-  gap: 15px;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
-.logo-img {
-  height: 50px;
-  /* Placeholder style */
-  background-color: var(--sidebar-bg, #212529);
-  padding: 5px;
-  border-radius: 4px;
-}
-
-.institution-name {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--sidebar-bg, #212529);
-    line-height: 1.3;
-    text-align: left;
-}
-
-.login-title {
-  margin-bottom: 30px;
-  color: #333;
-  font-weight: 600;
-  font-size: 1.4rem;
-}
-
-.form-group {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #495057;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--primary-color, #007bff);
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 25px;
-    margin-bottom: 20px;
-}
-
-.forgot-password {
-    font-size: 0.85rem;
-    color: var(--primary-color, #007bff);
-    text-decoration: none;
-}
-
-.forgot-password:hover {
-    text-decoration: underline;
-}
-
-.login-button {
-    padding: 10px 25px;
-}
-
-.create-account-link {
-    margin-top: 25px;
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.create-account-link a {
-    color: var(--primary-color, #007bff);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.create-account-link a:hover {
-    text-decoration: underline;
-}
-
 </style>
