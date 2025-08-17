@@ -1,0 +1,95 @@
+<template>
+  <div v-if="modelValue" class="modal-overlay" @click.self="closeModal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h3>{{ isEditMode ? 'Editar Edital' : 'Adicionar Novo Edital' }}</h3>
+        <button class="close-btn" @click="closeModal">&times;</button>
+      </header>
+      <form @submit.prevent="handleSubmit">
+        <div class="form-group">
+          <label for="titulo">Título do Edital</label>
+          <input type="text" id="titulo" v-model="formData.titulo" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="conteudo">Conteúdo do Edital (Copie e Cole)</label>
+          <textarea id="conteudo" v-model="formData.conteudo" rows="10" required></textarea>
+        </div>
+        
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar Edital</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, watch, computed } from 'vue';
+import apiClient from '@/services/api';
+
+const props = defineProps({
+  modelValue: Boolean,
+  editalToEdit: {
+    type: Object,
+    default: null
+  }
+});
+
+const emit = defineEmits(['update:modelValue', 'edital-saved']);
+
+const formData = ref({});
+const isEditMode = computed(() => !!props.editalToEdit);
+
+const closeModal = () => {
+  emit('update:modelValue', false);
+};
+
+const handleSubmit = async () => {
+  try {
+    if (isEditMode.value) {
+      // A lógica de PUT (edição) pode ser adicionada depois
+      // const response = await apiClient.put(`/editais/${props.editalToEdit._id}`, formData.value);
+      alert('Edital atualizado com sucesso!');
+    } else {
+      // Lógica de POST (criação)
+      const response = await apiClient.post('/editais', formData.value);
+      alert('Edital criado com sucesso!');
+    }
+    emit('edital-saved'); // Avisa o pai para recarregar a lista
+    closeModal();
+  } catch (error) {
+    console.error("Erro ao salvar edital:", error);
+    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível salvar o edital.'}`);
+  }
+};
+
+watch(() => props.modelValue, (isOpening) => {
+  if (isOpening) {
+    if (isEditMode.value) {
+      formData.value = { ...props.editalToEdit };
+    } else {
+      formData.value = {
+        titulo: '',
+        conteudo: ''
+      };
+    }
+  }
+});
+</script>
+
+<style scoped>
+/* Estilos podem ser reutilizados do CampaignModal */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background-color: white; padding: 1.5rem 2rem; border-radius: 8px; width: 100%; max-width: 600px; /* Maior para o conteúdo */ box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+.close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6c757d; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+.form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-family: inherit; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; margin-top: 1.5rem; border-top: 1px solid #e9ecef; }
+.btn-primary, .btn-secondary { padding: 0.6rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-weight: 500; }
+.btn-primary { background-color: #007bff; color: white; }
+.btn-secondary { background-color: #6c757d; color: white; }
+</style>

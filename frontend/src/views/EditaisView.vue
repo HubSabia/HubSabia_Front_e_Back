@@ -35,9 +35,7 @@
       </table>
     </div>
 
-    <!-- Usaremos um Modal para Criar/Editar, assim como nas Campanhas -->
-    <!-- (Ainda não criamos o EditalModal.vue, mas já deixamos a referência) -->
-    <!-- <EditalModal v-model="isModalVisible" :edital-to-edit="editalParaEditar" @edital-saved="buscarEditais" /> -->
+ <EditalModal v-model="isModalVisible" :edital-to-edit="editalParaEditar" @edital-saved="buscarEditais" />
 
   </div>
 </template>
@@ -45,10 +43,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
+import EditalModal from '@/components/EditalModal.vue';
 
 const editais = ref([]);
-// const isModalVisible = ref(false);
-// const editalParaEditar = ref(null);
+const isModalVisible = ref(false);
+const editalParaEditar = ref(null);
 
 const buscarEditais = async () => {
   try {
