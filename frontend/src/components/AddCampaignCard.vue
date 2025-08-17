@@ -1,41 +1,45 @@
 <template>
-  <div class="add-card" @click="emitAddCampaign">
+  <!-- MUDANÇA 1: O @click agora chama a função diretamente para emitir um evento 'click' -->
+  <div class="add-card" @click="emitClickEvent">
     <span class="add-card-plus">+</span>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(["add-campaign"]);
+// MUDANÇA 2: Definimos que este componente emite um evento chamado 'click'
+const emit = defineEmits(["click"]);
 
-const emitAddCampaign = () => {
-  emit("add-campaign");
+// MUDANÇA 3: A função agora emite o evento 'click'
+const emitClickEvent = () => {
+  emit("click");
 };
 </script>
 
 <style scoped>
-/* Reusing styles similar to the original HTML/CSS */
+/* Seus estilos estão perfeitos, nenhuma mudança necessária aqui */
 .add-card {
-  background-color: #e0e0e0; /* Adjusted grey */
-  border-radius: 10px;
+  background-color: #f8f9fa; /* Usei a cor do seu design original para consistência */
+  border-radius: 8px;
   width: 150px;
-  height: 200px;
+  height: 150px; /* Ajustei a altura para corresponder ao design original */
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px dashed #bdbdbd;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Sombra mais sutil */
+  border: 2px dashed #dee2e6;
 }
 
 .add-card:hover {
-  background-color: #d1d1d1;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 .add-card-plus {
-  font-size: 3.5rem;
-  color: #757575;
-  font-weight: lighter;
+  font-size: 3rem; /* Ajustado para o design original */
+  color: #adb5bd; /* Ajustado para o design original */
+  font-weight: 300; /* Ajustado para o design original */
 }
 </style>

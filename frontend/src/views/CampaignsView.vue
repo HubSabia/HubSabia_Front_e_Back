@@ -5,25 +5,18 @@
     </header>
 
     <div class="card-grid">
-      <!-- Este card pode ser seu componente AddCampaignCard.vue -->
-       <div class="new-campaign-card" @click="handleCriar">
-        <div class="plus-icon">+</div>
-      </div>
+      <!-- MUDANÇA: Usando o componente AddCampaignCard e escutando pelo evento 'click' dele -->
+      <AddCampaignCard @click="handleCriar" />
     </div>
-
-    <!-- 
-      1. USANDO O COMPONENTE DA TABELA 
-      - :campanhas="campanhas" -> Passa a lista de campanhas como uma 'prop' para o filho.
-      - @edit="handleEditar" -> Escuta o evento 'edit' que o filho emite e chama a função 'handleEditar'.
-      - @delete="handleExcluir" -> Escuta o evento 'delete' e chama a função 'handleExcluir'.
-    -->
+    
+    <!-- Usando o componente da Tabela -->
     <CampaignsTable 
       :campanhas="campanhas"   
       @edit="handleEditar"     
       @delete="handleExcluir"  
     />
     
-    <!-- O modal continua aqui, pois é controlado por esta página -->
+    <!-- Usando o componente do Modal -->
     <CampaignModal 
       v-model="isModalVisible" 
       :campaign-to-edit="campanhaParaEditar"
@@ -37,17 +30,18 @@
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
 
-// 2. IMPORTA OS COMPONENTES "FILHOS"
+// MUDANÇA: Importa TODOS os componentes filhos que esta página utiliza
+import AddCampaignCard from '@/components/AddCampaignCard.vue';
 import CampaignsTable from '@/components/CampaignsTable.vue';
 import CampaignModal from '@/components/CampaignModal.vue';
 
-// 3. A LÓGICA E OS DADOS PERMANECEM NA "PÁGINA INTELIGENTE"
+// A lógica de estado e as funções de manipulação de dados permanecem aqui
 const campanhas = ref([]);
 const isModalVisible = ref(false);
 const campanhaParaEditar = ref(null);
 
 // --- Funções CRUD (Lógica Central) ---
-// Estas funções agora são chamadas em resposta aos eventos dos componentes filhos.
+// Estas funções são chamadas em resposta aos eventos dos componentes filhos.
 
 const buscarCampanhas = async () => {
   try {
@@ -83,11 +77,13 @@ const handleExcluir = async (campanhaId) => {
   }
 };
 
+// Esta função é chamada quando o AddCampaignCard emite o evento 'click'
 const handleCriar = () => {
   campanhaParaEditar.value = null;
   isModalVisible.value = true;
 };
 
+// Esta função é chamada quando a CampaignsTable emite o evento 'edit'
 const handleEditar = (campanha) => {
   campanhaParaEditar.value = campanha;
   isModalVisible.value = true;
@@ -98,10 +94,11 @@ onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
+/* 
+  O CSS da página fica super limpo.
+  O CSS do card de criação foi movido para o componente AddCampaignCard.vue.
+*/
 .view-container { padding: 2rem; }
 .view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
 .card-grid { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
-.new-campaign-card { width: 150px; height: 150px; background-color: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease-in-out; }
-.new-campaign-card:hover { background-color: #e9ecef; border-color: #adb5bd; }
-.plus-icon { font-size: 3rem; color: #adb5bd; font-weight: 300; }
 </style>
