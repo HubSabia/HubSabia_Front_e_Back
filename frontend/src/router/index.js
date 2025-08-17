@@ -41,11 +41,11 @@ const routes = [
     component: () => import('@/views/UsersView.vue'),
     meta: { title: 'Gestão de Usuários', requiresAuth: true }
   },
-  {
-    path: '/sobre-bot',
-    name: 'SobreBot',
-    component: () => import('@/views/SobreBotView.vue'),
-    meta: { title: 'Sobre o Bot', requiresAuth: true }
+ {
+    path: '/editais', // Novo caminho
+    name: 'Editais',   // Novo nome
+    component: () => import('@/views/EditaisView.vue'), // Nova view
+    meta: { title: 'Gestão de Editais', requiresAuth: true }
   },
   {
     path: '/chatbot',

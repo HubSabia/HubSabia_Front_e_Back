@@ -11,6 +11,10 @@ const CampanhaSchema = new mongoose.Schema({
         default: 'Planejada' 
     },
     publico_alvo: { type: String },
+    editais: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Edital' 
+    }],
     criador: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true }
 }, { timestamps: true });
 

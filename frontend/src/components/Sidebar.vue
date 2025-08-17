@@ -31,7 +31,7 @@
           </router-link>
         </li>
        <li> <!-- Novo link adicionado -->
-          <router-link to="/sobre-bot" class="nav-link" active-class="active">
+          <router-link to="/editais" class="nav-link" active-class="active">
             <i class="icon icon-info"></i> <!-- Placeholder para ícone de informação -->
             <span>Sobre o Bot</span>
           </router-link>

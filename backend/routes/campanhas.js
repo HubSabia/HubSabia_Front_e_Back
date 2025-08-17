@@ -19,7 +19,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // ROTA POST: Criar (ATUALIZADA)
 router.post('/', authMiddleware, async (req, res) => {
     // MUDANÇA: Extraímos 'descricao' e 'status' do corpo da requisição
-    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo } = req.body;
+    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais} = req.body;
 
     if (!nome || !periodo_inicio || !periodo_fim) {
         return res.status(400).json({ msg: 'Por favor, inclua nome e período da campanha.' });
@@ -28,11 +28,12 @@ router.post('/', authMiddleware, async (req, res) => {
     try {
         const novaCampanha = new Campanha({
             nome,
-            descricao, // Adicionado
+            descricao,
             periodo_inicio,
             periodo_fim,
-            status,      // Adicionado
+            status,
             publico_alvo,
+            editais,
             criador: req.usuario.id
         });
         const campanhaSalva = await novaCampanha.save();
@@ -70,7 +71,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 // ROTA PUT: Editar (ATUALIZADA)
 router.put('/:id', authMiddleware, async (req, res) => {
-    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo } = req.body;
+    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais } = req.body;
 
     const camposAtualizados = {};
     if (nome) camposAtualizados.nome = nome;
@@ -79,6 +80,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (periodo_fim) camposAtualizados.periodo_fim = periodo_fim;
     if (status) camposAtualizados.status = status;
     if (publico_alvo) camposAtualizados.publico_alvo = publico_alvo;
+    if (editais) camposAtualizados.editais = editais;
 
     try {
         let campanha = await Campanha.findById(req.params.id);
