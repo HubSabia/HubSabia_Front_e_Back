@@ -6,6 +6,7 @@
     </header>
 
     <div class="actions-bar">
+      <!-- O clique neste botão agora chama a função 'handleCriar' correta -->
       <button class="btn-primary" @click="handleCriar">Adicionar Novo Edital</button>
     </div>
 
@@ -35,7 +36,12 @@
       </table>
     </div>
 
- <EditalModal v-model="isModalVisible" :edital-to-edit="editalParaEditar" @edital-saved="buscarEditais" />
+    <!-- O modal sendo chamado corretamente -->
+    <EditalModal 
+      v-model="isModalVisible" 
+      :edital-to-edit="editalParaEditar" 
+      @edital-saved="buscarEditais" 
+    />
 
   </div>
 </template>
@@ -63,16 +69,40 @@ const formatarData = (data) => {
   return new Date(data).toLocaleDateString('pt-BR');
 };
 
-// Funções placeholder que implementaremos depois com o modal
-const handleCriar = () => alert('Funcionalidade de Criar Edital a ser implementada.');
-const handleEditar = (edital) => alert(`Editar o edital: ${edital.titulo}`);
-const handleExcluir = (editalId) => alert(`Excluir o edital com ID: ${editalId}`);
+// --- MUDANÇA: Substituindo os placeholders pela lógica real ---
+
+// Abre o modal em modo de criação
+const handleCriar = () => {
+  editalParaEditar.value = null; // Garante que não estamos editando
+  isModalVisible.value = true;   // Abre o modal
+};
+
+// Abre o modal em modo de edição, passando os dados do edital
+const handleEditar = (edital) => {
+  editalParaEditar.value = edital;
+  isModalVisible.value = true;
+};
+
+// A lógica de exclusão pode ser implementada depois, quando a rota do backend estiver pronta
+const handleExcluir = async (editalId) => {
+  if (window.confirm('Tem certeza que deseja excluir este edital?')) {
+    alert(`Lógica para chamar apiClient.delete('/editais/${editalId}') a ser implementada.`);
+     try {
+       await apiClient.delete(`/editais/${editalId}`);
+       buscarEditais(); // Recarrega a lista
+       alert('Edital excluído com sucesso!');
+     } catch (error) {
+       console.error('Erro ao excluir edital:', error);
+       alert('Não foi possível excluir o edital.');
+    }
+  }
+};
 
 onMounted(buscarEditais);
 </script>
 
 <style scoped>
-/* Estilos podem ser reaproveitados da CampaignsView */
+/* Seus estilos estão corretos e não precisam de alteração */
 .view-container { padding: 2rem; }
 .view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 0.5rem; }
 .view-header p { color: #6c757d; margin-bottom: 1.5rem; }
