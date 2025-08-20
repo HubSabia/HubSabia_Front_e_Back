@@ -40,7 +40,7 @@
     <EditalModal 
       v-model="isModalVisible" 
       :edital-to-edit="editalParaEditar" 
-      @edital-saved="buscarEditais" 
+      @edital-saved="onEditalSaved"  
     />
 
   </div>
@@ -49,7 +49,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
-import EditalModal from '@/components/EditalModal.vue';
+// Assumindo que você criará este componente no próximo passo
+import EditalModal from '@/components/EditalModal.vue'; 
 
 const editais = ref([]);
 const isModalVisible = ref(false);
@@ -69,32 +70,42 @@ const formatarData = (data) => {
   return new Date(data).toLocaleDateString('pt-BR');
 };
 
-// --- MUDANÇA: Substituindo os placeholders pela lógica real ---
-
 // Abre o modal em modo de criação
 const handleCriar = () => {
-  editalParaEditar.value = null; // Garante que não estamos editando
-  isModalVisible.value = true;   // Abre o modal
+  editalParaEditar.value = null;
+  isModalVisible.value = true;
 };
 
-// Abre o modal em modo de edição, passando os dados do edital
+// Abre o modal em modo de edição
 const handleEditar = (edital) => {
   editalParaEditar.value = edital;
   isModalVisible.value = true;
 };
 
-// A lógica de exclusão pode ser implementada depois, quando a rota do backend estiver pronta
+// Lógica de exclusão com atualização instantânea
 const handleExcluir = async (editalId) => {
   if (window.confirm('Tem certeza que deseja excluir este edital?')) {
-    alert(`Lógica para chamar apiClient.delete('/editais/${editalId}') a ser implementada.`);
      try {
        await apiClient.delete(`/editais/${editalId}`);
-       buscarEditais(); // Recarrega a lista
+       // MUDANÇA: Remove o edital da lista localmente para feedback instantâneo
+       editais.value = editais.value.filter(e => e._id !== editalId);
        alert('Edital excluído com sucesso!');
      } catch (error) {
        console.error('Erro ao excluir edital:', error);
        alert('Não foi possível excluir o edital.');
     }
+  }
+};
+
+// MUDANÇA: Função unificada para lidar com o salvamento (criação e edição)
+const onEditalSaved = (editalSalvo) => {
+  const index = editais.value.findIndex(e => e._id === editalSalvo._id);
+  if (index !== -1) {
+    // Se o edital já existia (edição), atualiza-o na lista.
+    editais.value[index] = editalSalvo;
+  } else {
+    // Se for um novo edital (criação), adiciona-o no início da lista.
+    editais.value.unshift(editalSalvo);
   }
 };
 
