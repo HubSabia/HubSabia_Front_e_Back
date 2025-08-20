@@ -6,28 +6,41 @@ const Edital = require('../models/Edital');
 // ROTA GET: Lista TODOS os editais criados pelo usuário logado
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const editais = await Edital.find({ criador: req.usuario.id }).sort({ createdAt: -1 });
+        const editais = await Edital.find({ criador: req.usuario.id }).sort({ data_publicacao: -1, createdAt: -1 });
         res.json(editais);
-    } catch (err) { res.status(500).send('Erro no servidor.'); }
+    } catch (err) { 
+        console.error("Erro ao listar editais:", err.message);
+        res.status(500).send('Erro no servidor.'); 
+    }
 });
 
 // ROTA POST: Cria um novo edital na "biblioteca" do usuário
 router.post('/', authMiddleware, async (req, res) => {
-    const { titulo, conteudo } = req.body;
-    if (!titulo || !conteudo) {
-        return res.status(400).json({ msg: 'Título e conteúdo são obrigatórios.' });
+    // CORREÇÃO: Usamos os campos que estão no nosso modelo Edital.js
+    const { titulo, numero, orgao_publicador, link_documento, data_publicacao } = req.body;
+    
+    // A validação agora checa apenas o 'titulo'
+    if (!titulo) {
+        return res.status(400).json({ msg: 'O título do edital é obrigatório.' });
     }
+
     try {
         const novoEdital = new Edital({
             titulo,
-            conteudo,
+            numero,
+            orgao_publicador,
+            link_documento,
+            data_publicacao,
             criador: req.usuario.id
         });
         const editalSalvo = await novoEdital.save();
         res.status(201).json(editalSalvo);
-    } catch (err) { res.status(500).send('Erro no servidor.'); }
+    } catch (err) { 
+        console.error("Erro ao criar edital:", err.message);
+        res.status(500).send('Erro no servidor.'); 
+    }
 });
 
-// Implementaremos PUT e DELETE depois.
+// Adicionaremos PUT e DELETE depois, se necessário.
 
 module.exports = router;
