@@ -1,40 +1,23 @@
 <template>
-  <!-- A estrutura do modal é a mesma, controlada pelo v-model -->
   <div v-if="modelValue" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <header class="modal-header">
-        <!-- O título é dinâmico, dependendo do modo de edição ou criação -->
         <h3>{{ isEditMode ? 'Editar Edital' : 'Adicionar Novo Edital' }}</h3>
         <button class="close-btn" @click="closeModal">×</button>
       </header>
       <form @submit.prevent="handleSubmit">
-        <!-- O formulário agora reflete os campos do modelo Edital.js -->
         <div class="form-group">
-          <label for="titulo">Título do Edital</label>
+          <label for="titulo">Nome do Edital</label>
           <input type="text" id="titulo" v-model="formData.titulo" required>
         </div>
-        
-        <div class="form-group-row">
-          <div class="form-group">
-            <label for="numero">Número (Ex: 01/2025)</label>
-            <input type="text" id="numero" v-model="formData.numero">
-          </div>
-          <div class="form-group">
-            <label for="data_publicacao">Data de Publicação</label>
-            <input type="date" id="data_publicacao" v-model="formData.data_publicacao">
-          </div>
-        </div>
-
         <div class="form-group">
-          <label for="orgao_publicador">Órgão Publicador</label>
-          <input type="text" id="orgao_publicador" v-model="formData.orgao_publicador">
+          <label for="data_publicacao">Data de Publicação</label>
+          <input type="date" id="data_publicacao" v-model="formData.data_publicacao">
         </div>
-
         <div class="form-group">
-          <label for="link_documento">Link para o Documento (URL)</label>
-          <input type="url" id="link_documento" v-model="formData.link_documento" placeholder="https://...">
+          <label for="conteudo">Conteúdo do Edital (colar aqui)</label>
+          <textarea id="conteudo" v-model="formData.conteudo" rows="8" required></textarea>
         </div>
-        
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar Edital</button>
@@ -48,37 +31,26 @@
 import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
 
-// As props são as mesmas: uma para o v-model e outra para receber o edital a ser editado
 const props = defineProps({
   modelValue: Boolean,
-  editalToEdit: {
-    type: Object,
-    default: null
-  }
+  editalToEdit: { type: Object, default: null }
 });
-
-// O evento agora é unificado: 'edital-saved'
 const emit = defineEmits(['update:modelValue', 'edital-saved']);
 
 const formData = ref({});
 const isEditMode = computed(() => !!props.editalToEdit);
 
-const closeModal = () => {
-  emit('update:modelValue', false);
-};
+const closeModal = () => { emit('update:modelValue', false); };
 
-// A lógica de envio agora usa os endpoints de /api/editais
 const handleSubmit = async () => {
   try {
     let response;
     if (isEditMode.value) {
-      // MODO EDIÇÃO: Chama a rota PUT
+      // (A lógica de PUT pode ser adicionada depois, se necessário)
       response = await apiClient.put(`/editais/${props.editalToEdit._id}`, formData.value);
     } else {
-      // MODO CRIAÇÃO: Chama a rota POST
       response = await apiClient.post('/editais', formData.value);
     }
-    // Emite o evento unificado com os dados salvos
     emit('edital-saved', response.data);
     alert('Edital salvo com sucesso!');
     closeModal();
@@ -88,35 +60,29 @@ const handleSubmit = async () => {
   }
 };
 
-// Função helper para formatar a data para o input
 const formatDateForInput = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    return new Date(dateString).toISOString().split('T')[0];
 }
 
-// O watch agora preenche ou limpa o formulário de editais
 watch(() => props.modelValue, (isOpening) => {
   if (isOpening) {
     if (isEditMode.value) {
-      // Preenche o formulário com os dados do edital a ser editado
       formData.value = {
         ...props.editalToEdit,
         data_publicacao: formatDateForInput(props.editalToEdit.data_publicacao),
       };
     } else {
-      // Limpa o formulário para criar um novo edital
       formData.value = {
         titulo: '',
-        numero: '',
-        orgao_publicador: '',
-        link_documento: '',
+        conteudo: '',
         data_publicacao: ''
       };
     }
   }
 });
 </script>
+
 
 <style scoped>
 /* Os estilos são praticamente idênticos aos do CampaignModal, então podemos reutilizá-los */

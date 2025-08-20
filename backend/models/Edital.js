@@ -1,39 +1,25 @@
-// Arquivo: backend/models/Edital.js
-
 const mongoose = require('mongoose');
 
-// --- PASSO 2: DEFINIR A ESTRUTURA (SCHEMA) ---
-// Aqui definimos todos os campos que um documento "Edital" terá no banco de dados.
 const EditalSchema = new mongoose.Schema({
+    // Campo para o "Nome" que você mencionou
     titulo: {
         type: String,
-        required: true, // O título é obrigatório
-        trim: true
+        required: true
     },
-    numero: {
-        type: String // Ex: "001/2025"
+    // Campo para "colar o edital" (o conteúdo em texto)
+    conteudo: {
+        type: String,
+        required: true
     },
-    orgao_publicador: {
-        type: String
-    },
-    link_documento: {
-        type: String // URL para o PDF do edital
-    },
+    // Campo para a "data de publicação"
     data_publicacao: {
         type: Date
     },
-    // Este campo é crucial para a segurança, para sabermos quem criou o edital.
     criador: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario', // Faz a ligação com o seu modelo de Usuário
+        ref: 'Usuario',
         required: true
     }
-}, { 
-    // Opção que adiciona automaticamente os campos 'createdAt' e 'updatedAt'
-    timestamps: true 
-});
+}, { timestamps: true });
 
-// --- PASSO 3: EXPORTAR O MODELO ---
-// Criamos um modelo chamado 'Edital' usando o schema que definimos acima.
-// É este modelo que será usado nas rotas para criar, buscar, editar e deletar editais.
 module.exports = mongoose.model('Edital', EditalSchema);
