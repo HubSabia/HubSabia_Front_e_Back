@@ -5,7 +5,6 @@
 
     <div class="stats-grid">
       <div class="stat-card">
-        <!-- DADO REAL: Mostra o número de campanhas recebidas da API -->
         <div class="stat-number">{{ campanhas.length }}</div>
         <div class="stat-label">Campanhas Ativas</div>
       </div>
@@ -25,48 +24,53 @@
 
     <div class="content-card">
       <h3>Atividade Recente (Minhas Campanhas)</h3>
-      <!-- DADO REAL: Lista as campanhas recebidas da API -->
-      <ul v-if="campanhas.length > 0">
-        <li v-for="campanha in campanhas" :key="campanha.id">
-          {{ campanha.nome }} (Criador ID: {{ campanha.criador }})
+      <ul v-if="campanhas.length > 0" class="campaign-list">
+        <li v-for="campanha in campanhas" :key="campanha._id" class="campaign-item">
+          <div class="campaign-info">
+            <strong>{{ campanha.nome }}</strong>
+            <span class="campaign-status" :class="`status-${campanha.status.toLowerCase()}`">
+              {{ campanha.status }}
+            </span>
+          </div>
+          <div class="campaign-period">
+            {{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}
+          </div>
         </li>
       </ul>
-      <p v-else>Nenhuma campanha encontrada.</p>
+      <div v-else class="no-campaigns">
+        <p>Nenhuma campanha encontrada.</p>
+        <router-link to="/campanhas" class="btn btn-primary">Criar primeira campanha</router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-// MUDANÇA 1: Importamos 'ref' para criar variáveis reativas e nosso 'apiClient'
 import { ref, onMounted } from 'vue';
-import apiClient from '@/services/api'; // Importa nosso cliente de API configurado
+import apiClient from '@/services/api';
 
-// MUDANÇA 2: Criamos uma variável reativa para guardar a lista de campanhas
 const campanhas = ref([]);
 
-// MUDANÇA 3: A função onMounted agora é 'async' para poder fazer chamadas de API
-onMounted(async () => {
+const buscarCampanhas = async () => {
   try {
-    // Busca os dados da rota protegida '/api/campanhas'
-    // O apiClient automaticamente adiciona o token de autenticação
     console.log('Buscando dados das campanhas...');
     const response = await apiClient.get('/campanhas');
-
-    // Atualiza nossa variável reativa com os dados recebidos do backend
     campanhas.value = response.data;
     console.log('Campanhas recebidas:', response.data);
-
   } catch (error) {
-    // Se ocorrer um erro (ex: token inválido, servidor offline), ele será mostrado no console
     console.error('Falha ao buscar dados do dashboard:', error.response ? error.response.data : error.message);
-    // Você pode adicionar um alerta para o usuário aqui se quiser
-    // alert('Não foi possível carregar os dados do dashboard.');
   }
-});
+};
+
+const formatarData = (data) => {
+  if (!data) return '';
+  return new Date(data).toLocaleDateString('pt-BR');
+};
+
+onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
-/* Seu CSS continua o mesmo, sem nenhuma alteração necessária */
 .dashboard-view {
   padding: 20px;
 }
@@ -120,8 +124,86 @@ onMounted(async () => {
 }
 
 .content-card h3 {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   color: #343a40;
   font-weight: 600;
+}
+
+.campaign-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.campaign-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.campaign-item:last-child {
+  border-bottom: none;
+}
+
+.campaign-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.campaign-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-ativa {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-planejada {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-concluída {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-cancelada {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.campaign-period {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.no-campaigns {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.no-campaigns p {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 </style>
