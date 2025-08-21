@@ -17,8 +17,6 @@
         </div>
         <div class="form-actions">
            <a href="#" class="forgot-password">Esqueci minha senha</a>
-           
-           <!-- MUDANÇA 1: O botão agora está desabilitado e com texto dinâmico durante o carregamento -->
            <button type="submit" class="btn btn-primary login-button" :disabled="isLoading">
              {{ isLoading ? 'Entrando...' : 'Entrar' }}
            </button>
@@ -27,12 +25,14 @@
             Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
         </div>
 
-        <!-- MUDANÇA 2: A mensagem de carregamento que você pediu, na área da linha vermelha -->
         <div v-if="isLoading" class="loading-container">
           <div class="spinner"></div>
           <p>Buscando usuário, por favor aguarde...</p>
         </div>
 
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
       </form>
     </div>
   </div>
@@ -43,21 +43,20 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/api';
 
-const email = ref(""); 
+const email = ref("");
 const password = ref("");
-const router = useRouter();
-
-// MUDANÇA 3: Adicionamos uma variável reativa para controlar o estado de carregamento
 const isLoading = ref(false);
+const errorMessage = ref("");
+const router = useRouter();
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    alert("Por favor, preencha o e-mail e a senha.");
+    errorMessage.value = "Por favor, preencha o e-mail e a senha.";
     return;
   }
 
-  // MUDANÇA 4: A lógica de carregamento agora envolve a chamada da API
-  isLoading.value = true; // Inicia o carregamento
+  isLoading.value = true;
+  errorMessage.value = "";
 
   try {
     const response = await apiClient.post('/auth/login', { 
@@ -76,39 +75,134 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error("Falha no login:", error);
-    const errorMessage = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
-    alert(errorMessage);
+    const errorMsg = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
+    errorMessage.value = errorMsg;
   } finally {
-    isLoading.value = false; // Finaliza o carregamento, seja com sucesso ou erro
+    isLoading.value = false;
   }
 };
 </script>
 
 <style scoped>
-/* Seus estilos originais... */
-.login-view { width: 100%; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f2f5; }
-.login-card { background: #ffffff; padding: 40px 50px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1); width: 100%; max-width: 450px; text-align: center; }
-.logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; gap: 15px; }
-.logo-img { height: 50px; background-color: var(--sidebar-bg, #212529); padding: 5px; border-radius: 4px; }
-.institution-name { font-size: 1.1rem; font-weight: 600; color: var(--sidebar-bg, #212529); line-height: 1.3; text-align: left; }
-.login-title { margin-bottom: 30px; color: #333; font-weight: 600; font-size: 1.4rem; }
-.form-group { margin-bottom: 20px; text-align: left; }
-.form-group label { display: block; margin-bottom: 8px; color: #495057; font-weight: 500; font-size: 0.9rem; }
-.form-group input { width: 100%; padding: 12px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
-.form-group input:focus { outline: none; border-color: var(--primary-color, #007bff); box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
-.form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 20px; }
-.forgot-password { font-size: 0.85rem; color: var(--primary-color, #007bff); text-decoration: none; }
-.forgot-password:hover { text-decoration: underline; }
-.login-button { padding: 10px 25px; }
-.create-account-link { margin-top: 25px; font-size: 0.9rem; color: #6c757d; }
-.create-account-link a { color: var(--primary-color, #007bff); text-decoration: none; font-weight: 500; }
-.create-account-link a:hover { text-decoration: underline; }
+.login-view {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
 
-/* --- MUDANÇA 5: Novos estilos para o estado de carregamento --- */
+.login-card {
+  background: #ffffff;
+  padding: 40px 50px;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+  gap: 15px;
+}
+
+.logo-img {
+  height: 50px;
+  background-color: var(--sidebar-bg, #212529);
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.institution-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sidebar-bg, #212529);
+  line-height: 1.3;
+  text-align: left;
+}
+
+.login-title {
+  margin-bottom: 30px;
+  color: #333;
+  font-weight: 600;
+  font-size: 1.4rem;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  margin-bottom: 20px;
+}
+
+.forgot-password {
+  font-size: 0.85rem;
+  color: var(--primary-color, #007bff);
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-button {
+  padding: 10px 25px;
+}
+
 .login-button:disabled {
-  background-color: #0056b3; /* Um azul um pouco mais escuro/cinzento */
+  background-color: #0056b3;
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.create-account-link {
+  margin-top: 25px;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.create-account-link a {
+  color: var(--primary-color, #007bff);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.create-account-link a:hover {
+  text-decoration: underline;
 }
 
 .loading-container {
@@ -136,5 +230,15 @@ const handleLogin = async () => {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.error-message {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 </style>

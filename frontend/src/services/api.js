@@ -1,26 +1,36 @@
 import axios from 'axios';
 
-// Cria uma instância do axios com a URL base da sua API
+// Cria uma instância do axios com a URL base da API
 const apiClient = axios.create({
-    baseURL: 'https://hubsabia-backend-vdl8.onrender.com/api', // A base de todas as suas rotas de API
+    baseURL: 'https://hubsabia-backend-vdl8.onrender.com/api',
     headers: {
         'Content-Type': 'application/json'
     }
 });
 
-// Isso é um interceptador. Ele "intercepta" cada requisição ANTES de ela ser enviada.
+// Interceptador de requisição para adicionar token automaticamente
 apiClient.interceptors.request.use(config => {
-    // Pega o token do localStorage
-    const token = localStorage.getItem('authToken'); // Usamos a chave que definimos no login
-
-    // Se o token existir, adiciona ele ao cabeçalho 'x-auth-token'
+    const token = localStorage.getItem('authToken');
+    
     if (token) {
         config.headers['x-auth-token'] = token;
     }
-    return config; // Retorna a configuração modificada para o axios continuar a requisição
-},
-error => {
+    return config;
+}, error => {
     return Promise.reject(error);
 });
+
+// Interceptador de resposta para lidar com erros de autenticação
+apiClient.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            // Token inválido ou expirado
+            localStorage.removeItem('authToken');
+            window.location.href = '/#/login';
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default apiClient;

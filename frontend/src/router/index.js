@@ -14,7 +14,7 @@ const routes = [
     meta: { title: 'Registrar' }
   },
   {
-    path: '/', // Faz a página inicial redirecionar para o login
+    path: '/',
     redirect: '/login'
   },
   {
@@ -41,10 +41,10 @@ const routes = [
     component: () => import('@/views/UsersView.vue'),
     meta: { title: 'Gestão de Usuários', requiresAuth: true }
   },
- {
-    path: '/editais', // Novo caminho
-    name: 'Editais',   // Novo nome
-    component: () => import('@/views/EditaisView.vue'), // Nova view
+  {
+    path: '/editais',
+    name: 'Editais',
+    component: () => import('@/views/EditaisView.vue'),
     meta: { title: 'Gestão de Editais', requiresAuth: true }
   },
   {
@@ -58,6 +58,21 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+});
+
+// Guard de navegação para verificar autenticação
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('authToken');
+  
+  if (to.meta.requiresAuth && !token) {
+    // Se a rota requer autenticação mas não há token, redireciona para login
+    next('/login');
+  } else if (to.name === 'Login' && token) {
+    // Se já está logado e tenta acessar login, redireciona para dashboard
+    next('/dashboard');
+  } else {
+    next();
+  }
 });
 
 export default router;
