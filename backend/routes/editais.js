@@ -31,4 +31,51 @@ router.post('/', authMiddleware, async (req, res) => {
     } catch (err) { res.status(500).send('Erro no servidor.'); }
 });
 
+// ==========================================================
+// ROTA PARA EXCLUIR (DELETE)
+// ==========================================================
+router.delete('/:id', authMiddleware, async (req, res) => {
+    try {
+        const edital = await Edital.findById(req.params.id);
+        if (!edital) {
+            return res.status(404).json({ msg: 'Edital não encontrado.' });
+        }
+        // Segurança: Apenas o criador pode excluir
+        if (edital.criador.toString() !== req.usuario.id) {
+            return res.status(401).json({ msg: 'Ação não autorizada.' });
+        }
+        await Edital.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Edital removido com sucesso.' });
+    } catch (err) {
+        console.error("Erro ao excluir edital:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// ==========================================================
+// ROTA PARA EDITAR (PUT)
+// ==========================================================
+router.put('/:id', authMiddleware, async (req, res) => {
+    const { titulo, conteudo } = req.body;
+    const camposAtualizados = {};
+    if (titulo) camposAtualizados.titulo = titulo;
+    if (conteudo) camposAtualizados.conteudo = conteudo;
+
+    try {
+        let edital = await Edital.findById(req.params.id);
+        if (!edital) { return res.status(404).json({ msg: 'Edital não encontrado.' }); }
+        if (edital.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        
+        edital = await Edital.findByIdAndUpdate(
+            req.params.id,
+            { $set: camposAtualizados },
+            { new: true }
+        );
+        res.json(edital);
+    } catch (err) {
+        console.error("Erro ao editar edital:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
 module.exports = router;
