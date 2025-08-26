@@ -3,10 +3,8 @@
     <div class="chat-container">
       <header class="chat-header">
         <h2>Conversa com o Chatbot</h2>
-        <!-- Aqui poderíamos mostrar o nome do chatbot no futuro -->
       </header>
       <div class="messages-area" ref="messagesAreaRef">
-        <!-- Loop para exibir as mensagens -->
         <div v-for="(msg, index) in mensagens" :key="index" :class="['message-bubble', msg.autor]">
           <p>{{ msg.texto }}</p>
         </div>
@@ -36,15 +34,14 @@ import { useRoute } from 'vue-router';
 import apiClient from '@/services/api';
 
 const route = useRoute();
-const chatbotId = route.params.id; // Pega o ID do chatbot da URL
+const chatbotId = route.params.id;
 
 const mensagens = ref([]);
 const novaMensagem = ref('');
 const isLoading = ref(false);
-const messagesAreaRef = ref(null); // Referência para a área de mensagens para o scroll
+const messagesAreaRef = ref(null);
 
 const scrollToBottom = async () => {
-  // Espera o DOM ser atualizado para fazer o scroll
   await nextTick();
   const area = messagesAreaRef.value;
   if (area) {
@@ -54,18 +51,15 @@ const scrollToBottom = async () => {
 
 const enviarMensagem = async () => {
   if (!novaMensagem.value.trim() || isLoading.value) return;
-
   const textoUsuario = novaMensagem.value;
   mensagens.value.push({ autor: 'user', texto: textoUsuario });
   novaMensagem.value = '';
   isLoading.value = true;
   scrollToBottom();
-
   try {
     const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, {
       mensagemUsuario: textoUsuario
     });
-    
     mensagens.value.push({ autor: 'bot', texto: response.data.resposta });
   } catch (error) {
     console.error("Erro ao enviar mensagem:", error);
@@ -77,13 +71,13 @@ const enviarMensagem = async () => {
 };
 
 onMounted(() => {
-  // Mensagem inicial do bot
   mensagens.value.push({ autor: 'bot', texto: 'Olá! Faça sua pergunta sobre a campanha e seus editais.' });
 });
 </script>
 
 <style scoped>
-.chat-view { display: flex; justify-content: center; align-items: center; height: calc(100vh - 60px); /* Ajustar altura conforme seu header principal */ background-color: #f4f7f9; }
+/* Estilos da interface de chat */
+.chat-view { display: flex; justify-content: center; align-items: center; height: calc(100vh - 60px); background-color: #f4f7f9; }
 .chat-container { width: 100%; max-width: 800px; height: 90%; background: white; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
 .chat-header { padding: 1rem; border-bottom: 1px solid #e9ecef; }
 .messages-area { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
