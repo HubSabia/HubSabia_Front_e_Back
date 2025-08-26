@@ -19,7 +19,7 @@
           </router-link>
         </li>
         <li>
-          <router-link to="/chatbot" class="nav-link" active-class="active">
+          <router-link to="/chatbots" class="nav-link" active-class="active">
             <i class="icon icon-chatbot"></i>
             <span>Chatbots</span>
           </router-link>
