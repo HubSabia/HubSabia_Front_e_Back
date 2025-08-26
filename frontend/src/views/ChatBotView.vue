@@ -1,141 +1,101 @@
 <template>
-  <div class="view-container">
-    <header class="view-header">
-      <h2>Gestão de Chatbots</h2>
-    </header>
-
-    <div class="actions-bar">
-      <button class="btn-primary" @click="handleCriar">Criar Novo Chatbot</button>
+  <div class="chat-view">
+    <div class="chat-container">
+      <header class="chat-header">
+        <h2>Conversa com o Chatbot</h2>
+        <!-- Aqui poderíamos mostrar o nome do chatbot no futuro -->
+      </header>
+      <div class="messages-area" ref="messagesAreaRef">
+        <!-- Loop para exibir as mensagens -->
+        <div v-for="(msg, index) in mensagens" :key="index" :class="['message-bubble', msg.autor]">
+          <p>{{ msg.texto }}</p>
+        </div>
+        <div v-if="isLoading" class="message-bubble bot typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <footer class="chat-footer">
+        <form @submit.prevent="enviarMensagem" class="message-form">
+          <input
+            type="text"
+            v-model="novaMensagem"
+            placeholder="Digite sua pergunta..."
+            :disabled="isLoading"
+            autocomplete="off"
+          />
+          <button type="submit" :disabled="isLoading">Enviar</button>
+        </form>
+      </footer>
     </div>
-
-    <div class="list-card">
-      <h3 class="list-title">Meus Chatbots</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>NOME</th>
-            <th>CAMPANHA ASSOCIADA</th>
-            <th>STATUS</th>
-            <th>AÇÕES</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="chatbot in chatbots" :key="chatbot._id">
-            <td>{{ chatbot.nome }}</td>
-            <td>{{ chatbot.campanha ? chatbot.campanha.nome : 'N/A' }}</td>
-            <td>
-              <!-- Adicionei .replace(' ', '-') para o status "Em Manutenção" funcionar no CSS -->
-              <span :class="['status-badge', `status-${chatbot.status.toLowerCase().replace(' ', '-')}`]">
-                {{ chatbot.status }}
-              </span>
-            </td>
-            <td class="actions-cell">
-              <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar</button>
-              <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
-              <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
-            </td>
-          </tr>
-          <tr v-if="chatbots.length === 0">
-            <td colspan="4" class="no-data">Nenhum chatbot encontrado. Crie o seu primeiro!</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Modal para criar e editar chatbots -->
-    <ChatbotModal
-      v-model="isModalVisible"
-      :chatbot-to-edit="chatbotParaEditar"
-      @chatbot-created="adicionarNovoChatbotNaLista"
-      @chatbot-updated="atualizarChatbotNaLista"
-    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import apiClient from '@/services/api';
-import ChatbotModal from '@/components/ChatbotModal.vue';
 
-const chatbots = ref([]);
-const isModalVisible = ref(false);
-const chatbotParaEditar = ref(null);
-const router = useRouter();
+const route = useRoute();
+const chatbotId = route.params.id; // Pega o ID do chatbot da URL
 
-// --- Funções CRUD ---
+const mensagens = ref([]);
+const novaMensagem = ref('');
+const isLoading = ref(false);
+const messagesAreaRef = ref(null); // Referência para a área de mensagens para o scroll
 
-const buscarChatbots = async () => {
+const scrollToBottom = async () => {
+  // Espera o DOM ser atualizado para fazer o scroll
+  await nextTick();
+  const area = messagesAreaRef.value;
+  if (area) {
+    area.scrollTop = area.scrollHeight;
+  }
+};
+
+const enviarMensagem = async () => {
+  if (!novaMensagem.value.trim() || isLoading.value) return;
+
+  const textoUsuario = novaMensagem.value;
+  mensagens.value.push({ autor: 'user', texto: textoUsuario });
+  novaMensagem.value = '';
+  isLoading.value = true;
+  scrollToBottom();
+
   try {
-    const response = await apiClient.get('/chatbots');
-    chatbots.value = response.data;
+    const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, {
+      mensagemUsuario: textoUsuario
+    });
+    
+    mensagens.value.push({ autor: 'bot', texto: response.data.resposta });
   } catch (error) {
-    console.error("Erro ao buscar chatbots:", error);
+    console.error("Erro ao enviar mensagem:", error);
+    mensagens.value.push({ autor: 'bot', texto: 'Desculpe, ocorreu um erro. Tente novamente mais tarde.' });
+  } finally {
+    isLoading.value = false;
+    scrollToBottom();
   }
 };
 
-const adicionarNovoChatbotNaLista = (novoChatbot) => {
-  chatbots.value.unshift(novoChatbot);
-};
-
-const atualizarChatbotNaLista = (chatbotAtualizado) => {
-  const index = chatbots.value.findIndex(c => c._id === chatbotAtualizado._id);
-  if (index !== -1) {
-    chatbots.value[index] = chatbotAtualizado;
-  }
-};
-
-const handleExcluir = async (chatbotId) => {
-  if (!window.confirm("Você tem certeza que deseja excluir este chatbot?")) {
-    return;
-  }
-  try {
-    await apiClient.delete(`/chatbots/${chatbotId}`);
-    chatbots.value = chatbots.value.filter(c => c._id !== chatbotId);
-    alert("Chatbot excluído com sucesso!");
-  } catch (error) {
-    console.error("Erro ao excluir chatbot:", error);
-    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível excluir o chatbot.'}`);
-  }
-};
-
-const handleCriar = () => {
-  chatbotParaEditar.value = null;
-  isModalVisible.value = true;
-};
-
-const handleEditar = (chatbot) => {
-  chatbotParaEditar.value = chatbot;
-  isModalVisible.value = true;
-};
-
-const iniciarConversa = (chatbotId) => {
-  // Redireciona para a página de chat, passando o ID do chatbot na URL
-  router.push(`/chatbot/${chatbotId}`);
-};
-
-// --- Lifecycle Hook ---
-onMounted(buscarChatbots);
+onMounted(() => {
+  // Mensagem inicial do bot
+  mensagens.value.push({ autor: 'bot', texto: 'Olá! Faça sua pergunta sobre a campanha e seus editais.' });
+});
 </script>
 
 <style scoped>
-/* Estilos reutilizados e adaptados */
-.view-container { padding: 2rem; }
-.view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
-.actions-bar { margin-bottom: 2rem; }
-.list-card { background-color: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.list-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; }
-table { width: 100%; border-collapse: collapse; text-align: left; }
-th, td { padding: 1rem; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
-th { font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 600; }
-.status-badge { padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500; display: inline-block; }
-.status-ativo { background-color: #d4edda; color: #155724; }
-.status-inativo { background-color: #f8f9fa; color: #343a40; }
-.status-em-manutenção { background-color: #fff3cd; color: #856404; }
-.actions-cell button { padding: 0.3rem 0.6rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.8rem; }
-.btn-primary { background-color: #007bff; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; }
-.btn-edit { background-color: #6c757d; color: white; }
-.btn-delete { background-color: #dc3545; color: white; }
-.btn-chat { background-color: #28a745; color: white; }
-.no-data { text-align: center; padding: 2rem; color: #6c757d; }
+.chat-view { display: flex; justify-content: center; align-items: center; height: calc(100vh - 60px); /* Ajustar altura conforme seu header principal */ background-color: #f4f7f9; }
+.chat-container { width: 100%; max-width: 800px; height: 90%; background: white; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+.chat-header { padding: 1rem; border-bottom: 1px solid #e9ecef; }
+.messages-area { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+.message-bubble { max-width: 75%; padding: 0.75rem 1rem; border-radius: 18px; line-height: 1.5; }
+.message-bubble.user { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.message-bubble.bot { background-color: #e9ecef; color: #343a40; align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-footer { padding: 1rem; border-top: 1px solid #e9ecef; }
+.message-form { display: flex; gap: 0.5rem; }
+.message-form input { flex-grow: 1; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 18px; }
+.message-form button { padding: 0.75rem 1.5rem; border: none; background-color: #007bff; color: white; border-radius: 18px; cursor: pointer; }
+.typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #adb5bd; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+.typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 </style>
