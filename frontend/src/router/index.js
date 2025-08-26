@@ -48,7 +48,7 @@ const routes = [
     meta: { title: 'Gestão de Chatbots', requiresAuth: true }
   },
   {
-    path: '/chatbot/:id',
+    path: '/chatbot',
     name: 'ChatBot',
     component: () => import('@/views/ChatBotView.vue'),
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
