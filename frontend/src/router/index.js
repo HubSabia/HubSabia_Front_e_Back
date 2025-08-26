@@ -42,7 +42,7 @@ const routes = [
     meta: { title: 'Gestão de Editais', requiresAuth: true }
   },
   {
-    path: '/chatbots',
+    path: '/Chatbots',
     name: 'ChatBots',
     component: () => import('@/views/ChatbotsView.vue'),
     meta: { title: 'Gestão de Chatbots', requiresAuth: true }
