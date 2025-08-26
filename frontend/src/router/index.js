@@ -47,12 +47,6 @@ const routes = [
     component: () => import('@/views/EditaisView.vue'),
     meta: { title: 'Gestão de Editais', requiresAuth: true }
   },
-  {
-    path: '/chatbot',
-    name: 'ChatBot',
-    component: () => import('@/views/ChatBotView.vue'),
-    meta: { title: 'Chat Bot', requiresAuth: true }
-  },
 ];
 
 const router = createRouter({
