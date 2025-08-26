@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 const Chatbot = require('../models/Chatbot');
-const Campanha = require('../models/Campanha'); // Para validação
+const Edital = require('../models/Edital');
+const Campanha = require('../models/Campanha');
+
 
 // ==========================================================
 // ROTA GET: Listar todos os chatbots do usuário
@@ -93,6 +95,49 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         res.json({ msg: 'Chatbot removido com sucesso.' });
     } catch (err) {
         console.error("Erro ao excluir chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// ==========================================================
+// ROTA POST: Interagir com um chatbot específico
+// ==========================================================
+router.post('/:chatbotId/interagir', authMiddleware, async (req, res) => {
+    const { mensagemUsuario } = req.body;
+    
+    if (!mensagemUsuario) {
+        return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
+    }
+
+    try {
+        // 1. Encontra o chatbot e popula TODA a informação necessária em cadeia
+        const chatbot = await Chatbot.findById(req.params.chatbotId)
+            .populate({
+                 path: 'campanha',
+                 populate: {
+                     path: 'editais', // Aninha a população para pegar os editais dentro da campanha
+                     model: 'Edital'
+                 }
+            });
+
+        if (!chatbot || !chatbot.campanha) {
+            return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
+        }
+
+        // 2. Constrói o contexto para a IA a partir do conteúdo dos editais
+        const contexto = chatbot.campanha.editais.map(e => e.conteudo).join('\n\n---\n\n');
+
+        // 3. LÓGICA DA IA (POR ENQUANTO, SIMULADA)
+        //    Aqui você faria a chamada para a API da OpenAI, Google AI, etc.
+        //    Ex: const respostaDaIA = await servicoDeIA.gerarResposta(mensagemUsuario, contexto);
+        
+        const respostaSimulada = `(Resposta Simulada) Baseado no contexto dos editais, a resposta para sua pergunta sobre "${mensagemUsuario}" é... [O conteúdo dos editais seria usado aqui para gerar uma resposta real].`;
+
+        // 4. Retorna a resposta para o frontend
+        res.json({ resposta: respostaSimulada });
+
+    } catch (err) {
+        console.error("Erro na interação com o chatbot:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
