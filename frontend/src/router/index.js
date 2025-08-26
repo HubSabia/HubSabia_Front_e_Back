@@ -30,12 +30,6 @@ const routes = [
     meta: { title: 'Gestão de Campanhas', requiresAuth: true }
   },
   {
-    path: '/chatbots',
-    name: 'Chatbots',
-    component: () => import('@/views/ChatbotsView.vue'),
-    meta: { title: 'Gestão de Chatbots', requiresAuth: true }
-  },
-  {
     path: '/usuarios',
     name: 'Usuarios',
     component: () => import('@/views/UsersView.vue'),
@@ -46,6 +40,12 @@ const routes = [
     name: 'Editais',
     component: () => import('@/views/EditaisView.vue'),
     meta: { title: 'Gestão de Editais', requiresAuth: true }
+  },
+  {
+    path: '/chatbot',
+    name: 'ChatBot',
+    component: () => import('@/views/ChatBotView.vue'),
+    meta: { title: 'Chat Bot', requiresAuth: true }
   },
 ];
 
