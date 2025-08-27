@@ -21,7 +21,7 @@
         <li>
           <router-link to="/gerencia" class="nav-link" active-class="active">
             <i class="icon icon-chatbot"></i>
-            <span>Chatbots</span>
+            <span>Gerenciar bots</span>
           </router-link>
         </li>
         <li>
