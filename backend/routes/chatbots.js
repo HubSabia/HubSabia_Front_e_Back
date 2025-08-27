@@ -142,4 +142,27 @@ router.post('/:chatbotId/interagir', authMiddleware, async (req, res) => {
     }
 });
 
+// ==========================================================
+// ROTA GET: Buscar um chatbot específico pelo ID
+// ==========================================================
+router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+        const chatbot = await Chatbot.findById(req.params.id)
+            .populate('campanha', 'nome'); // Popula o nome da campanha
+
+        if (!chatbot) {
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
+        }
+
+        // Segurança: Garante que o usuário logado é o criador do chatbot
+        if (chatbot.criador.toString() !== req.usuario.id) {
+            return res.status(401).json({ msg: 'Ação não autorizada.' });
+        }
+
+        res.json(chatbot);
+    } catch (err) {
+        console.error("Erro ao buscar chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
 module.exports = router;
