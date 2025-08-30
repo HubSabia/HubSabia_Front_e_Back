@@ -1,101 +1,104 @@
 <template>
-  <div class="campaigns-view">
-    <div v-if="!showForm" class="campaign-list-view">
-      <CampaignsTable
-        :campaigns="campaigns"
-        @edit-campaign="handleEditCampaign"
-        @delete-campaign="handleDeleteCampaign"
-        @add-campaign="handleAddCampaign"
-      />
+  <div class="view-container">
+    <header class="view-header">
+      <h2>Campanhas</h2>
+    </header>
+
+    <div class="card-grid">
+      <!-- MUDANÇA: Usando o componente AddCampaignCard e escutando pelo evento 'click' dele -->
+      <AddCampaignCard @click="handleCriar" />
     </div>
-    <div v-else class="campaign-form-view">
-      <CampaignForm
-        :campaign="editingCampaign"
-        @save-campaign="handleSaveCampaign"
-        @cancel-form="handleCancelForm"
-      />
-    </div>
+    
+    <!-- Usando o componente da Tabela -->
+    <CampaignsTable 
+      :campanhas="campanhas"   
+      @edit="handleEditar"     
+      @delete="handleExcluir"  
+    />
+    
+    <!-- Usando o componente do Modal -->
+    <CampaignModal 
+      v-model="isModalVisible" 
+      :campaign-to-edit="campanhaParaEditar"
+      @campaign-created="adicionarNovaCampanhaNaLista" 
+      @campaign-updated="atualizarCampanhaNaLista"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { onMounted, getCurrentInstance } from 'vue';
-import CampaignForm from '@/components/CampaignForm.vue';
+import { ref, onMounted } from 'vue';
+import apiClient from '@/services/api';
+
+// MUDANÇA: Importa TODOS os componentes filhos que esta página utiliza
+import AddCampaignCard from '@/components/AddCampaignCard.vue';
 import CampaignsTable from '@/components/CampaignsTable.vue';
+import CampaignModal from '@/components/CampaignModal.vue';
 
-const instance = getCurrentInstance();
+// A lógica de estado e as funções de manipulação de dados permanecem aqui
+const campanhas = ref([]);
+const isModalVisible = ref(false);
+const campanhaParaEditar = ref(null);
 
+// --- Funções CRUD (Lógica Central) ---
+// Estas funções são chamadas em resposta aos eventos dos componentes filhos.
 
-
-const showForm = ref(false);
-const editingCampaign = ref(null); // null for new, object for editing
-
-// Sample data (simulated backend)
-const campaigns = ref([]);
-
-const handleAddCampaign = () => {
-  editingCampaign.value = { id: null, name: '', description: '', period: '', status: 'Planejada', targetAudience: '' }; // Reset for new campaign
-  showForm.value = true;
-};
-
-const handleEditCampaign = (campaignId) => {
-  const campaignToEdit = campaigns.value.find(c => c.id === campaignId);
-  if (campaignToEdit) {
-    editingCampaign.value = { ...campaignToEdit }; // Create a copy to edit
-    showForm.value = true;
+const buscarCampanhas = async () => {
+  try {
+    const response = await apiClient.get('/campanhas');
+    campanhas.value = response.data;
+  } catch (error) {
+    console.error("Erro ao buscar campanhas:", error);
   }
 };
 
-const handleSaveCampaign = (campaignData) => {
-  if (campaignData.id) {
-    // Update existing campaign
-    const index = campaigns.value.findIndex(c => c.id === campaignData.id);
-    if (index !== -1) {
-      campaigns.value[index] = { ...campaignData };
-    }
-  } else {
-    // Add new campaign (simulate ID generation)
-    campaigns.value.push({ ...campaignData, id: Date.now() });
+const adicionarNovaCampanhaNaLista = (novaCampanha) => {
+  campanhas.value.unshift(novaCampanha);
+};
+
+const atualizarCampanhaNaLista = (campanhaAtualizada) => {
+  const index = campanhas.value.findIndex(c => c._id === campanhaAtualizada._id);
+  if (index !== -1) {
+    campanhas.value[index] = campanhaAtualizada;
   }
-  showForm.value = false;
-  editingCampaign.value = null;
 };
 
-const handleDeleteCampaign = (campaignId) => {
-  // Simulate deletion
-  campaigns.value = campaigns.value.filter(c => c.id !== campaignId);
-  // Add confirmation dialog in a real app
+const handleExcluir = async (campanhaId) => {
+  if (!window.confirm("Você tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita.")) {
+    return;
+  }
+  try {
+    await apiClient.delete(`/campanhas/${campanhaId}`);
+    campanhas.value = campanhas.value.filter(c => c._id !== campanhaId);
+    alert("Campanha excluída com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir campanha:", error);
+    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível excluir a campanha.'}`);
+  }
 };
 
-const handleCancelForm = () => {
-  showForm.value = false;
-  editingCampaign.value = null;
+// Esta função é chamada quando o AddCampaignCard emite o evento 'click'
+const handleCriar = () => {
+  campanhaParaEditar.value = null;
+  isModalVisible.value = true;
 };
 
-onMounted(() => {
-  instance.emit("update-title", "Gerenciamento de Campanhas");
-});
+// Esta função é chamada quando a CampaignsTable emite o evento 'edit'
+const handleEditar = (campanha) => {
+  campanhaParaEditar.value = campanha;
+  isModalVisible.value = true;
+};
 
+// --- Lifecycle Hook ---
+onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
-.campaigns-view {
-  padding: 20px;
-}
-
-.campaign-list-view {
-  display: flex;
-  flex-direction: column; /* Adjust as needed, maybe start with AddCard then Table */
-  gap: 20px;
-}
-
-/* Add basic styling for form view if needed */
-.campaign-form-view {
-  /* Styles for when the form is visible */
-  background-color: #f8f9fa; /* Lighter grey for form background */
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
+/* 
+  O CSS da página fica super limpo.
+  O CSS do card de criação foi movido para o componente AddCampaignCard.vue.
+*/
+.view-container { padding: 2rem; }
+.view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
+.card-grid { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
 </style>

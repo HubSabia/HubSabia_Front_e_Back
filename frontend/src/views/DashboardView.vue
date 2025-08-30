@@ -1,12 +1,11 @@
 <template>
   <div class="dashboard-view">
-    <h1 class="view-title">Dashboard do Projeto Integrador IFPR</h1>
+    <h2 class="view-title">Dashboard</h2>
     <p class="view-subtitle">Visão geral do sistema</p>
 
-    <!-- Placeholder for stats cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-number">--</div>
+        <div class="stat-number">{{ campanhas.length }}</div>
         <div class="stat-label">Campanhas Ativas</div>
       </div>
       <div class="stat-card">
@@ -23,22 +22,52 @@
       </div>
     </div>
 
-    <!-- Placeholder for recent activity table -->
     <div class="content-card">
-      <h2>Atividade Recente do Sistema</h2>
-      <p>Tabela de atividades recentes aparecerá aqui...</p>
+      <h3>Atividade Recente (Minhas Campanhas)</h3>
+      <ul v-if="campanhas.length > 0" class="campaign-list">
+        <li v-for="campanha in campanhas" :key="campanha._id" class="campaign-item">
+          <div class="campaign-info">
+            <strong>{{ campanha.nome }}</strong>
+            <span class="campaign-status" :class="`status-${campanha.status.toLowerCase()}`">
+              {{ campanha.status }}
+            </span>
+          </div>
+          <div class="campaign-period">
+            {{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}
+          </div>
+        </li>
+      </ul>
+      <div v-else class="no-campaigns">
+        <p>Nenhuma campanha encontrada.</p>
+        <router-link to="/campanhas" class="btn btn-primary">Criar primeira campanha</router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, getCurrentInstance } from 'vue';
+import { ref, onMounted } from 'vue';
+import apiClient from '@/services/api';
 
-const instance = getCurrentInstance();
+const campanhas = ref([]);
 
-onMounted(() => {
-  instance.emit("update-title", "Dashboard");
-});
+const buscarCampanhas = async () => {
+  try {
+    console.log('Buscando dados das campanhas...');
+    const response = await apiClient.get('/campanhas');
+    campanhas.value = response.data;
+    console.log('Campanhas recebidas:', response.data);
+  } catch (error) {
+    console.error('Falha ao buscar dados do dashboard:', error.response ? error.response.data : error.message);
+  }
+};
+
+const formatarData = (data) => {
+  if (!data) return '';
+  return new Date(data).toLocaleDateString('pt-BR');
+};
+
+onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
@@ -95,8 +124,86 @@ onMounted(() => {
 }
 
 .content-card h3 {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   color: #343a40;
   font-weight: 600;
+}
+
+.campaign-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.campaign-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.campaign-item:last-child {
+  border-bottom: none;
+}
+
+.campaign-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.campaign-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-ativa {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-planejada {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-concluída {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-cancelada {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.campaign-period {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.no-campaigns {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.no-campaigns p {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 </style>

@@ -34,7 +34,7 @@ import fotoNovo3 from "@/assets/foto-novo3.jpg";
 const instance = getCurrentInstance();
 
 onMounted(() => {
-  instance.emit("update-title", "Sobre o Sabiá Bot - Equipe de Desenvolvimento IFPR");
+  instance.emit("update-title", "Sobre o Bot");
 });
 
 const authors = ref([
