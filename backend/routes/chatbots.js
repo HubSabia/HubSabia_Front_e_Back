@@ -71,9 +71,11 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
         
         // MUDANÇA 3: Substituímos a resposta simulada pela chamada real ao Gemini
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
 
-            const prompt = `Você é um assistente prestativo do IFPR. Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
+            const prompt = `Você é um assistente prestativo do IFPR. 
+            Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
+            Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
             
             const result = await model.generateContent(prompt);
             const response = await result.response;
