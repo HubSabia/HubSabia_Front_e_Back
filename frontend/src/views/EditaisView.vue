@@ -45,9 +45,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import apiClient from '@/services/api';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import EditalModal from '@/components/EditalModal.vue';
+
+const instance = getCurrentInstance();
 
 const editais = ref([]);
 const isModalVisible = ref(false);
@@ -90,7 +91,9 @@ const handleExcluir = async (editalId) => {
   }
 };
 
-onMounted(buscarEditais);
+onMounted(()=> {
+  instance.emit("update-title", "Editais");
+}, buscarEditais);
 </script>
 
 <style scoped>

@@ -8,8 +8,8 @@
       <h3 class="login-title">Acesso ao Sistema</h3>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="email" required placeholder="Digite seu email">
+          <label for="username">Usuário ou Email</label>
+          <input type="text" id="username" v-model="username" required placeholder="Digite seu usuário">
         </div>
         <div class="form-group">
           <label for="password">Senha</label>
@@ -17,21 +17,10 @@
         </div>
         <div class="form-actions">
            <a href="#" class="forgot-password">Esqueci minha senha</a>
-           <button type="submit" class="btn btn-primary login-button" :disabled="isLoading">
-             {{ isLoading ? 'Entrando...' : 'Entrar' }}
-           </button>
+           <button type="submit" class="btn btn-primary login-button">Entrar</button>
         </div>
          <div class="create-account-link">
-            Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
-        </div>
-
-        <div v-if="isLoading" class="loading-container">
-          <div class="spinner"></div>
-          <p>Buscando usuário, por favor aguarde...</p>
-        </div>
-
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
+            Não tem uma conta? <a href="#">Crie uma aqui</a>
         </div>
       </form>
     </div>
@@ -39,48 +28,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import { useRouter } from 'vue-router';
-import apiClient from '@/services/api';
 
-const email = ref("");
+const username = ref("");
 const password = ref("");
-const isLoading = ref(false);
-const errorMessage = ref("");
 const router = useRouter();
+const instance = getCurrentInstance();
 
-const handleLogin = async () => {
-  if (!email.value || !password.value) {
-    errorMessage.value = "Por favor, preencha o e-mail e a senha.";
-    return;
-  }
-
-  isLoading.value = true;
-  errorMessage.value = "";
-
-  try {
-    const response = await apiClient.post('/auth/login', { 
-      email: email.value, 
-      password: password.value 
-    });
-    
-    const data = response.data;
-
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      router.push("/dashboard");
-    } else {
-      throw new Error('Token não recebido da API.');
-    }
-
-  } catch (error) {
-    console.error("Falha no login:", error);
-    const errorMsg = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
-    errorMessage.value = errorMsg;
-  } finally {
-    isLoading.value = false;
+const handleLogin = () => {
+  // Simulate login validation
+  console.log("Login attempt:", username.value);
+  // In a real app, validate credentials here
+  if (username.value && password.value) {
+    // Simulate successful login
+    router.push("/dashboard");
   }
 };
+
+onMounted(() => {
+  // Emit event to update page title (though Login might not need a header title)
+  instance.emit("update-title", "Login - Projeto Integrador IFPR");
+});
+
 </script>
 
 <style scoped>
@@ -90,7 +60,7 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f0f2f5;
+  background-color: #f0f2f5; /* Light grey background */
 }
 
 .login-card {
@@ -113,17 +83,18 @@ const handleLogin = async () => {
 
 .logo-img {
   height: 50px;
+  /* Placeholder style */
   background-color: var(--sidebar-bg, #212529);
   padding: 5px;
   border-radius: 4px;
 }
 
 .institution-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--sidebar-bg, #212529);
-  line-height: 1.3;
-  text-align: left;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--sidebar-bg, #212529);
+    line-height: 1.3;
+    text-align: left;
 }
 
 .login-title {
@@ -162,83 +133,41 @@ const handleLogin = async () => {
 }
 
 .form-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 25px;
-  margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    margin-bottom: 20px;
 }
 
 .forgot-password {
-  font-size: 0.85rem;
-  color: var(--primary-color, #007bff);
-  text-decoration: none;
+    font-size: 0.85rem;
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
 }
 
 .forgot-password:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .login-button {
-  padding: 10px 25px;
-}
-
-.login-button:disabled {
-  background-color: #0056b3;
-  opacity: 0.7;
-  cursor: not-allowed;
+    padding: 10px 25px;
 }
 
 .create-account-link {
-  margin-top: 25px;
-  font-size: 0.9rem;
-  color: #6c757d;
+    margin-top: 25px;
+    font-size: 0.9rem;
+    color: #6c757d;
 }
 
 .create-account-link a {
-  color: var(--primary-color, #007bff);
-  text-decoration: none;
-  font-weight: 500;
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
+    font-weight: 500;
 }
 
 .create-account-link a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
-.loading-container {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: #6c757d;
-}
-
-.spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border-left-color: var(--primary-color, #007bff);
-  animation: spin 1s ease infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-message {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
 </style>

@@ -14,7 +14,7 @@ import { onMounted, getCurrentInstance } from 'vue';
 const instance = getCurrentInstance();
 
 onMounted(() => {
-  instance.emit("update-title", "Usuários");
+  instance.emit("update-title", "Gestão de Usuários IFPR");
 });
 </script>
 
