@@ -5,16 +5,11 @@ const Chatbot = require('../models/Chatbot');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 
-// MUDANÇA 1: Importa a biblioteca do Google AI
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// MUDANÇA 2: Configura a API com a sua chave do .env
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 
 // --- ROTAS GERAIS (CRUD Básico) ---
-
-// GET /api/chatbots -> Listar todos os chatbots do usuário
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const chatbots = await Chatbot.find({ criador: req.usuario.id })
@@ -27,7 +22,6 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
-// POST /api/chatbots -> Criar um novo chatbot
 router.post('/', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     if (!nome || !campanha) {
@@ -51,7 +45,6 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
-// POST /api/chatbots/:id/interagir -> Interagir com um chatbot (ATUALIZADO COM IA)
 router.post('/:id/interagir', authMiddleware, async (req, res) => {
     const { mensagemUsuario } = req.body;
     if (!mensagemUsuario) {
@@ -69,9 +62,29 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
         
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         
-        // MUDANÇA 3: Substituímos a resposta simulada pela chamada real ao Gemini
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+            // MUDANÇA: Adicionamos as configurações de segurança para evitar bloqueios desnecessários.
+            const safetySettings = [
+                {
+                    category: "HARM_CATEGORY_HARASSMENT",
+                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
+                },
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
+                },
+                {
+                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
+                },
+                {
+                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
+                },
+            ];
+
+            // Passamos as safetySettings ao inicializar o modelo.
+            const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro", safetySettings });
 
             const prompt = `Você é um assistente prestativo do IFPR. 
             Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
@@ -94,7 +107,6 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/chatbots/:id -> Buscar um chatbot específico
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id).populate('campanha', 'nome');
@@ -107,7 +119,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// PUT /api/chatbots/:id -> Editar um chatbot
 router.put('/:id', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     const camposAtualizados = {};
@@ -133,7 +144,6 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// DELETE /api/chatbots/:id -> Excluir um chatbot
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
