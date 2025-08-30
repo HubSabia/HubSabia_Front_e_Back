@@ -6,13 +6,11 @@ const ChatbotSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    // Adiciona o campo 'status' que estava faltando
     status: {
         type: String,
         enum: ['Ativo', 'Inativo', 'Em Manutenção'],
         default: 'Inativo'
     },
-    // Adiciona a referência à Campanha que estava faltando
     campanha: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Campanha',

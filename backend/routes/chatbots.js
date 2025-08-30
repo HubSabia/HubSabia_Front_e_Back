@@ -5,13 +5,11 @@ const Chatbot = require('../models/Chatbot');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 
+// --- ROTAS GERAIS (CRUD Básico) ---
 
-// ==========================================================
-// ROTA GET: Listar todos os chatbots do usuário
-// ==========================================================
+// GET /api/chatbots -> Listar todos os chatbots do usuário
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        // Popula o campo 'campanha' para que possamos ver o nome da campanha associada
         const chatbots = await Chatbot.find({ criador: req.usuario.id })
             .populate('campanha', 'nome')
             .sort({ createdAt: -1 });
@@ -22,30 +20,19 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
-// ==========================================================
-// ROTA POST: Criar um novo chatbot
-// ==========================================================
+// POST /api/chatbots -> Criar um novo chatbot
 router.post('/', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     if (!nome || !campanha) {
         return res.status(400).json({ msg: 'Nome e campanha associada são obrigatórios.' });
     }
     try {
-        // Validação: Garante que a campanha existe e pertence ao usuário
         const campanhaExiste = await Campanha.findOne({ _id: campanha, criador: req.usuario.id });
         if (!campanhaExiste) {
             return res.status(404).json({ msg: 'Campanha não encontrada ou não autorizada.' });
         }
-        
-        const novoChatbot = new Chatbot({
-            nome,
-            status,
-            campanha, // Salva o ID da campanha
-            criador: req.usuario.id
-        });
-        
+        const novoChatbot = new Chatbot({ nome, status, campanha, criador: req.usuario.id });
         const chatbotSalvo = await novoChatbot.save();
-        // Popula o chatbot recém-criado para enviar de volta ao frontend
         const chatbotPopulado = await Chatbot.findById(chatbotSalvo._id).populate('campanha', 'nome');
         res.status(201).json(chatbotPopulado);
     } catch (err) {
@@ -54,9 +41,50 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-// ==========================================================
-// ROTA PUT: Editar um chatbot existente
-// ==========================================================
+
+// --- ROTAS ESPECÍFICAS (por ID) ---
+// A ordem aqui é importante: rotas com sub-caminhos fixos ('/interagir') devem vir antes das genéricas.
+
+// POST /api/chatbots/:id/interagir -> Interagir com um chatbot
+router.post('/:id/interagir', authMiddleware, async (req, res) => {
+    const { mensagemUsuario } = req.body;
+    if (!mensagemUsuario) {
+        return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
+    }
+    try {
+        const chatbot = await Chatbot.findById(req.params.id).populate({
+                 path: 'campanha',
+                 populate: { path: 'editais', model: 'Edital' }
+            });
+
+        if (!chatbot || !chatbot.campanha) {
+            return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
+        }
+        
+        const contexto = chatbot.campanha.editais.map(e => e.conteudo).join('\n\n---\n\n');
+        const respostaSimulada = `(Resposta Simulada) Baseado no contexto dos editais, a resposta para sua pergunta sobre "${mensagemUsuario}" é...`;
+        res.json({ resposta: respostaSimulada });
+
+    } catch (err) {
+        console.error("Erro na interação com o chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// GET /api/chatbots/:id -> Buscar um chatbot específico
+router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+        const chatbot = await Chatbot.findById(req.params.id).populate('campanha', 'nome');
+        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
+        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        res.json(chatbot);
+    } catch (err) {
+        console.error("Erro ao buscar chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// PUT /api/chatbots/:id -> Editar um chatbot
 router.put('/:id', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     const camposAtualizados = {};
@@ -82,9 +110,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// ==========================================================
-// ROTA DELETE: Excluir um chatbot
-// ==========================================================
+// DELETE /api/chatbots/:id -> Excluir um chatbot
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
@@ -99,70 +125,5 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// ==========================================================
-// ROTA POST: Interagir com um chatbot específico
-// ==========================================================
-router.post('/:chatbotId/interagir', authMiddleware, async (req, res) => {
-    const { mensagemUsuario } = req.body;
-    
-    if (!mensagemUsuario) {
-        return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
-    }
 
-    try {
-        // 1. Encontra o chatbot e popula TODA a informação necessária em cadeia
-        const chatbot = await Chatbot.findById(req.params.chatbotId)
-            .populate({
-                 path: 'campanha',
-                 populate: {
-                     path: 'editais', // Aninha a população para pegar os editais dentro da campanha
-                     model: 'Edital'
-                 }
-            });
-
-        if (!chatbot || !chatbot.campanha) {
-            return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
-        }
-
-        // 2. Constrói o contexto para a IA a partir do conteúdo dos editais
-        const contexto = chatbot.campanha.editais.map(e => e.conteudo).join('\n\n---\n\n');
-
-        // 3. LÓGICA DA IA (POR ENQUANTO, SIMULADA)
-        //    Aqui você faria a chamada para a API da OpenAI, Google AI, etc.
-        //    Ex: const respostaDaIA = await servicoDeIA.gerarResposta(mensagemUsuario, contexto);
-        
-        const respostaSimulada = `(Resposta Simulada) Baseado no contexto dos editais, a resposta para sua pergunta sobre "${mensagemUsuario}" é... [O conteúdo dos editais seria usado aqui para gerar uma resposta real].`;
-
-        // 4. Retorna a resposta para o frontend
-        res.json({ resposta: respostaSimulada });
-
-    } catch (err) {
-        console.error("Erro na interação com o chatbot:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
-});
-
-// ==========================================================
-// ROTA GET: Buscar um chatbot específico pelo ID
-// ==========================================================
-router.get('/:id', authMiddleware, async (req, res) => {
-    try {
-        const chatbot = await Chatbot.findById(req.params.id)
-            .populate('campanha', 'nome'); // Popula o nome da campanha
-
-        if (!chatbot) {
-            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
-        }
-
-        // Segurança: Garante que o usuário logado é o criador do chatbot
-        if (chatbot.criador.toString() !== req.usuario.id) {
-            return res.status(401).json({ msg: 'Ação não autorizada.' });
-        }
-
-        res.json(chatbot);
-    } catch (err) {
-        console.error("Erro ao buscar chatbot:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
-});
 module.exports = router;
