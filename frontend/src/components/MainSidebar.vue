@@ -12,28 +12,30 @@
             <span>Dashboard</span>
           </router-link>
         </li>
+        <li class="nav-divider"></li>
         <li>
-          <router-link to="/campanhas" class="nav-link" active-class="active">
+          <router-link to="/editais" class="nav-link" active-class="active">
+            <i class="icon icon-document"></i>
+            <span>Editais</span>
+          </router-link>
+        </li>
+        <li>
+          <router-link to="/campanhas" class="nav-link hierarchy-level-1" active-class="active">
             <i class="icon icon-campaign"></i>
             <span>Campanhas</span>
           </router-link>
         </li>
         <li>
-          <router-link to="/gerencia" class="nav-link" active-class="active">
+          <router-link to="/gerencia" class="nav-link hierarchy-level-2" active-class="active">
             <i class="icon icon-chatbot"></i>
             <span>Chatbots</span>
           </router-link>
         </li>
+        <li class="nav-divider"></li>
         <li>
           <router-link to="/usuarios" class="nav-link" active-class="active">
             <i class="icon icon-users"></i>
             <span>Usuários</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/editais" class="nav-link" active-class="active">
-            <i class="icon icon-info"></i>
-            <span>Editais</span>
           </router-link>
         </li>
       </ul>
@@ -139,6 +141,22 @@ const logout = () => {
 .nav-link.active .icon {
    border-color: var(--primary-color, #007bff);
    color: var(--primary-color, #007bff);
+}
+
+/* Hierarquia visual */
+.hierarchy-level-1 {
+  padding-left: 35px !important;
+}
+
+.hierarchy-level-2 {
+  padding-left: 45px !important;
+}
+
+.nav-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 15px 25px;
+  list-style: none;
 }
 
 .sidebar-footer {
