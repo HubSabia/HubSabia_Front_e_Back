@@ -84,7 +84,7 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             ];
 
             // Passamos as safetySettings ao inicializar o modelo.
-            const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro", safetySettings });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro", safetySettings });
 
             const prompt = `Você é um assistente prestativo do IFPR. 
             Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
