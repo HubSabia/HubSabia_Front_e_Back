@@ -5,6 +5,13 @@ const Chatbot = require('../models/Chatbot');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 
+// MUDANÇA 1: Importa a biblioteca do Google AI
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+// MUDANÇA 2: Configura a API com a sua chave do .env
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+
 // --- ROTAS GERAIS (CRUD Básico) ---
 
 // GET /api/chatbots -> Listar todos os chatbots do usuário
@@ -43,9 +50,8 @@ router.post('/', authMiddleware, async (req, res) => {
 
 
 // --- ROTAS ESPECÍFICAS (por ID) ---
-// A ordem aqui é importante: rotas com sub-caminhos fixos ('/interagir') devem vir antes das genéricas.
 
-// POST /api/chatbots/:id/interagir -> Interagir com um chatbot
+// POST /api/chatbots/:id/interagir -> Interagir com um chatbot (ATUALIZADO COM IA)
 router.post('/:id/interagir', authMiddleware, async (req, res) => {
     const { mensagemUsuario } = req.body;
     if (!mensagemUsuario) {
@@ -61,9 +67,24 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
         }
         
-        const contexto = chatbot.campanha.editais.map(e => e.conteudo).join('\n\n---\n\n');
-        const respostaSimulada = `(Resposta Simulada) Baseado no contexto dos editais, a resposta para sua pergunta sobre "${mensagemUsuario}" é...`;
-        res.json({ resposta: respostaSimulada });
+        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
+        
+        // MUDANÇA 3: Substituímos a resposta simulada pela chamada real ao Gemini
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+            const prompt = `Você é um assistente prestativo do IFPR. Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
+            
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const respostaDaIA = response.text();
+
+            res.json({ resposta: respostaDaIA });
+
+        } catch (iaError) {
+            console.error("Erro da API do Google AI:", iaError);
+            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA.' });
+        }
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
