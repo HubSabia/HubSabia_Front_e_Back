@@ -1,19 +1,12 @@
 <template>
-  <div class="login-background">
-    <div class="login-container">
+  <div class="login-view">
+    <div class="login-card">
       <div class="logo-area">
-        <div class="logo-box">
-          <span class="logo-initials">IFPR</span>
-        </div>
-        <div class="logo-text">
-          <span>INSTITUTO FEDERAL</span>
-          <span>Paraná</span>
-        </div>
+        <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
+        <h2 class="institution-name">INSTITUTO FEDERAL<br>Paraná</h2>
       </div>
-
-      <h1 class="title">Acesso ao Sistema</h1>
-
-      <form @submit.prevent="handleLogin" class="login-form">
+      <h3 class="login-title">Acesso ao Sistema</h3>
+      <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" v-model="email" required placeholder="Digite seu email">
@@ -22,34 +15,30 @@
           <label for="password">Senha</label>
           <input type="password" id="password" v-model="password" required placeholder="Digite sua senha">
         </div>
+        <div class="form-actions">
+           <a href="#" class="forgot-password">Esqueci minha senha</a>
+           <button type="submit" class="btn btn-primary login-button" :disabled="isLoading">
+             {{ isLoading ? 'Entrando...' : 'Entrar' }}
+           </button>
+        </div>
+         <div class="create-account-link">
+            Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
+        </div>
 
-        <div class="actions">
-          <a href="#" class="forgot-password">Esqueci minha senha</a>
-          <button type="submit" class="btn-login" :disabled="isLoading">
-            {{ isLoading ? 'Entrando...' : 'Entrar' }}
-          </button>
+        <div v-if="isLoading" class="loading-container">
+          <div class="spinner"></div>
+          <p>Buscando usuário, por favor aguarde...</p>
+        </div>
+
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
         </div>
       </form>
-
-      <div class="signup-link">
-        <span>Não tem uma conta?</span>
-        <router-link to="/registrar">Crie uma aqui</router-link>
-      </div>
-
-      <!-- Mantendo seus indicadores de estado -->
-      <div v-if="isLoading" class="loading-container">
-        <div class="spinner"></div>
-        <p>Autenticando...</p>
-      </div>
-      <div v-if="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-// SEU SCRIPT SETUP ESTÁ PERFEITO E NÃO PRECISA DE MUDANÇAS
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/api';
@@ -90,162 +79,43 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* ESTILOS ATUALIZADOS PARA O DESIGN DO FIGMA */
-.login-background {
+.login-view {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  background-color: var(--content-bg, #f8f9fa);
+}
+
+.login-card {
+  background: #ffffff;
+  padding: 40px 50px;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
   width: 100%;
-  background-color: #ffffff;
-  border: 4px solid #007bff; /* Ajuste a cor da borda se necessário */
-}
-
-.login-container {
-  width: 100%;
-  max-width: 400px;
-  padding: 2.5rem;
-  border: 1px solid #000000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.logo-area {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  width: 100%;
-}
-
-.logo-box {
-  background-color: #000000;
-  color: #ffffff;
-  padding: 0.8rem;
-  font-weight: bold;
-  margin-right: 1rem;
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.title {
-  font-size: 1.5rem;
-  margin-bottom: 2rem;
-  font-weight: 600;
+  max-width: 450px;
   text-align: center;
 }
 
-.login-form {
-  width: 100%;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  background-color: #000000;
-  color: #ffffff;
-  border: none;
-  font-size: 1rem;
-}
-
-.form-group input::placeholder {
-  color: #a0a0a0;
-}
-
-.actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.forgot-password {
-  font-size: 0.85rem;
-  color: #000000;
-  text-decoration: underline;
-}
-
-.btn-login {
-  background-color: #00ff00; /* Verde limão */
-  color: #000000;
-  border: 1px solid #000000;
-  padding: 0.8rem 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.btn-login:hover {
-  background-color: #00e600;
-}
-
-.btn-login:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
-}
-
-.signup-link {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-top: 1.5rem;
-}
-
-.signup-link a {
-  color: #000000;
-  text-decoration: underline;
-  font-weight: 500;
-}
-
-.loading-container {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: #6c757d;
-}
-
-.spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border-left-color: #000000;
-  animation: spin 1s ease infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error-message {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  width: 100%;
-}
+.logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; gap: 15px; }
+.logo-img { height: 50px; background-color: var(--sidebar-bg, #212529); padding: 5px; border-radius: 4px; }
+.institution-name { font-size: 1.1rem; font-weight: 600; color: var(--sidebar-bg, #212529); line-height: 1.3; text-align: left; }
+.login-title { margin-bottom: 30px; color: #333; font-weight: 600; font-size: 1.4rem; }
+.form-group { margin-bottom: 20px; text-align: left; }
+.form-group label { display: block; margin-bottom: 8px; color: #495057; font-weight: 500; font-size: 0.9rem; }
+.form-group input { width: 100%; padding: 12px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+.form-group input:focus { outline: none; border-color: var(--primary-color, #007bff); box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
+.form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 20px; }
+.forgot-password { font-size: 0.85rem; color: var(--primary-color, #007bff); text-decoration: none; }
+.forgot-password:hover { text-decoration: underline; }
+.login-button { padding: 10px 25px; }
+.login-button:disabled { background-color: #0056b3; opacity: 0.7; cursor: not-allowed; }
+.create-account-link { margin-top: 25px; font-size: 0.9rem; color: #6c757d; }
+.create-account-link a { color: var(--primary-color, #007bff); text-decoration: none; font-weight: 500; }
+.create-account-link a:hover { text-decoration: underline; }
+.loading-container { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: #6c757d; }
+.spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color, #007bff); animation: spin 1s ease infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.error-message { margin-top: 15px; padding: 10px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px; font-size: 0.9rem; }
 </style>
