@@ -1,6 +1,6 @@
 <template>
   <div id="app" :class="{ 'login-layout': isLoginPage, 'main-layout': !isLoginPage }">
-    <MainSidebar v-if="!isLoginPage" />
+    <Sidebar v-if="!isLoginPage" />
     <div class="content-wrapper">
       <Header v-if="!isLoginPage" :pageTitle="currentPageTitle" />
       <main class="main-content">
@@ -13,32 +13,39 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import MainSidebar from '@/components/MainSidebar.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import Header from '@/components/Header.vue';
 
 const route = useRoute();
-const currentPageTitle = ref('Dashboard');
+const currentPageTitle = ref('Dashboard'); // Default title
 
-const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Register');
+const isLoginPage = computed(() => route.name === 'Login');
 
+// Function to update the header title based on the current view
 const updatePageTitle = (title) => {
   currentPageTitle.value = title;
 };
+
+// Optionally, watch the route to set title if views don't emit
+// watch(route, (newRoute) => {
+//   currentPageTitle.value = newRoute.meta.title || 'Admin';
+// }, { immediate: true });
+
 </script>
 
 <style>
 /* Global styles & Formal Theme */
 :root {
-  --primary-color: #0056b3;
-  --secondary-color: #6c757d;
-  --sidebar-bg: #212529;
-  --header-bg: #ffffff;
-  --content-bg: #f8f9fa;
+  --primary-color: #0056b3; /* Formal Blue */
+  --secondary-color: #6c757d; /* Formal Grey */
+  --sidebar-bg: #212529; /* Dark Sidebar */
+  --header-bg: #ffffff; /* White Header */
+  --content-bg: #f8f9fa; /* Light Grey Content BG */
   --text-color: #212529;
   --text-color-light: #f8f9fa;
   --border-color: #dee2e6;
   --card-bg: #ffffff;
-  --font-family: 'Inter', sans-serif;
+  --font-family: 'Inter', sans-serif; /* Formal, clean font */
 }
 
 * {
@@ -69,18 +76,15 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #e9ecef;
+  background-color: #e9ecef; /* Slightly different bg for login */
 }
 
 .content-wrapper {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  margin-left: 260px; /* Sidebar width */
   transition: margin-left 0.3s ease;
-}
-
-.main-layout .content-wrapper {
-  margin-left: 260px;
 }
 
 .main-content {
@@ -89,6 +93,7 @@ body {
   background-color: var(--content-bg);
 }
 
+/* Basic Button Styles (can be componentized later) */
 .btn {
   display: inline-block;
   padding: 10px 20px;
@@ -112,7 +117,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #004182;
+  background-color: darken(var(--primary-color), 10%);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
@@ -122,28 +127,11 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #545b62;
+  background-color: darken(var(--secondary-color), 10%);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.login-layout .main-content {
-  padding: 0;
-}
-
+/* Add Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-@media (max-width: 1024px) {
-  .main-layout .content-wrapper {
-    margin-left: 240px;
-  }
-}
-
-@media (max-width: 767px) {
-  .main-layout .content-wrapper {
-    margin-left: 80px;
-  }
-  .main-content {
-    padding: 15px;
-  }
-}
 </style>
