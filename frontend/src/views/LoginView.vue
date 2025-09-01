@@ -25,7 +25,9 @@
 
         <div class="actions">
           <a href="#" class="forgot-password">Esqueci minha senha</a>
-          <button type="submit" class="btn-login">Entrar</button>
+          <button type="submit" class="btn-login" :disabled="isLoading">
+            {{ isLoading ? 'Entrando...' : 'Entrar' }}
+          </button>
         </div>
       </form>
 
@@ -33,24 +35,38 @@
         <span>Não tem uma conta?</span>
         <router-link to="/registrar">Crie uma aqui</router-link>
       </div>
+
+      <!-- Mantendo seus indicadores de estado -->
+      <div v-if="isLoading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Autenticando...</p>
+      </div>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+// SEU SCRIPT SETUP ESTÁ PERFEITO E NÃO PRECISA DE MUDANÇAS
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/api';
 
-const email = ref(""); 
+const email = ref("");
 const password = ref("");
+const isLoading = ref(false);
+const errorMessage = ref("");
 const router = useRouter();
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    alert("Por favor, preencha o e-mail e a senha.");
+    errorMessage.value = "Por favor, preencha o e-mail e a senha.";
     return;
   }
+  isLoading.value = true;
+  errorMessage.value = "";
   try {
     const response = await apiClient.post('/auth/login', { 
       email: email.value, 
@@ -65,30 +81,31 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error("Falha no login:", error);
-    const errorMessage = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
-    alert(errorMessage);
+    const errorMsg = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
+    errorMessage.value = errorMsg;
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
 
 <style scoped>
-
+/* ESTILOS ATUALIZADOS PARA O DESIGN DO FIGMA */
 .login-background {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   width: 100%;
-  background-color: #ffffff; /* Fundo branco */
-  padding: 2rem;
-  border: 4px solid #007bff; /* Borda azul, ajuste a cor se necessário */
+  background-color: #ffffff;
+  border: 4px solid #007bff; /* Ajuste a cor da borda se necessário */
 }
 
 .login-container {
   width: 100%;
-  max-width: 400px; /* Largura do card de login */
+  max-width: 400px;
   padding: 2.5rem;
-  border: 1px solid #000000; /* Borda preta fina */
+  border: 1px solid #000000;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -181,14 +198,54 @@ const handleLogin = async () => {
   background-color: #00e600;
 }
 
+.btn-login:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
 .signup-link {
   font-size: 0.9rem;
   color: #6c757d;
+  margin-top: 1.5rem;
 }
 
 .signup-link a {
   color: #000000;
   text-decoration: underline;
   font-weight: 500;
+}
+
+.loading-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #6c757d;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border-left-color: #000000;
+  animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 100%;
 }
 </style>
