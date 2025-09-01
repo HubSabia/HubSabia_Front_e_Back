@@ -131,6 +131,14 @@ body {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.login-layout .content-wrapper {
+  margin-left: 0;
+}
+
+.login-layout .main-content {
+  padding: 0;
+}
+
 /* Add Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
