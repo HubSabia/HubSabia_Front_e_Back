@@ -214,4 +214,12 @@ const handleLogin = async () => {
 
 .loading-container, .error-message { margin-top: 1.5rem; }
 
+
+.login-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;    
+  width: 100%;
+  min-height: 100vh;
+}
 </style>

@@ -139,6 +139,10 @@ body {
   padding: 0;
 }
 
+.login-layout .main-content {
+  padding: 0;
+}
+
 /* Add Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
