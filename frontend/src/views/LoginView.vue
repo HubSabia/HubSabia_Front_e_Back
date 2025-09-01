@@ -88,15 +88,17 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* ESTILOS ATUALIZADOS PARA O NOVO DESIGN */
+/* ESTILOS ATUALIZADOS E MAIS ESPECÍFICOS */
 
+/* Garante que esta view ocupe todo o espaço disponível */
 .login-view {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   width: 100%;
-  background-color: #f0f2f5; /* Fundo cinza claro */
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 2rem; /* Adiciona um espaçamento para telas menores */
 }
 
 .login-card {
@@ -118,7 +120,7 @@ const handleLogin = async () => {
 }
 
 .logo-box {
-  background-color: #343a40; /* Cinza escuro */
+  background-color: #343a40;
   color: white;
   padding: 0.75rem;
   font-weight: 600;
@@ -171,12 +173,8 @@ const handleLogin = async () => {
 
 .form-group input:focus {
   outline: none;
-  border-color: #0d6efd; /* Azul primário */
+  border-color: #0d6efd;
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-.form-group input::placeholder {
-  color: #adb5bd;
 }
 
 .actions-row {
@@ -192,10 +190,7 @@ const handleLogin = async () => {
   color: #0d6efd;
   text-decoration: none;
 }
-
-.forgot-password:hover {
-  text-decoration: underline;
-}
+.forgot-password:hover { text-decoration: underline; }
 
 .btn-login {
   background-color: #0d6efd;
@@ -207,44 +202,16 @@ const handleLogin = async () => {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-
-.btn-login:hover {
-  background-color: #0b5ed7;
-}
-
-.btn-login:disabled {
-  background-color: #0d6efd;
-  opacity: 0.65;
-  cursor: not-allowed;
-}
+.btn-login:hover { background-color: #0b5ed7; }
+.btn-login:disabled { background-color: #0d6efd; opacity: 0.65; cursor: not-allowed; }
 
 .signup-link {
   font-size: 0.9rem;
   color: #6c757d;
 }
+.signup-link a { color: #0d6efd; text-decoration: none; font-weight: 500; }
+.signup-link a:hover { text-decoration: underline; }
 
-.signup-link a {
-  color: #0d6efd;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
-}
-
-/* Seus estilos de loading e error message já são ótimos e combinam bem */
-.loading-container, .error-message {
-  margin-top: 1.5rem;
-}
-
-.error-message {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #f8d7da;
-  color: #721c24;            
-  border: 1px solid #f5c6cb; 
-}
-
+.loading-container, .error-message { margin-top: 1.5rem; }
 
 </style>
