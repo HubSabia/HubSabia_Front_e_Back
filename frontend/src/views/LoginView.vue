@@ -2,46 +2,27 @@
   <div class="login-view">
     <div class="login-card">
       <div class="logo-area">
-        <div class="logo-box">IFPR</div>
-        <div class="logo-text">
-          <span>INSTITUTO FEDERAL</span>
-          <span>Paraná</span>
-        </div>
+        <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
+        <h2 class="institution-name">INSTITUTO FEDERAL<br>Paraná</h2>
       </div>
-      
-      <h2 class="title">Acesso ao Sistema</h2>
-
-      <form @submit.prevent="handleLogin" class="login-form">
+      <h3 class="login-title">Acesso ao Sistema</h3>
+      <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label for="email">Usuário ou Email</label>
-          <input type="email" id="email" v-model="email" required placeholder="Digite seu usuário">
+          <label for="username">Usuário ou Email</label>
+          <input type="text" id="username" v-model="username" required placeholder="Digite seu usuário">
         </div>
-
         <div class="form-group">
           <label for="password">Senha</label>
           <input type="password" id="password" v-model="password" required placeholder="Digite sua senha">
         </div>
-
-        <div class="actions-row">
-          <a href="#" class="forgot-password">Esqueci minha senha</a>
-          <button type="submit" class="btn-login" :disabled="isLoading">
-            {{ isLoading ? 'Entrando...' : 'Entrar' }}
-          </button>
+        <div class="form-actions">
+           <a href="#" class="forgot-password">Esqueci minha senha</a>
+           <button type="submit" class="btn btn-primary login-button">Entrar</button>
+        </div>
+         <div class="create-account-link">
+            Não tem uma conta? <a href="#">Crie uma aqui</a>
         </div>
       </form>
-
-      <div class="signup-link">
-        <span>Não tem uma conta?</span>
-        <router-link to="/registrar">Crie uma aqui</router-link>
-      </div>
-
-      <!-- Indicadores de estado -->
-      <div v-if="isLoading" class="loading-container">
-        <div class="spinner"></div>
-      </div>
-      <div v-if="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
     </div>
   </div>
 </template>
@@ -88,24 +69,22 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* ESTILOS ATUALIZADOS PARA O NOVO DESIGN */
-
 .login-view {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  width: 100%;
-  background-color: #f0f2f5; /* Fundo cinza claro */
+  background-color: #f0f2f5; /* Light grey background */
 }
 
 .login-card {
-  background-color: #ffffff;
-  padding: 2.5rem 3rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  padding: 40px 50px;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 480px;
+  max-width: 450px;
   text-align: center;
 }
 
@@ -113,56 +92,49 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 25px;
+  gap: 15px;
 }
 
-.logo-box {
-  background-color: #343a40; /* Cinza escuro */
-  color: white;
-  padding: 0.75rem;
-  font-weight: 600;
+.logo-img {
+  height: 50px;
+  /* Placeholder style */
+  background-color: var(--sidebar-bg, #212529);
+  padding: 5px;
   border-radius: 4px;
 }
 
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  color: #343a40;
-  font-weight: 600;
-  line-height: 1.3;
+.institution-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--sidebar-bg, #212529);
+    line-height: 1.3;
+    text-align: left;
 }
 
-.title {
-  font-size: 1.75rem;
-  margin-bottom: 2.5rem;
+.login-title {
+  margin-bottom: 30px;
+  color: #333;
   font-weight: 600;
-  color: #212529;
-}
-
-.login-form {
-  width: 100%;
+  font-size: 1.4rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
   text-align: left;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: #495057;
   font-weight: 500;
-  color: #6c757d;
+  font-size: 0.9rem;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.8rem 1rem;
-  background-color: #ffffff;
-  color: #212529;
+  padding: 12px 15px;
   border: 1px solid #ced4da;
   border-radius: 6px;
   font-size: 1rem;
@@ -171,66 +143,46 @@ const handleLogin = async () => {
 
 .form-group input:focus {
   outline: none;
-  border-color: #0d6efd; /* Azul primário */
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: var(--primary-color, #007bff);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.form-group input::placeholder {
-  color: #adb5bd;
-}
-
-.actions-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1.5rem;
-  margin-bottom: 2rem;
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    margin-bottom: 20px;
 }
 
 .forgot-password {
-  font-size: 0.85rem;
-  color: #0d6efd;
-  text-decoration: none;
+    font-size: 0.85rem;
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
 }
 
 .forgot-password:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
-.btn-login {
-  background-color: #0d6efd;
-  color: #ffffff;
-  border: none;
-  padding: 0.7rem 2rem;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.login-button {
+    padding: 10px 25px;
 }
 
-.btn-login:hover {
-  background-color: #0b5ed7;
+.create-account-link {
+    margin-top: 25px;
+    font-size: 0.9rem;
+    color: #6c757d;
 }
 
-.btn-login:disabled {
-  background-color: #0d6efd;
-  opacity: 0.65;
-  cursor: not-allowed;
+.create-account-link a {
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
+    font-weight: 500;
 }
 
-.signup-link {
-  font-size: 0.9rem;
-  color: #6c757d;
-}
-
-.signup-link a {
-  color: #0d6efd;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
+.create-account-link a:hover {
+    text-decoration: underline;
 }
 
 /* Seus estilos de loading e error message já são ótimos e combinam bem */
