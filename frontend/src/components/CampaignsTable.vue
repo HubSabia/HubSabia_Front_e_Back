@@ -9,6 +9,7 @@
           <th>STATUS</th>
           <th>PÚBLICO-ALVO</th>
           <th>AÇÕES</th>
+          <th><button class="btn-create" @click="$emit('add')">Adicionar Campanha</button></th>
         </tr>
       </thead>
       <tbody>
