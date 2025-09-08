@@ -13,7 +13,8 @@
     <CampaignsTable 
       :campanhas="campanhas"   
       @edit="handleEditar"     
-      @delete="handleExcluir"  
+      @delete="handleExcluir"
+      @add="handleCriar"
     />
     
     <!-- Usando o componente do Modal -->
