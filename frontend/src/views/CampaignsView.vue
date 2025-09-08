@@ -3,12 +3,6 @@
     <header class="view-header">
       <h2>Campanhas</h2>
     </header>
-
-    <div class="card-grid">
-      <!-- MUDANÇA: Usando o componente AddCampaignCard e escutando pelo evento 'click' dele -->
-      <AddCampaignCard @click="handleCriar" />
-    </div>
-    
     <!-- Usando o componente da Tabela -->
     <CampaignsTable 
       :campanhas="campanhas"   
