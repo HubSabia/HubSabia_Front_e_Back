@@ -57,7 +57,6 @@ router.post('/registrar', async (req, res) => {
 // ==========================================================
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
     if (!email || !password) {
         return res.status(400).json({ msg: 'Por favor, inclua email e senha.' });
     }
@@ -67,22 +66,21 @@ router.post('/login', async (req, res) => {
         const usuario = await Usuario.findOne({ email: email.toLowerCase() });
 
         if (!usuario) {
-            // Se não encontrar o usuário, retornamos uma mensagem genérica por segurança
+            // Mensagem genérica por segurança
             return res.status(400).json({ msg: 'Credenciais inválidas.' });
         }
 
-        // Compara a senha enviada com a senha criptografada no banco de dados
+        // Compara a senha enviada com a senha criptografada no banco
         const isMatch = await bcrypt.compare(password, usuario.senha_hash);
 
         if (!isMatch) {
-            // Se as senhas não baterem, retornamos a mesma mensagem genérica
             return res.status(400).json({ msg: 'Credenciais inválidas.' });
         }
-
-        // Se o login for bem-sucedido, criamos o "payload" para o token JWT
+        
         const payload = {
             usuario: {
-                id: usuario.id // Guardamos apenas o ID do usuário no token
+                id: usuario.id,
+                role: usuario.role
             }
         };
 
