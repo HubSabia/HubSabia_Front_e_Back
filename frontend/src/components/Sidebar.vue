@@ -1,15 +1,22 @@
 <template>
   <aside class="sidebar">
     <div class="logo-container">
-      <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img"> <!-- Placeholder -->
+      <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
       <span class="logo-text">INSTITUTO FEDERAL<br>Paraná</span>
     </div>
     <nav class="navigation">
       <ul>
         <li>
           <router-link to="/dashboard" class="nav-link" active-class="active">
-            <i class="icon icon-dashboard"></i> <!-- Placeholder for icon -->
+            <i class="icon icon-dashboard"></i>
             <span>Dashboard</span>
+          </router-link>
+        </li>
+        <!-- MUDANÇA: Ordem dos links ajustada para a lógica do fluxo -->
+        <li>
+          <router-link to="/editais" class="nav-link" active-class="active">
+            <i class="icon icon-file-text"></i>
+            <span>Editais</span>
           </router-link>
         </li>
         <li>
@@ -19,20 +26,23 @@
           </router-link>
         </li>
         <li>
-          <router-link to="/gerencia" class="nav-link" active-class="active">
+          <!-- MUDANÇA: 'to' corrigido para "/chatbots" e texto padronizado -->
+          <router-link to="/chatbots" class="nav-link" active-class="active">
             <i class="icon icon-chatbot"></i>
-            <span>Gerenciar bots</span>
+            <span>Chatbots</span>
           </router-link>
         </li>
-        <li>
+        <!-- MUDANÇA: O link "Usuários" agora só aparece para administradores -->
+        <li v-if="userIsAdmin">
           <router-link to="/usuarios" class="nav-link" active-class="active">
             <i class="icon icon-users"></i>
             <span>Usuários</span>
           </router-link>
         </li>
-       <li> <!-- Novo link adicionado -->
-          <router-link to="/editais" class="nav-link" active-class="active">
-            <i class="icon icon-info"></i> <!-- Placeholder para ícone de informação -->
+        <!-- MUDANÇA: Adicionado um link para a página "Sobre o Bot", se ela existir -->
+        <li>
+          <router-link to="/sobre-bot" class="nav-link" active-class="active">
+            <i class="icon icon-info"></i>
             <span>Sobre o Bot</span>
           </router-link>
         </li>
@@ -46,16 +56,20 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+// MUDANÇA: Importamos a nossa função helper para verificar o papel do usuário
+import { isAdmin } from '@/utils/auth';
 
 const router = useRouter();
+// A verificação é feita aqui e o resultado fica disponível para o template
+const userIsAdmin = isAdmin();
 
+// MUDANÇA: Lógica de logout completa e segura
 const logout = () => {
-  // Add actual logout logic here (e.g., clear token, redirect)
-  console.log("Logout clicked");
-  router.push("/"); // Redirect to login
+  // 1. Remove o token de autenticação do armazenamento local
+  localStorage.removeItem('authToken');
+  // 2. Redireciona para a página de login
+  router.push("/login");
 };
-
-// Placeholder for icon components or classes if using an icon library
 </script>
 
 <style scoped>
