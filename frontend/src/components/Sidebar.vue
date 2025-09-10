@@ -12,7 +12,6 @@
             <span>Dashboard</span>
           </router-link>
         </li>
-        <!-- MUDANÇA: Ordem dos links ajustada para a lógica do fluxo -->
         <li>
           <router-link to="/editais" class="nav-link" active-class="active">
             <i class="icon icon-file-text"></i>
@@ -26,20 +25,23 @@
           </router-link>
         </li>
         <li>
-          <!-- MUDANÇA: 'to' corrigido para "/chatbots" e texto padronizado -->
           <router-link to="/chatbots" class="nav-link" active-class="active">
             <i class="icon icon-chatbot"></i>
             <span>Chatbots</span>
           </router-link>
         </li>
-        <!-- MUDANÇA: O link "Usuários" agora só aparece para administradores -->
+        
+        <!-- Link de "Usuários" que só aparece para administradores -->
         <li v-if="userIsAdmin">
           <router-link to="/usuarios" class="nav-link" active-class="active">
             <i class="icon icon-users"></i>
             <span>Usuários</span>
           </router-link>
         </li>
-        <!-- MUDANÇA: Adicionado um link para a página "Sobre o Bot", se ela existir -->
+
+        <!-- ========================================================== -->
+        <!-- MUDANÇA: Adicionando o link "Sobre o Bot" de volta -->
+        <!-- ========================================================== -->
         <li>
           <router-link to="/sobre-bot" class="nav-link" active-class="active">
             <i class="icon icon-info"></i>
@@ -55,19 +57,15 @@
 </template>
 
 <script setup>
+// O seu <script setup> continua o mesmo
 import { useRouter } from 'vue-router';
-// MUDANÇA: Importamos a nossa função helper para verificar o papel do usuário
 import { isAdmin } from '@/utils/auth';
 
 const router = useRouter();
-// A verificação é feita aqui e o resultado fica disponível para o template
 const userIsAdmin = isAdmin();
 
-// MUDANÇA: Lógica de logout completa e segura
 const logout = () => {
-  // 1. Remove o token de autenticação do armazenamento local
   localStorage.removeItem('authToken');
-  // 2. Redireciona para a página de login
   router.push("/login");
 };
 </script>
