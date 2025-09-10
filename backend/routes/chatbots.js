@@ -87,6 +87,9 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             }
         }
 
+        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
+        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
         const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
 2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
