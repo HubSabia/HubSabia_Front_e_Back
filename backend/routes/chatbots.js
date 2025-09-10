@@ -100,7 +100,7 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
 
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", safetySettings });
 
-            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR')}.
+            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.
             ${infoDeData}
             Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
             Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
