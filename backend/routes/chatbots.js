@@ -100,22 +100,10 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
 
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", safetySettings });
 
-            const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
-            1. Você é um assistente virtual do IFPR.
-            2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
-            3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
-            4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
-            5. Não invente informações nem responda a perguntas sobre outros tópicos.
-            6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
-
-            ---
-            CONTEXTO DOS EDITAIS:
-            ${contexto}
-            ---
-            PERGUNTA DO USUÁRIO:
-            ${mensagemUsuario}
-            `;
-
+            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.
+            ${infoDeData}
+            Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
+            Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
             
             const result = await model.generateContent(prompt);
             const response = await result.response;
