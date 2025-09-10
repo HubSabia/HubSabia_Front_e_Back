@@ -87,34 +87,37 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             }
         }
         // --- FIM DA LÓGICA DE DATA ---
-        
-        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
-        
-        try {
-            const safetySettings = [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            ];
+        let iaError = null;
+        let respostaDaIA = null;
+        const maxTentativas = 3;
 
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", safetySettings });
-
-            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.
-            ${infoDeData}
-            Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
-            Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
-            
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const respostaDaIA = response.text();
-
-            res.json({ resposta: respostaDaIA });
-
-        } catch (iaError) {
-            console.error("Erro da API do Google AI:", iaError);
-            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA.' });
+        for (let i = 0; i < maxTentativas; i++) {
+            try {
+                console.log(`Tentativa ${i + 1} de chamar a API do Google AI...`);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" /*, safetySettings*/ });
+                const result = await model.generateContent(prompt);
+                respostaDaIA = result.response.text();
+                iaError = null; // Limpa o erro se a tentativa for bem-sucedida
+                break; // Sai do loop se tivermos sucesso
+            } catch (error) {
+                iaError = error; // Guarda o erro
+                console.error(`Tentativa ${i + 1} falhou. Erro: ${error.message}`);
+                if (i < maxTentativas - 1) {
+                    // Espera 1 segundo antes da próxima tentativa
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
         }
+
+        // Se, após todas as tentativas, ainda tivermos um erro, falhamos
+        if (iaError) {
+            console.error("Erro final da API do Google AI após todas as tentativas:", iaError);
+            return res.status(503).json({ msg: 'O serviço de IA está sobrecarregado. Por favor, tente novamente em alguns instantes.' });
+        }
+        
+        // Se tivemos sucesso, envia a resposta
+        res.json({ resposta: respostaDaIA });
+
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
