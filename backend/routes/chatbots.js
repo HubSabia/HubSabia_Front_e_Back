@@ -94,7 +94,7 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
         for (let i = 0; i < maxTentativas; i++) {
             try {
                 console.log(`Tentativa ${i + 1} de chamar a API do Google AI...`);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" /*, safetySettings*/ });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" /*, safetySettings*/ });
                 const result = await model.generateContent(prompt);
                 respostaDaIA = result.response.text();
                 iaError = null; // Limpa o erro se a tentativa for bem-sucedida
