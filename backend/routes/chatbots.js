@@ -1,3 +1,5 @@
+// Arquivo: backend/routes/chatbots.js
+
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
@@ -5,11 +7,16 @@ const Chatbot = require('../models/Chatbot');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 
+// MUDANÇA 1: Importa a biblioteca do Google AI
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+// MUDANÇA 2: Configura a API com a sua chave do .env
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 
 // --- ROTAS GERAIS (CRUD Básico) ---
+
+// GET /api/chatbots -> Listar todos os chatbots do usuário
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const chatbots = await Chatbot.find({ criador: req.usuario.id })
@@ -22,6 +29,7 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+// POST /api/chatbots -> Criar um novo chatbot
 router.post('/', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     if (!nome || !campanha) {
@@ -45,6 +53,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
+// POST /api/chatbots/:id/interagir -> Interagir com um chatbot (ATUALIZADO COM IA E LÓGICA DE DATA)
 router.post('/:id/interagir', authMiddleware, async (req, res) => {
     const { mensagemUsuario } = req.body;
     if (!mensagemUsuario) {
@@ -60,33 +69,39 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
         }
         
+        // --- INÍCIO DA LÓGICA DE DATA ---
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
+        const dataFim = new Date(chatbot.campanha.periodo_fim);
+        dataFim.setHours(23, 59, 59, 999);
+
+        let infoDeData = "";
+        if (hoje > dataFim) {
+            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
+        } else {
+            const diffTime = Math.abs(dataFim - hoje);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays <= 7) {
+                infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
+            }
+        }
+        // --- FIM DA LÓGICA DE DATA ---
+        
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         
         try {
-            // MUDANÇA: Adicionamos as configurações de segurança para evitar bloqueios desnecessários.
             const safetySettings = [
-                {
-                    category: "HARM_CATEGORY_HARASSMENT",
-                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    category: "HARM_CATEGORY_HATE_SPEECH",
-                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    threshold: "BLOCK_MEDIUM_AND_ABOVE",
-                },
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
             ];
 
-            // Passamos as safetySettings ao inicializar o modelo.
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", safetySettings });
 
-            const prompt = `Você é um assistente prestativo do IFPR. 
+            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR')}.
+            ${infoDeData}
             Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
             Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
             
@@ -107,6 +122,7 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/chatbots/:id -> Buscar um chatbot específico
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id).populate('campanha', 'nome');
@@ -119,6 +135,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// PUT /api/chatbots/:id -> Editar um chatbot
 router.put('/:id', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
     const camposAtualizados = {};
@@ -144,6 +161,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// DELETE /api/chatbots/:id -> Excluir um chatbot
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
