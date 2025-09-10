@@ -86,7 +86,24 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
                 infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
             }
         }
-        // --- FIM DA LÓGICA DE DATA ---
+
+        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+1. Você é um assistente virtual do IFPR.
+2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
+3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
+4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
+5. Não invente informações nem responda a perguntas sobre outros tópicos.
+6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
+
+---
+CONTEXTO DOS EDITAIS:
+${contexto}
+---
+PERGUNTA DO USUÁRIO:
+${mensagemUsuario}
+`;
+
+
         let iaError = null;
         let respostaDaIA = null;
         const maxTentativas = 3;
