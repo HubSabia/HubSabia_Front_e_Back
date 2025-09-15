@@ -65,6 +65,14 @@ const routes = [
   component: () => import('@/views/PublicChatView.vue'),
   meta: { title: 'Assistente Virtual' } 
   },
+
+  // ROTA PÚBLICA - SEM 'requiresAuth'
+  {
+    path: '/chat-publico/:id',
+    name: 'ChatPublico',
+    component: () => import('@/views/PublicChatView.vue'),
+    meta: { title: 'Assistente Virtual' }
+  },
 ];
 
 const router = createRouter({
