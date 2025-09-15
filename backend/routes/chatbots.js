@@ -11,6 +11,10 @@ const Usuario = require('../models/Usuario');
 // Mantemos a importação da biblioteca
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// MUDANÇA 2: Configura a API com a sua chave do .env
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+
 // --- ROTAS GERAIS (CRUD Básico) ---
 
 // GET /api/chatbots -> Listar todos os chatbots do usuário
@@ -47,6 +51,7 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
+
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
 // POST /api/chatbots/:id/interagir (ATUALIZADO PARA USAR A CHAVE DO USUÁRIO)
@@ -77,6 +82,19 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
         const hoje = new Date();
         const dataFim = new Date(chatbot.campanha.periodo_fim);
         let infoDeData = ""; // Adapte sua lógica de data aqui
+        dataFim.setHours(23, 59, 59, 999);
+
+        let infoDeData = "";
+        if (hoje > dataFim) {
+            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
+        } else {
+            const diffTime = Math.abs(dataFim - hoje);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays <= 7) {
+                infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
+            }
+        }
+
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
@@ -106,6 +124,56 @@ ${mensagemUsuario}
             console.error("Erro da API do Google AI:", iaError);
             res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida.' });
         }
+        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+1. Você é um assistente virtual do IFPR.
+2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
+3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
+4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
+5. Não invente informações nem responda a perguntas sobre outros tópicos.
+6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
+
+---
+CONTEXTO DOS EDITAIS:
+${contexto}
+---
+PERGUNTA DO USUÁRIO:
+${mensagemUsuario}
+`;
+
+
+        let iaError = null;
+        let respostaDaIA = null;
+        const maxTentativas = 3;
+
+        for (let i = 0; i < maxTentativas; i++) {
+            try {
+                console.log(`Tentativa ${i + 1} de chamar a API do Google AI...`);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" /*, safetySettings*/ });
+                const result = await model.generateContent(prompt);
+                respostaDaIA = result.response.text();
+                iaError = null; // Limpa o erro se a tentativa for bem-sucedida
+                break; // Sai do loop se tivermos sucesso
+            } catch (error) {
+                iaError = error; // Guarda o erro
+                console.error(`Tentativa ${i + 1} falhou. Erro: ${error.message}`);
+                if (i < maxTentativas - 1) {
+                    // Espera 1 segundo antes da próxima tentativa
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+
+        // Se, após todas as tentativas, ainda tivermos um erro, falhamos
+        if (iaError) {
+            console.error("Erro final da API do Google AI após todas as tentativas:", iaError);
+            return res.status(503).json({ msg: 'O serviço de IA está sobrecarregado. Por favor, tente novamente em alguns instantes.' });
+        }
+        
+        // Se tivemos sucesso, envia a resposta
+        res.json({ resposta: respostaDaIA });
+
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
@@ -166,5 +234,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         res.status(500).send('Erro no servidor.');
     }
 });
+
 
 module.exports = router;
