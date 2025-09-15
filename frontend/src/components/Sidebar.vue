@@ -30,6 +30,12 @@
             <span>Chatbots</span>
           </router-link>
         </li>
+        <li>
+        <router-link to="/perfil" class="nav-link" active-class="active">
+        <i class="icon icon-user"></i> <!-- Placeholder de ícone -->
+        <span>Meu Perfil</span>
+        </router-link>
+        </li>
         
         <!-- Link de "Usuários" que só aparece para administradores -->
         <li v-if="userIsAdmin">

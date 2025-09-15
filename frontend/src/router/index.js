@@ -24,6 +24,12 @@ const routes = [
     meta: { title: 'Dashboard', requiresAuth: true }
   },
   {
+    path: '/perfil',
+    name: 'Perfil',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { title: 'Meu Perfil', requiresAuth: true }
+  },
+  {
     path: '/campanhas',
     name: 'Campanhas',
     component: () => import('@/views/CampaignsView.vue'),
