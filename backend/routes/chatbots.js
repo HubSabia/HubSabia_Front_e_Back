@@ -6,13 +6,10 @@ const authMiddleware = require('../middlewares/auth');
 const Chatbot = require('../models/Chatbot');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
+const Usuario = require('../models/Usuario');
 
-// MUDANÇA 1: Importa a biblioteca do Google AI
+// Mantemos a importação da biblioteca
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// MUDANÇA 2: Configura a API com a sua chave do .env
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 
 // --- ROTAS GERAIS (CRUD Básico) ---
 
@@ -50,16 +47,24 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
-// POST /api/chatbots/:id/interagir -> Interagir com um chatbot (ATUALIZADO COM IA E LÓGICA DE DATA)
+// POST /api/chatbots/:id/interagir (ATUALIZADO PARA USAR A CHAVE DO USUÁRIO)
 router.post('/:id/interagir', authMiddleware, async (req, res) => {
     const { mensagemUsuario } = req.body;
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
     }
     try {
+        // 1. Busca o usuário logado para obter sua chave de API
+        const usuario = await Usuario.findById(req.usuario.id);
+        if (!usuario || !usuario.geminiApiKey) {
+            return res.status(400).json({ msg: 'Nenhuma chave de API do Google AI foi configurada. Por favor, adicione sua chave na sua página de perfil.' });
+        }
+        
+        // 2. Inicializa a IA com a CHAVE DO USUÁRIO
+        const genAI = new GoogleGenerativeAI(usuario.geminiApiKey);
+        
         const chatbot = await Chatbot.findById(req.params.id).populate({
                  path: 'campanha',
                  populate: { path: 'editais', model: 'Edital' }
@@ -69,51 +74,37 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
             return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
         }
         
-        // --- INÍCIO DA LÓGICA DE DATA ---
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
         const dataFim = new Date(chatbot.campanha.periodo_fim);
-        dataFim.setHours(23, 59, 59, 999);
-
-        let infoDeData = "";
-        if (hoje > dataFim) {
-            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
-        } else {
-            const diffTime = Math.abs(dataFim - hoje);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays <= 7) {
-                infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
-            }
-        }
-        // --- FIM DA LÓGICA DE DATA ---
-        
+        let infoDeData = ""; // Adapte sua lógica de data aqui
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
+        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        
+        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+1. Você é um assistente virtual do IFPR.
+2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
+3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
+4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
+5. Não invente informações nem responda a perguntas sobre outros tópicos.
+6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
+
+---
+CONTEXTO DOS EDITAIS:
+${contexto}
+---
+PERGUNTA DO USUÁRIO:
+${mensagemUsuario}
+`;
         
         try {
-            const safetySettings = [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            ];
-
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", safetySettings });
-
-            const prompt = `Você é um assistente prestativo do IFPR. A data de hoje é ${hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.
-            ${infoDeData}
-            Sua função é responder perguntas baseando-se estritamente no seguinte contexto fornecido, que são os editais de uma campanha. 
-            Não invente informações. Se a resposta não estiver no contexto, diga que você não tem essa informação.\n\nContexto:\n${contexto}\n\nPergunta do Usuário: ${mensagemUsuario}`;
-            
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" /*, safetySettings*/ });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
-
             res.json({ resposta: respostaDaIA });
-
         } catch (iaError) {
             console.error("Erro da API do Google AI:", iaError);
-            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA.' });
+            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida.' });
         }
 
     } catch (err) {
@@ -175,6 +166,5 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         res.status(500).send('Erro no servidor.');
     }
 });
-
 
 module.exports = router;

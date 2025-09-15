@@ -1,4 +1,3 @@
-// backend/models/Usuario.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -22,8 +21,11 @@ const UsuarioSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    geminiApiKey: {
+        type: String,
+        trim: true
     }
-    // MUDANÇA: Removendo o array de chatbots aninhados
 }, { timestamps: true }); // Adicionamos timestamps para data_criacao
 
 // Seu hook de criptografia de senha continua perfeito
