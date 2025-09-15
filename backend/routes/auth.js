@@ -80,7 +80,8 @@ router.post('/login', async (req, res) => {
         const payload = {
             usuario: {
                 id: usuario.id,
-                role: usuario.role
+                role: usuario.role,
+                nome: usuario.nome
             }
         };
 

@@ -3,7 +3,7 @@
     <MainSidebar v-if="!isLoginPage" />
     <!-- Or <main-sidebar v-if="!isLoginPage" /> -->
     <div class="content-wrapper">
-      <Header v-if="!isLoginPage" :pageTitle="currentPageTitle" />
+      <Header :pageTitle="currentPageTitle" />
       <main class="main-content">
         <router-view @update-title="updatePageTitle"></router-view>
       </main>
