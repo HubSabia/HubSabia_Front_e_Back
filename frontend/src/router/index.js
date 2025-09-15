@@ -59,6 +59,12 @@ const routes = [
     component: () => import('@/views/ConversaChatbot.vue'),
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
   },
+  {
+  path: '/chat-publico/:id',
+  name: 'ChatPublico',
+  component: () => import('@/views/PublicChatView.vue'),
+  meta: { title: 'Assistente Virtual' } 
+  },
 ];
 
 const router = createRouter({
