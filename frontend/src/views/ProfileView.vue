@@ -77,7 +77,7 @@ onMounted(buscarApiKey);
 .api-key-form label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
 .api-key-form input { width: 100%; max-width: 600px; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; }
 .api-key-form small { display: block; margin-top: 0.5rem; color: #6c757d; font-size: 0.8rem; }
-.btn-primary { /* Estilo do seu botão */ }
+
 .success-message {
   margin-top: 1rem;
   padding: 0.75rem;
