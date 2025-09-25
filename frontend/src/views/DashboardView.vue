@@ -251,16 +251,4 @@ onMounted(buscarDados);
   margin-bottom: 20px;
   font-size: 1.1rem;
 }
-
-@media (max-width: 768px) {
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .campaign-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
 </style>
