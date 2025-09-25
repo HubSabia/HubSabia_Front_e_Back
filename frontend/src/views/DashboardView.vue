@@ -143,7 +143,6 @@ onMounted(buscarDados);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
   border-left: 5px solid var(--primary-color, #007bff);
-  transition: transform 0.2s ease;
 }
 
 .stat-card:hover {
