@@ -1,12 +1,10 @@
 <template>
   <div class="dashboard-view">
-    <div class="dashboard-header">
-      <h2 class="view-title">Dashboard</h2>
-      <p class="view-subtitle">Visão geral do sistema HubSabia</p>
-    </div>
+    <h1 class="view-title">Dashboard do Projeto Integrador IFPR</h1>
+    <p class="view-subtitle">Visão geral do sistema</p>
 
-    <!-- Cards de Status Simplificados -->
-    <div class="status-grid">
+    <!-- Placeholder for stats cards -->
+      <div class="status-grid">
       <div class="stat-card">
         <div class="stat-number">{{ editais.length }}</div>
         <div class="stat-label">Editais</div>
@@ -51,6 +49,7 @@
       </div>
     </div>
   </div>
+
 </template>
 
 <script setup>
@@ -110,29 +109,26 @@ onMounted(buscarDados);
 
 <style scoped>
 .dashboard-view {
-  padding: 0;
-}
-
-.dashboard-header {
-  margin-bottom: 30px;
+  padding: 20px;
 }
 
 .view-title {
   font-size: 1.8rem;
   font-weight: 600;
-  color: var(--text-color, #343a40);
+  color: #343a40;
   margin-bottom: 5px;
 }
 
 .view-subtitle {
   font-size: 1rem;
-  color: var(--secondary-color, #6c757d);
+  color: #6c757d;
+  margin-bottom: 30px;
 }
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
   margin-bottom: 30px;
 }
 
@@ -143,11 +139,6 @@ onMounted(buscarDados);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
   border-left: 5px solid var(--primary-color, #007bff);
-  transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
 }
 
 .stat-number {
@@ -160,18 +151,6 @@ onMounted(buscarDados);
 .stat-label {
   color: #6c757d;
   font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-
-.stat-link {
-  color: var(--primary-color, #007bff);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.stat-link:hover {
-  text-decoration: underline;
 }
 
 .content-card {
@@ -182,86 +161,8 @@ onMounted(buscarDados);
 }
 
 .content-card h3 {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   color: #343a40;
   font-weight: 600;
-}
-
-.campaign-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.campaign-item {
-  padding: 15px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.campaign-item:last-child {
-  border-bottom: none;
-}
-
-.campaign-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.campaign-status {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-ativa {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-planejada {
-  background-color: #cce5ff;
-  color: #004085;
-}
-
-.status-concluída {
-  background-color: #e2e3e5;
-  color: #383d41;
-}
-
-.status-cancelada {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.campaign-period {
-  color: #6c757d;
-  font-size: 0.9rem;
-}
-
-.no-campaigns {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-}
-
-.no-campaigns p {
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-}
-
-@media (max-width: 768px) {
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .campaign-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
 }
 </style>
