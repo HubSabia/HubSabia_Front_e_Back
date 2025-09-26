@@ -129,7 +129,7 @@ onMounted(buscarEditais);
 }
 
 table { 
-  width: 100%; 
+  width: 600px; 
   border-collapse: collapse; 
   text-align: left; 
 }
