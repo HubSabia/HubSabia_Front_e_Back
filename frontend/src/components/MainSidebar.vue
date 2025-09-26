@@ -38,12 +38,6 @@
             <span>Usuários</span>
           </router-link>
         </li>
-        <li>
-          <router-link to="/" class="nav-link" active-class="active">
-            <i class="icon icon-users"></i>
-            <span>Sobre</span>
-          </router-link>
-        </li>
       </ul>
     </nav>
     <div class="sidebar-footer">
