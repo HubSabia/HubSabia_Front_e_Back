@@ -132,7 +132,8 @@ onMounted(buscarEditais);
 table { 
   width: 100%; 
   border-collapse: collapse; 
-  text-align: left; 
+  text-align: left;
+  table-layout: fixed;
 }
 
 th, td { 
@@ -152,6 +153,8 @@ th {
 .titulo-cell { 
   font-weight: 500; 
   color: #343a40;
+  word-wrap: break-word;
+  max-width: 0;
 }
 
 .actions-cell button { 
