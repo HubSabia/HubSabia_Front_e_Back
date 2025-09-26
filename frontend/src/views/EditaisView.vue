@@ -119,6 +119,7 @@ onMounted(buscarEditais);
   border-radius: 8px; 
   padding: 1.5rem; 
   box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+  max-widht: 800px;
 }
 
 .list-title { 
