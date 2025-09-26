@@ -155,6 +155,7 @@ th {
   color: #343a40;
   word-wrap: break-word;
   max-width: 0;
+  overflow-wrap: break-word;
 }
 
 .actions-cell button { 
