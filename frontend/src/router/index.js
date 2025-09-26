@@ -47,9 +47,9 @@ const routes = [
     component: () => import('@/views/EditaisView.vue'),
     meta: { title: 'Gestão de Editais', requiresAuth: true }
   },
-   {
-    path: '/gerencia',
-    name: 'Gerencia',
+  {
+    path: '/chatbots',
+    name: 'Chatbots',
     component: () => import('@/views/GerenciaChatbots.vue'),
     meta: { title: 'Gestão de Chatbots', requiresAuth: true }
   },
@@ -60,18 +60,10 @@ const routes = [
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
   },
   {
-  path: '/chat-publico/:id',
-  name: 'ChatPublico',
-  component: () => import('@/views/PublicChatView.vue'),
-  meta: { title: 'Assistente Virtual' } 
-  },
-
-  // ROTA PÚBLICA - SEM 'requiresAuth'
-  {
     path: '/chat-publico/:id',
     name: 'ChatPublico',
     component: () => import('@/views/PublicChatView.vue'),
-    meta: { title: 'Assistente Virtual' }
+    meta: { title: 'Assistente Virtual' } // Rota pública, sem 'requiresAuth'
   },
 ];
 
@@ -80,15 +72,13 @@ const router = createRouter({
   routes,
 });
 
-// Guard de navegação para verificar autenticação
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   
-  if (to.meta.requiresAuth && !token) {
-    // Se a rota requer autenticação mas não há token, redireciona para login
+  if (requiresAuth && !token) {
     next('/login');
-  } else if (to.name === 'Login' && token) {
-    // Se já está logado e tenta acessar login, redireciona para dashboard
+  } else if ((to.name === 'Login' || to.name === 'Register') && token) {
     next('/dashboard');
   } else {
     next();
