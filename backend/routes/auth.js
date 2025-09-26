@@ -1,108 +1,94 @@
+// Arquivo: backend/routes/auth.js
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-// Importamos o nosso modelo de Usuário que criamos no passo anterior
 const Usuario = require('../models/Usuario');
 
 // ==========================================================
-// ROTA DE REGISTRO
-// MÉTODO: POST | ENDPOINT: /api/auth/registrar
+// MUDANÇA 1: Importamos a biblioteca de limite de requisições
 // ==========================================================
-router.post('/registrar', async (req, res) => {
-    // 1. Extraímos os dados do corpo (body) da requisição
-    const { nome, email, senha } = req.body;
+const rateLimit = require('express-rate-limit');
 
-    // 2. Validação simples para ver se todos os campos foram enviados
+// ==========================================================
+// MUDANÇA 2: Criamos a nossa regra de limite
+// ==========================================================
+const authLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // Janela de tempo: 15 minutos
+	max: 10, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
+	message: { msg: 'Muitas tentativas de autenticação a partir deste IP. Por favor, tente novamente após 15 minutos.' },
+	standardHeaders: true, // Padrão recomendado
+	legacyHeaders: false,  // Padrão recomendado
+});
+
+// ==========================================================
+// ROTA DE REGISTRO
+// ==========================================================
+// MUDANÇA 3: Aplicamos o 'authLimiter' à rota.
+// Agora, esta rota está protegida contra spam.
+router.post('/registrar', authLimiter, async (req, res) => {
+    const { nome, email, senha } = req.body;
     if (!nome || !email || !senha) {
         return res.status(400).json({ msg: 'Por favor, inclua todos os campos: nome, email e senha.' });
     }
-
     try {
-        // 3. Verifica se o usuário já existe no banco de dados
         let usuario = await Usuario.findOne({ email: email.toLowerCase() });
-
         if (usuario) {
-            // Se encontrarmos um usuário com o mesmo email, retornamos um erro
             return res.status(400).json({ msg: 'Um usuário com este e-mail já existe.' });
         }
-
-        // 4. Se o usuário não existe, criamos uma nova instância do modelo
-        // Note que passamos a senha em texto plano aqui. O hook 'pre-save' no modelo vai criptografá-la.
         usuario = new Usuario({
             nome,
             email,
             senha_hash: senha
         });
-
-        // 5. Salvamos o novo usuário no banco de dados. O Mongoose cuidará da criptografia.
         await usuario.save();
-
-        // 6. Retornamos uma resposta de sucesso.
-        // Por segurança, não retornamos o token aqui. O usuário deve fazer login para obtê-lo.
         res.status(201).json({ msg: 'Usuário registrado com sucesso!' });
-
     } catch (err) {
-        // Se algo der errado no servidor (ex: problema de conexão com o banco), capturamos o erro
         console.error(err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
 
-
 // ==========================================================
 // ROTA DE LOGIN
-// MÉTODO: POST | ENDPOINT: /api/auth/login
 // ==========================================================
-router.post('/login', async (req, res) => {
+// MUDANÇA 4: Aplicamos o 'authLimiter' à rota de login também.
+// Isso protege contra ataques de força bruta (tentar adivinhar senhas).
+router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ msg: 'Por favor, inclua email e senha.' });
     }
-
     try {
-        // Procura o usuário pelo email
         const usuario = await Usuario.findOne({ email: email.toLowerCase() });
-
         if (!usuario) {
-            // Mensagem genérica por segurança
             return res.status(400).json({ msg: 'Credenciais inválidas.' });
         }
-
-        // Compara a senha enviada com a senha criptografada no banco
         const isMatch = await bcrypt.compare(password, usuario.senha_hash);
-
         if (!isMatch) {
             return res.status(400).json({ msg: 'Credenciais inválidas.' });
         }
-        
         const payload = {
             usuario: {
                 id: usuario.id,
                 role: usuario.role,
                 nome: usuario.nome
-            }
+            },
         };
-
-        // Assinamos o token com o nosso segredo do .env
-        // O token expira em 5 horas (você pode mudar isso)
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
             { expiresIn: '5h' },
             (err, token) => {
                 if (err) throw err;
-                // Retornamos o token para o cliente
                 res.json({ token });
             }
         );
-
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
 
-// Exportamos o router para que o server.js possa usá-lo
 module.exports = router;
