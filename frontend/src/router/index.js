@@ -73,6 +73,12 @@ const routes = [
     component: () => import('@/views/PublicChatView.vue'),
     meta: { title: 'Assistente Virtual' }
   },
+  {
+    path:'sobre',
+    name: 'Sobre',
+    component: () => import('@/views/SobreBotView.vue'),
+    mata: {title: 'Sobre'}
+  }
 ];
 
 const router = createRouter({
