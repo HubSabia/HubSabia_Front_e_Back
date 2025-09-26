@@ -133,12 +133,17 @@ onMounted(buscarDados);
 }
 
 .stat-card {
-  background-color: var(--card-bg, #ffffff);
-  padding: 25px;
+  background-color: #ffffff;
+  padding: 25px 20px;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
-  border-left: 5px solid var(--primary-color, #007bff);
+  border-left: 5px solid #007bff;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.2s ease-in-out;
 }
 
 .stat-number {
