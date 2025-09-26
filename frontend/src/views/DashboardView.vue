@@ -102,7 +102,9 @@ const buscarDados = async () => {
 const formatarData = (data) => {
   if (!data) return '';
   return new Date(data).toLocaleDateString('pt-BR');
+};
 
+onMounted(buscarDados);
 </script>
 
 <style scoped>
