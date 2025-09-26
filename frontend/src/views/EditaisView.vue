@@ -115,11 +115,11 @@ onMounted(buscarEditais);
 }
 
 .list-card { 
+  widht: 800px;
   background-color: #fff; 
   border-radius: 8px; 
   padding: 1.5rem; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-  widht: 800px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 .list-title { 
