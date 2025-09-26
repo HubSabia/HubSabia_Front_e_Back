@@ -128,18 +128,5 @@ body {
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-@media (max-width: 1024px) {
-  .main-layout .content-wrapper {
-    margin-left: 240px;
-  }
-}
 
-@media (max-width: 767px) {
-  .main-layout .content-wrapper {
-    margin-left: 80px;
-  }
-  .main-content {
-    padding: 15px;
-  }
-}
 </style>
