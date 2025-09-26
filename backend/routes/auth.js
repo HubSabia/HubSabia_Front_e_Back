@@ -18,6 +18,7 @@ const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // Janela de tempo: 15 minutos
 	max: 2, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
 	message: { msg: 'Muitas tentativas de autenticação a partir deste IP. Por favor, tente novamente após 15 minutos.' },
+    skip: (req, res) => req.method === 'OPTIONS',
 	standardHeaders: true, // Padrão recomendado
 	legacyHeaders: false,  // Padrão recomendado
 });
