@@ -52,17 +52,8 @@
               <span>Gerenciar Usuários</span>
             </router-link>
           </li>
-           <li>
-            <router-link to="/perfil" class="nav-link" active-class="active">
-              <i class="icon icon-profile"></i>
-              <span>Meu Perfil</span>
-            </router-link>
-          </li>
         </ul>
       </nav>
-      <div class="sidebar-footer">
-        <button @click="logout" class="btn btn-logout">Sair</button>
-      </div>
     </div>
   </aside>
 </template>
