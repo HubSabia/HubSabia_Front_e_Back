@@ -16,7 +16,7 @@ const rateLimit = require('express-rate-limit');
 // ==========================================================
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // Janela de tempo: 15 minutos
-	max: 10, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
+	max: 2, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
 	message: { msg: 'Muitas tentativas de autenticação a partir deste IP. Por favor, tente novamente após 15 minutos.' },
 	standardHeaders: true, // Padrão recomendado
 	legacyHeaders: false,  // Padrão recomendado
