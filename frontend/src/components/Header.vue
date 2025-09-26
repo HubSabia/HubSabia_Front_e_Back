@@ -52,25 +52,25 @@ const loadUserData = () => {
   if (token) {
     try {
       const decoded = jwtDecode(token);
-      // Supondo que o nome esteja no token ou que possamos pegá-lo
-      // Se não, você pode buscar os dados do usuário aqui com uma chamada de API
-      userName.value = decoded.usuario.nome || 'Usuário';
-      userInitial.value = (decoded.usuario.nome || 'A').charAt(0).toUpperCase();
+      
+      // MUDANÇA: Verificamos se 'usuario' e 'usuario.nome' existem ANTES de usá-los.
+      if (decoded && decoded.usuario && decoded.usuario.nome) {
+        userName.value = decoded.usuario.nome;
+        userInitial.value = decoded.usuario.nome.charAt(0).toUpperCase();
+      } else {
+        // Se o nome não estiver no token, usamos um valor padrão.
+        userName.value = 'Usuário';
+        userInitial.value = 'U';
+      }
+
     } catch (e) {
       console.error("Erro ao decodificar token no Header:", e);
+      // Limpa um token inválido para evitar erros repetidos
+      localStorage.removeItem('authToken');
+      router.push('/login'); // Força o logout se o token for inválido
     }
   }
 };
-
-const toggleDropdown = () => {
-  isDropdownOpen.value = !isDropdownOpen.value;
-};
-
-const logout = () => {
-  localStorage.removeItem('authToken');
-  router.push('/login');
-};
-
 // Lógica para fechar o menu se o usuário clicar fora dele
 const handleClickOutside = (event) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
