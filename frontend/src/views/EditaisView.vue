@@ -115,7 +115,7 @@ onMounted(buscarEditais);
 }
 
 .list-card { 
-  widht: 800px;
+  width: 800px;
   background-color: #fff; 
   border-radius: 8px; 
   padding: 1.5rem; 
