@@ -1,6 +1,5 @@
 <template>
   <div id="sobrebot-view">
-    <!-- ... -->
     <div class="authors-section">
       <!-- A tag <a> é o card em si (a classe .author está nela) -->
       <a v-for="(author, index) in authors" 
