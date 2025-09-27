@@ -3,11 +3,6 @@
     <header class="view-header">
       <h2>Gestão de Chatbots</h2>
     </header>
-
-    <div class="actions-bar">
-      <button class="btn-primary" @click="handleCriar">Criar Novo Chatbot</button>
-    </div>
-
     <!-- A tabela agora será renderizada em vez do bloco <pre> -->
     <div class="list-card">
       <h3 class="list-title">Meus Chatbots</h3>
