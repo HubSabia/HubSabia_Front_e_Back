@@ -69,7 +69,6 @@ const authors = ref([
 /* --- ESTILOS GERAIS E PARA DESKTOP (Telas Grandes) --- */
 
 #sobrebot-view {
-  margin-left: 260px; 
   padding: 20px;
   transition: margin-left 0.3s ease; 
 }
