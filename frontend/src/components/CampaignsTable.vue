@@ -15,9 +15,9 @@
       <tbody>
         <!-- 1. O loop agora usa a prop 'campanhas' que veio do pai -->
         <tr v-for="campanha in campanhas" :key="campanha._id">
-          <td>{{ campanha.nome }}</td>
+          <td class="titulo-cell">{{ campanha.nome }}</td>
           <td>{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
-          <td>
+          <td class="status-cell">
             <span :class="['status-badge', `status-${campanha.status.toLowerCase()}`]">{{ campanha.status }}</span>
           </td>
           <td>{{ campanha.publico_alvo }}</td>
@@ -82,8 +82,13 @@ th, td {
 th { 
   font-size: 0.75rem; 
   text-transform: uppercase;
-  color: #6c757d; 
   font-weight: 600; 
+}
+.titulo-cell { 
+  font-weight: 500; 
+  word-wrap: break-word;
+  max-width: 0;
+  overflow-wrap: break-word;
 }
 .status-badge { 
   padding: 0.25rem 0.6rem; 
