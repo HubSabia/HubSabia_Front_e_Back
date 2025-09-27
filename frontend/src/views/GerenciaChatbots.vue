@@ -88,21 +88,74 @@ onMounted(buscarChatbots);
 
 <style scoped>
 /*.view-container { padding: 2rem; }*/
-.view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
-.actions-bar { margin-bottom: 2rem; }
-.list-card { background-color: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.list-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; }
-table { width: 100%; border-collapse: collapse; text-align: left; }
-th, td { padding: 1rem; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
-th { font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 600; }
-.status-badge { padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500; display: inline-block; }
-.status-ativo { background-color: #d4edda; color: #155724; }
-.status-inativo { background-color: #f8f9fa; color: #343a40; }
-.status-em-manutenção { background-color: #fff3cd; color: #856404; }
-.actions-cell button { padding: 0.3rem 0.6rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.8rem; }
-.btn-primary { background-color: #007bff; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; }
-.btn-edit { background-color: #6c757d; color: white; }
-.btn-delete { background-color: #dc3545; color: white; }
-.btn-chat { background-color: #28a745; color: white; }
-.no-data { text-align: center; padding: 2rem; color: #6c757d; }
+.list-card { 
+  width: 900px;
+  background-color: #fff; 
+  border-radius: 8px; 
+  padding: 1.5rem; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  }
+.list-title { 
+  font-size: 1.2rem; 
+  font-weight: 600; 
+  margin-bottom: 1.5rem; 
+}
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  text-align: left;
+  table-layout: fixed;
+}
+th, td { 
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+th { 
+  font-size: 0.75rem; 
+  text-transform: uppercase;
+  font-weight: 600; 
+}
+.titulo-cell { 
+  font-weight: 500; 
+  word-wrap: break-word;
+  max-width: 0;
+  overflow-wrap: break-word;
+}
+.status-badge { 
+  padding: 0.25rem 0.6rem; 
+  border-radius: 12px; 
+  font-size: 0.8rem; 
+  font-weight: 500; 
+  display: inline-block; 
+}
+.status-ativa { 
+  background-color: #d4edda; 
+  color: #155724;
+}
+.status-planejada { 
+  background-color: #cce5ff; 
+  color: #004085; 
+}
+.actions-cell button { 
+  padding: 0.3rem 0.6rem; 
+  border: none; 
+  border-radius: 4px; 
+  cursor: pointer;
+  margin-right: 0.5rem; 
+  font-size: 0.8rem; 
+}
+.btn-edit { 
+  background-color: #007bff; 
+  color: white; 
+}
+.btn-delete { 
+  background-color: #dc3545; 
+  color: white; 
+}
+.no-data { 
+  text-align: center; 
+  padding: 2rem; 
+  color: #6c757d; 
+}
 </style>
