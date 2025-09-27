@@ -29,7 +29,6 @@
         </tr>
         <tr v-if="!campanhas || campanhas.length === 0">
           <td colspan="5" class="no-data">Nenhuma campanha encontrada.</td>
-          <button class="btn-create" @click="$emit('add')">Adicionar Campanha</button>
         </tr>
       </tbody>
     </table>
