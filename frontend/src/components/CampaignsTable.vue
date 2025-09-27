@@ -57,7 +57,7 @@ const formatarData = (data) => {
 <style scoped>
 /* O CSS da tabela que estava em CampaignsView.vue agora vive aqui */
 .list-card { 
-  width: 800px;
+  width: 900px;
   background-color: #fff; 
   border-radius: 8px; 
   padding: 1.5rem; 
