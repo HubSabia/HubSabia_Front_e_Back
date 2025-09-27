@@ -75,10 +75,9 @@ const authors = ref([
 }
 
 .authors-section {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start; /* Alinha os cards à esquerda */
-  gap: 20px; /* Espaço consistente entre os cards */
+  display: grid;
+  grid-template-columns: repeat(1, minmax(420px, 1fr));
+  gap: 25px;
   padding: 40px 0;
 }
 
