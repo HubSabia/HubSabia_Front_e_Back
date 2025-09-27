@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed } from 'vue'; 
 import { useRoute } from 'vue-router';
 import MainSidebar from '@/components/MainSidebar.vue';
 import Header from '@/components/Header.vue';
