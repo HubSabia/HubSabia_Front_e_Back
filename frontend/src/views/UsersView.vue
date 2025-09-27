@@ -159,7 +159,6 @@ onMounted(buscarUsuarios);
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: white;
 }
 .role-select:disabled {
   background-color: #eee;
@@ -179,7 +178,7 @@ onMounted(buscarUsuarios);
   background-color: #c0392b;
 }
 .btn-delete:disabled {
-  background-color: #bdc3c7; /* Cinza */
+  background-color: #000000; 
   cursor: not-allowed;
 }
 
