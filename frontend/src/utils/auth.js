@@ -4,7 +4,7 @@ import { jwtDecode } from 'jwt-decode';
  * Decodifica o token JWT armazenado e retorna o payload do usuário.
  * @returns {object|null} O payload do usuário (com id, role) ou null se o token for inválido.
  */
-function getUserPayload() {
+export function getUserPayload() {
   const token = localStorage.getItem('authToken');
   if (!token) return null;
 
