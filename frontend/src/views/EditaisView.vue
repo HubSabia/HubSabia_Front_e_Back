@@ -95,7 +95,7 @@ onMounted(buscarEditais);
 
 <style scoped>
 .view-container { 
-  padding: 2rem; 
+  /*padding: 2rem;*/ 
 }
 
 .view-header h2 { 

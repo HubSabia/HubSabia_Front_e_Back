@@ -85,11 +85,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* O CSS também já estava correto para este layout. */
 .app-header {
   background-color: #ffffff;
   border-bottom: 1px solid #dee2e6;
-  padding: 0 30px;
   height: 70px;
   display: flex;
   align-items: center;
@@ -100,6 +98,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 0 30px;
 }
 
 .page-title {
