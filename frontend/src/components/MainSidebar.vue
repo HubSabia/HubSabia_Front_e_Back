@@ -77,7 +77,7 @@ const logout = () => {
 .sidebar {
   width: 260px;
   background-color: #14333A; /* Cinza escuro azulado */
-  color: #d1d5db; /* Cinza claro */
+  color: #E3E3E3; /* Cinza claro */
   height: 100vh;
   position: fixed;
   left: 0;
@@ -85,7 +85,7 @@ const logout = () => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid #374151;
+  border-right: 1px solid #134EB3;
 }
 
 .logo-container {
