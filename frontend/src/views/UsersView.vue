@@ -178,7 +178,7 @@ onMounted(buscarUsuarios);
   background-color: #c0392b;
 }
 .btn-delete:disabled {
-  background-color: #000000; 
+  background-color: #777; 
   cursor: not-allowed;
 }
 
