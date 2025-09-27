@@ -115,7 +115,6 @@ onMounted(buscarDados);
 .view-title {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #343a40;
   margin-bottom: 5px;
 }
 
@@ -127,7 +126,7 @@ onMounted(buscarDados);
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(720px, 1fr));
+  grid-template-columns: repeat(2, minmax(520px, 1fr));
   gap: 25px;
   margin-bottom: 30px;
 }
