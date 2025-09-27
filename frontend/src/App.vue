@@ -17,13 +17,12 @@ import MainSidebar from '@/components/MainSidebar.vue';
 import Header from '@/components/Header.vue';
 
 const route = useRoute();
-const currentPageTitle = ref('Dashboard');
+// Pega o título do 'meta' da rota atual.
+const currentPageTitle = computed(() => {
+  return route.meta.title || 'Dashboard'; // Se não houver, usa 'Dashboard' como padrão.
+});
 
 const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Register');
-
-const updatePageTitle = (title) => {
-  currentPageTitle.value = title;
-};
 </script>
 
 <style>
