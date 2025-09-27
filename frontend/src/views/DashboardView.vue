@@ -126,7 +126,7 @@ onMounted(buscarDados);
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(520px, 1fr));
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
   gap: 25px;
   margin-bottom: 30px;
 }
