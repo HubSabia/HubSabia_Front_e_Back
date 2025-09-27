@@ -59,7 +59,7 @@ const authors = ref([
 ]);
 </script>
 
-<style>
+<style scoped>
 /* --- ESTILOS GERAIS E PARA DESKTOP (Telas Grandes) --- */
 
 #sobrebot-view {
