@@ -76,7 +76,7 @@ const logout = () => {
 
 .sidebar {
   width: 260px;
-  background-color: #1f2937; /* Cinza escuro azulado */
+  background-color: #14333A; /* Cinza escuro azulado */
   color: #d1d5db; /* Cinza claro */
   height: 100vh;
   position: fixed;
