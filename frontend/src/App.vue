@@ -27,6 +27,31 @@ const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Reg
 
 
 <style>
+  :root {
+  --primary-color: #0056b3;
+  --secondary-color: #6c757d;
+  --sidebar-bg: #212529;
+  --header-bg: #ffffff;
+  --content-bg: #f8f9fa;
+  --text-color: #212529;
+  --text-color-light: #f8f9fa;
+  --border-color: #dee2e6;
+  --card-bg: #ffffff;
+  --font-family: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--content-bg);
+  color: var(--text-color);
+  line-height: 1.6;
+}
 #app {
   display: flex;
   min-height: 100vh;
