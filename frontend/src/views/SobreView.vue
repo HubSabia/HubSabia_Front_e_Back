@@ -84,7 +84,7 @@ const authors = ref([
 /* O container do card que é um link clicável */
 .author {
   width: 22%; 
-  min-width: 280px; 
+  min-width: 980px; 
   text-align: center;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
