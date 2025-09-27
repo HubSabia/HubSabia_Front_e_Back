@@ -94,9 +94,6 @@ onMounted(buscarEditais);
 </script>
 
 <style scoped>
-.view-container { 
-  /*padding: 2rem;*/ 
-}
 
 .view-header h2 { 
   font-size: 1.8rem; 
