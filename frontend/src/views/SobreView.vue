@@ -93,7 +93,10 @@ const authors = ref([
   text-decoration: none; /* Garante que o container não tenha sublinhado */
   
   /* Faz com que o conteúdo dentro dele se alinhe verticalmente */
-  
+  display: flex; /* Transforma o filho em um container flexível também */
+  align-items: center; /* Alinha a imagem e o texto verticalmente */
+  gap: 20px; /* Adiciona um espaço entre a imagem e o texto */
+  /* Outros estilos para o filho, se precisar */
 }
 
 .author:hover {
