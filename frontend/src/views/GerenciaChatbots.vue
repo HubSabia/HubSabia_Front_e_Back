@@ -22,9 +22,9 @@
         </thead>
         <tbody>
           <tr v-for="chatbot in chatbots" :key="chatbot._id">
-            <td>{{ chatbot.nome }}</td>
+            <td class="titulo-cell">{{ chatbot.nome }}</td>
             <td>{{ chatbot.campanha?.nome || 'N/A' }}</td>
-            <td>
+            <td class="status-cell">
               <span v-if="chatbot.status" :class="['status-badge', `status-${chatbot.status.toLowerCase().replace(' ', '-')}`]">
                 {{ chatbot.status }}
               </span>
@@ -116,7 +116,7 @@ th {
   text-transform: uppercase;
   font-weight: 600; 
 }
-.titulo-cell { 
+.titulo-cell, .status-cell { 
   font-weight: 500; 
   word-wrap: break-word;
   max-width: 0;
