@@ -93,9 +93,7 @@ const authors = ref([
   text-decoration: none; /* Garante que o container não tenha sublinhado */
   
   /* Faz com que o conteúdo dentro dele se alinhe verticalmente */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  
 }
 
 .author:hover {
