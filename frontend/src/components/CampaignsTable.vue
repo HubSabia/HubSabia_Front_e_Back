@@ -57,16 +57,69 @@ const formatarData = (data) => {
 
 <style scoped>
 /* O CSS da tabela que estava em CampaignsView.vue agora vive aqui */
-.list-card { background-color: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.list-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; }
-table { width: 100%; border-collapse: collapse; text-align: left; }
-th, td { padding: 1rem; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
-th { font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 600; }
-.status-badge { padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500; display: inline-block; }
-.status-ativa { background-color: #d4edda; color: #155724; }
-.status-planejada { background-color: #cce5ff; color: #004085; }
-.actions-cell button { padding: 0.3rem 0.6rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.8rem; }
-.btn-edit { background-color: #007bff; color: white; }
-.btn-delete { background-color: #dc3545; color: white; }
-.no-data { text-align: center; padding: 2rem; color: #6c757d; }
+.list-card { 
+  width: 800px;
+  background-color: #fff; 
+  border-radius: 8px; 
+  padding: 1.5rem; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  }
+.list-title { 
+  font-size: 1.2rem; 
+  font-weight: 600; 
+  margin-bottom: 1.5rem; 
+}
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  text-align: left;
+  table-layout: fixed;
+}
+th, td { 
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+th { 
+  font-size: 0.75rem; 
+  text-transform: uppercase;
+  color: #6c757d; 
+  font-weight: 600; 
+}
+.status-badge { 
+  padding: 0.25rem 0.6rem; 
+  border-radius: 12px; 
+  font-size: 0.8rem; 
+  font-weight: 500; 
+  display: inline-block; 
+}
+.status-ativa { 
+  background-color: #d4edda; 
+  color: #155724;
+}
+.status-planejada { 
+  background-color: #cce5ff; 
+  color: #004085; 
+}
+.actions-cell button { 
+  padding: 0.3rem 0.6rem; 
+  border: none; 
+  border-radius: 4px; 
+  cursor: pointer;
+  margin-right: 0.5rem; 
+  font-size: 0.8rem; 
+}
+.btn-edit { 
+  background-color: #007bff; 
+  color: white; 
+}
+.btn-delete { 
+  background-color: #dc3545; 
+  color: white; 
+}
+.no-data { 
+  text-align: center; 
+  padding: 2rem; 
+  color: #6c757d; 
+}
 </style>
