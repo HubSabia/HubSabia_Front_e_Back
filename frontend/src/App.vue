@@ -84,7 +84,6 @@ body {
 
 .main-content {
   flex-grow: 1;
-  padding: 30px;
   background-color: var(--content-bg);
 }
 
