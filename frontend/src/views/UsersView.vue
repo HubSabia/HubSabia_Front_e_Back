@@ -12,7 +12,7 @@
             <tr>
               <th>NOME</th>
               <th>EMAIL</th>
-              <th>PAPEL (ROLE)</th>
+              <th>PAPEL</th>
               <th>DATA DE CRIAÇÃO</th>
               <th>AÇÕES</th>
             </tr>
