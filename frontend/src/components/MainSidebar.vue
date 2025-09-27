@@ -35,7 +35,7 @@
       <nav class="navigation">
         <ul>
           <li>
-            <router-link to="/sobre-bot" class="nav-link" active-class="active">
+            <router-link to="/sobre" class="nav-link" active-class="active">
               <i class="icon icon-about"></i>
               <span>Sobre</span>
             </router-link>

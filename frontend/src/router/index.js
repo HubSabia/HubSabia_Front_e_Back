@@ -65,6 +65,12 @@ const routes = [
     component: () => import('@/views/PublicChatView.vue'),
     meta: { title: 'Assistente Virtual' } // Rota pública, sem 'requiresAuth'
   },
+  {
+    path: '/sobre',
+    name: 'Sobre',
+    component: () => import('@/views/SobreView.vue'),
+    mata: { title: 'Sobre nos'}
+  },
 ];
 
 const router = createRouter({
