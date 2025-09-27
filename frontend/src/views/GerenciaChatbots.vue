@@ -18,6 +18,7 @@
             <th>CAMPANHA ASSOCIADA</th>
             <th>STATUS</th>
             <th>AÇÕES</th>
+            <th><button class="btn-primary" @click="handleCriar">Criar Novo Chatbot</button></th>
           </tr>
         </thead>
         <tbody>
