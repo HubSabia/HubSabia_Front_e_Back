@@ -4,7 +4,7 @@
     <div class="content-wrapper">
       <Header v-if="!isLoginPage" :pageTitle="currentPageTitle" />
       <main class="main-content">
-        <router-view @update-title="updatePageTitle"></router-view>
+        <router-view></router-view>
       </main>
     </div>
   </div>

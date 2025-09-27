@@ -1,27 +1,22 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-      <!-- Opcional: Título da página atual, se você quiser manter essa funcionalidade -->
-      <h1 class="page-title">{{ pageTitle || 'Dashboard' }}</h1>
+      <!-- CORREÇÃO: O título da página vindo do App.vue é exibido aqui -->
+      <h1 class="page-title">{{ pageTitle }}</h1>
 
+      <!-- O menu de usuário fica à direita -->
       <div class="user-menu" ref="userMenuRef">
-        <!-- O botão que abre/fecha o menu -->
+        <!-- O botão é o conjunto de Nome + Avatar -->
         <button @click="toggleDropdown" class="user-button">
           <span class="user-name">{{ userName }}</span>
           <div class="user-avatar">{{ userInitial }}</div>
         </button>
 
-        <!-- O menu dropdown que aparece/desaparece -->
+        <!-- O dropdown agora contém 'Meu Perfil' e 'Sair' -->
         <transition name="fade">
           <div v-if="isDropdownOpen" class="dropdown-content">
-            <router-link to="/perfil" class="dropdown-item">
-              <i class="icon-profile"></i> <!-- Placeholder de ícone -->
-              <span>Meu Perfil</span>
-            </router-link>
-            <a href="#" @click.prevent="logout" class="dropdown-item">
-              <i class="icon-logout"></i> <!-- Placeholder de ícone -->
-              <span>Sair</span>
-            </a>
+            <router-link to="/perfil" class="dropdown-item">Meu Perfil</router-link>
+            <a href="#" @click.prevent="logout" class="dropdown-item">Sair</a>
           </div>
         </transition>
       </div>
@@ -30,34 +25,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { jwtDecode } from 'jwt-decode';
 
-// Props para receber o título da página do App.vue
 defineProps({
   pageTitle: String
 });
 
 const isDropdownOpen = ref(false);
 const router = useRouter();
-const userMenuRef = ref(null); // Para fechar o menu ao clicar fora
+const route = useRoute();
+const userMenuRef = ref(null);
+const userName = ref('Usuário');
+const userInitial = ref('U');
 
-const userName = ref('Admin User'); // Valor padrão
-const userInitial = ref('A'); // Valor padrão
-
-// Função para buscar o nome do usuário do token
 const loadUserData = () => {
   const token = localStorage.getItem('authToken');
   if (token) {
     try {
       const decoded = jwtDecode(token);
-      // Supondo que o nome esteja no token ou que possamos pegá-lo
-      // Se não, você pode buscar os dados do usuário aqui com uma chamada de API
-      userName.value = decoded.usuario.nome || 'Usuário';
-      userInitial.value = (decoded.usuario.nome || 'A').charAt(0).toUpperCase();
+      if (decoded && decoded.usuario && decoded.usuario.nome) {
+        userName.value = decoded.usuario.nome;
+        userInitial.value = decoded.usuario.nome.charAt(0).toUpperCase();
+      }
     } catch (e) {
-      console.error("Erro ao decodificar token no Header:", e);
+      console.error("Token inválido:", e);
     }
   }
 };
@@ -70,12 +63,16 @@ const logout = () => {
   localStorage.removeItem('authToken');
   router.push('/login');
 };
-// Lógica para fechar o menu se o usuário clicar fora dele
+
 const handleClickOutside = (event) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
     isDropdownOpen.value = false;
   }
 };
+
+watch(() => route.name, () => {
+  loadUserData();
+});
 
 onMounted(() => {
   loadUserData();
@@ -88,9 +85,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* O CSS também já estava correto para este layout. */
 .app-header {
-  background-color: var(--header-bg, #ffffff);
-  border-bottom: 1px solid var(--border-color, #dee2e6);
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
   padding: 0 30px;
   height: 70px;
   display: flex;
@@ -107,7 +105,7 @@ onUnmounted(() => {
 .page-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--text-color, #212529);
+  color: #212529;
 }
 
 .user-menu {
@@ -121,13 +119,8 @@ onUnmounted(() => {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   border-radius: 20px;
-  transition: background-color 0.2s;
-}
-
-.user-button:hover {
-  background-color: #f1f1f1;
 }
 
 .user-name {
@@ -139,7 +132,7 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: var(--primary-color, #007bff);
+  background-color: #0d6efd;
   color: white;
   display: flex;
   justify-content: center;
@@ -149,7 +142,7 @@ onUnmounted(() => {
 
 .dropdown-content {
   position: absolute;
-  top: 110%;
+  top: 120%;
   right: 0;
   background-color: white;
   box-shadow: 0 8px 16px rgba(0,0,0,0.1);
@@ -160,13 +153,10 @@ onUnmounted(() => {
 }
 
 .dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
   padding: 12px 16px;
   text-decoration: none;
   color: #495057;
-  font-size: 0.95rem;
   transition: background-color 0.2s;
 }
 
@@ -174,10 +164,10 @@ onUnmounted(() => {
   background-color: #f8f9fa;
 }
 
-/* Animação de fade para o dropdown */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.2s ease;
 }
+
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
