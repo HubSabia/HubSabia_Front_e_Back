@@ -1,6 +1,6 @@
 <template>
   <div class="view-container">
-    <h1 class="view-title">Dashboard</h1>
+    <h1 class="view-title">Kallel</h1>
     <p class="view-subtitle">Visão geral do sistema</p>
 
     <!-- Placeholder for stats cards -->
