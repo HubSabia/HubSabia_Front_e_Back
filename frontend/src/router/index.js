@@ -36,6 +36,12 @@ const routes = [
     meta: { title: 'Gestão de Campanhas', requiresAuth: true }
   },
   {
+    path: '/sobre',
+    name: 'Sobre',
+    component: () => import('@/views/SobreView.vue'),
+    mata: { title: 'Sobre'}
+  },
+  {
     path: '/usuarios',
     name: 'Usuarios',
     component: () => import('@/views/UsersView.vue'),
@@ -64,12 +70,6 @@ const routes = [
     name: 'ChatPublico',
     component: () => import('@/views/PublicChatView.vue'),
     meta: { title: 'Assistente Virtual' } // Rota pública, sem 'requiresAuth'
-  },
-  {
-    path: '/sobre',
-    name: 'Sobre',
-    component: () => import('@/views/SobreView.vue'),
-    mata: { title: 'Sobre nos'}
   },
 ];
 
