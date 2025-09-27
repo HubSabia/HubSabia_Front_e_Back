@@ -87,7 +87,7 @@ onMounted(buscarChatbots);
 </script>
 
 <style scoped>
-.view-container { padding: 2rem; }
+/*.view-container { padding: 2rem; }*/
 .view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
 .actions-bar { margin-bottom: 2rem; }
 .list-card { background-color: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
