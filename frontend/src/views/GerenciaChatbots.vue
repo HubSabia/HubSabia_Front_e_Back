@@ -1,42 +1,38 @@
 <template>
   <div class="view-container">
     <header class="view-header">
-      <h2>Gestão de Chatbots</h2>
+      <h2>Criar ChatBots</h2>
+      <button class="btn-primary" @click="handleCriar">Adicionar</button>
     </header>
-    <!-- A tabela agora será renderizada em vez do bloco <pre> -->
-    <div class="list-card">
-      <h3 class="list-title">Meus Chatbots</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>NOME</th>
-            <th>CAMPANHA ASSOCIADA</th>
-            <th>STATUS</th>
-            <th>AÇÕES</th>
-            <th><button class="btn-primary" @click="handleCriar">Criar Novo Chatbot</button></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="chatbot in chatbots" :key="chatbot._id">
-            <td class="titulo-cell">{{ chatbot.nome }}</td>
-            <td>{{ chatbot.campanha?.nome || 'N/A' }}</td>
-            <td class="status-cell">
-              <span v-if="chatbot.status" :class="['status-badge', `status-${chatbot.status.toLowerCase().replace(' ', '-')}`]">
-                {{ chatbot.status }}
-              </span>
-            </td>
-            <td class="actions-cell">
-              <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar</button>
-              <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
-              <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
-            </td>
-          </tr>
-          <tr v-if="!isLoading && chatbots.length === 0">
-            <td colspan="4" class="no-data">Nenhum chatbot encontrado.</td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="isLoading">Carregando chatbots...</p> <!-- Indicador de carregamento -->
+
+    <div class="bots-list-container">
+      <!-- Cabeçalho da Lista -->
+      <div class="list-header">
+        <span class="col-nome">Nome</span>
+        <span class="col-campanha">Campanha Associada</span>
+        <span class="col-status">Status</span>
+        <span class="col-acoes">Ações</span>
+      </div>
+
+      <!-- Lista de Bots -->
+      <div class="bots-list">
+        <div v-if="isLoading" class="loading-message">Carregando chatbots...</div>
+        
+        <div v-if="!isLoading && chatbots.length === 0" class="no-data-message">
+          Nenhum chatbot encontrado. Clique em "Adicionar" para criar o seu primeiro.
+        </div>
+
+        <div v-for="chatbot in chatbots" :key="chatbot._id" class="bot-item">
+          <div class="col-nome">{{ chatbot.nome }}</div>
+          <div class="col-campanha">{{ chatbot.campanha?.nome || 'N/A' }}</div>
+          <div class="col-status">{{ chatbot.status }}</div>
+          <div class="col-acoes actions-buttons">
+            <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
+            <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
+            <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <ChatbotModal
@@ -58,7 +54,7 @@ const chatbots = ref([]);
 const isModalVisible = ref(false);
 const chatbotParaEditar = ref(null);
 const router = useRouter();
-const isLoading = ref(true); // Adicionando estado de carregamento
+const isLoading = ref(true);
 
 const buscarChatbots = async () => {
   isLoading.value = true;
@@ -83,75 +79,104 @@ onMounted(buscarChatbots);
 </script>
 
 <style scoped>
-/*.view-container { padding: 2rem; }*/
-.list-card { 
-  width: 900px;
-  background-color: #fff; 
-  border-radius: 8px; 
-  padding: 1.5rem; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-.list-title { 
-  font-size: 1.2rem; 
-  font-weight: 600; 
-  margin-bottom: 1.5rem; 
+.view-container {
+  padding: 2rem;
+  background-color: #e9ecef; 
 }
-table { 
-  width: 100%; 
-  border-collapse: collapse; 
-  text-align: left;
-  table-layout: fixed;
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
-th, td { 
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
-  vertical-align: middle;
+
+.view-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
 }
-th { 
-  font-size: 0.75rem; 
-  text-transform: uppercase;
-  font-weight: 600; 
-}
-.titulo-cell, .status-cell { 
-  font-weight: 500; 
-  word-wrap: break-word;
-  max-width: 0;
-  overflow-wrap: break-word;
-}
-.status-badge { 
-  padding: 0.25rem 0.6rem; 
-  border-radius: 12px; 
-  font-size: 0.8rem; 
-  font-weight: 500; 
-  display: inline-block; 
-}
-.status-ativa { 
-  background-color: #d4edda; 
-  color: #155724;
-}
-.status-planejada { 
-  background-color: #cce5ff; 
-  color: #004085; 
-}
-.actions-cell button { 
-  padding: 0.3rem 0.6rem; 
-  border: none; 
-  border-radius: 4px; 
+
+.btn-primary {
+  background-color: #28a745; 
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   cursor: pointer;
-  margin-right: 0.5rem; 
-  font-size: 0.8rem; 
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
-.btn-edit { 
-  background-color: #007bff; 
-  color: white; 
+.btn-primary:hover {
+  background-color: #218838;
 }
-.btn-delete { 
-  background-color: #dc3545; 
-  color: white; 
+
+.bots-list-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
-.no-data { 
-  text-align: center; 
-  padding: 2rem; 
-  color: #6c757d; 
+
+.list-header, .bot-item {
+  display: grid;
+  grid-template-columns: 1.5fr 2fr 1fr 2.5fr; 
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.list-header {
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.bot-item {
+  transition: background-color 0.2s;
+}
+
+.bot-item:last-child {
+  border-bottom: none;
+}
+
+.bot-item:hover {
+  background-color: #f8f9fa;
+}
+
+.col-nome, .col-campanha, .col-status, .col-acoes {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions-buttons button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+}
+.actions-buttons button:hover {
+  opacity: 0.85;
+}
+
+.btn-edit { background-color: #0d6efd; } 
+.btn-delete { background-color: #dc3545; } 
+.btn-chat { background-color: #1f2937; } 
+
+.loading-message, .no-data-message {
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
 }
 </style>
