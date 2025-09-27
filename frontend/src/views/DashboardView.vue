@@ -1,6 +1,6 @@
 <template>
-  <div class="dashboard-view">
-    <h1 class="view-title">Dashboard do Projeto Integrador IFPR</h1>
+  <div class="view-container">
+    <h1 class="view-title">Dashboard</h1>
     <p class="view-subtitle">Visão geral do sistema</p>
 
     <!-- Placeholder for stats cards -->
@@ -108,8 +108,8 @@ onMounted(buscarDados);
 </script>
 
 <style scoped>
-.dashboard-view {
-  padding: 20px;
+.view-container {
+  padding: 30px;
 }
 
 .view-title {
