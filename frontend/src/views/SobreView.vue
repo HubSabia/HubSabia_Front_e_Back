@@ -23,18 +23,14 @@
 </template>
 
 <script setup>
+// MUDANÇA: Removemos 'onMounted' e 'getCurrentInstance' que não são mais necessários.
 import { ref } from 'vue'; 
 import Carlos from "@/assets/carloseduardo.jpg";
 import Heitor from "@/assets/heitor.jpeg";
 import Kallel from "@/assets/kallel.jpeg";
 import fotoNovo3 from "@/assets/foto-novo3.jpg";
 
-const instance = getCurrentInstance();
-
-onMounted(() => {
-  instance.emit("update-title", "Sobre o Bot");
-});
-
+// O resto do seu script (a lista de autores) continua perfeito.
 const authors = ref([
   {
     name: "Carlos",
