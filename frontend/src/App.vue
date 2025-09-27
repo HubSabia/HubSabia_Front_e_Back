@@ -11,19 +11,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import MainSidebar from '@/components/MainSidebar.vue';
 import Header from '@/components/Header.vue';
 
 const route = useRoute();
-// Pega o título do 'meta' da rota atual.
+
 const currentPageTitle = computed(() => {
-  return route.meta.title || 'Dashboard'; // Se não houver, usa 'Dashboard' como padrão.
+  return route.meta.title || 'Dashboard';
 });
 
 const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Register');
 </script>
+
 
 <style>
 /* Global styles & Formal Theme */
@@ -125,6 +126,5 @@ body {
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 
 </style>
