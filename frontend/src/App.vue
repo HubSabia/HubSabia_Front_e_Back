@@ -19,7 +19,7 @@ import Header from '@/components/Header.vue';
 const route = useRoute();
 
 const currentPageTitle = computed(() => {
-  return route.meta.title || 'Sobre';
+  return route.meta.title || 'Home';
 });
 
 const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Register');
