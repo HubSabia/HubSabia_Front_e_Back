@@ -108,9 +108,6 @@ onMounted(buscarDados);
 </script>
 
 <style scoped>
-.main-layout .content-wrapper {
-    margin-left: 160px;
-}
 .view-container {
   padding: 30px;
 }
@@ -136,7 +133,7 @@ onMounted(buscarDados);
 
 .stat-card {
   background-color: #ffffff;
-  padding: 25px 20px;
+  padding: 45px 40px;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
