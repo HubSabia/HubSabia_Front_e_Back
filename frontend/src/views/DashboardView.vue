@@ -1,5 +1,5 @@
-<template id="teste">
-  <div class="view-container">
+<template>
+  <div class="view-container" id="teste">
     <h1 class="view-title">Dashboard</h1>
     <p class="view-subtitle">Visão geral do sistema</p>
 
