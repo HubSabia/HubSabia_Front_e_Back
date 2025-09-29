@@ -118,7 +118,7 @@ onMounted(buscarCampanhas);
 .view-container {
   padding: 2rem;
   background-color: #e9ecef; /* Fundo cinza claro da página */
-  min-height: calc(100vh - 70px);
+  min-height: calc(100vh - 70px); /* Ocupa a altura da tela menos o header */
 }
 
 .view-header {
@@ -148,12 +148,12 @@ onMounted(buscarCampanhas);
   background-color: #218838;
 }
 
-/* ESTILOS DO CONTAINER DA LISTA (AGORA PARA A TABELA) */
+/* ESTILOS DO CONTAINER DA LISTA/TABELA */
 .list-card {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  overflow: hidden; /* Importante para as bordas arredondadas da tabela */
+  overflow: hidden; /* Garante que as bordas da tabela fiquem contidas */
 }
 
 /* ESTILOS DA TABELA */
@@ -170,7 +170,7 @@ onMounted(buscarCampanhas);
 }
 
 .data-table thead {
-  background-color: #f8f9fa; /* Fundo suave para o cabeçalho */
+  background-color: #f8f9fa; /* Fundo cinza bem claro para o cabeçalho */
 }
 
 .data-table th {
@@ -181,11 +181,11 @@ onMounted(buscarCampanhas);
 }
 
 .data-table tbody tr:last-child td {
-  border-bottom: none; /* Remove a última borda para um visual limpo */
+  border-bottom: none; /* Remove a borda da última linha */
 }
 
 .data-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa; /* Efeito suave ao passar o mouse */
 }
 
 .actions-buttons {
