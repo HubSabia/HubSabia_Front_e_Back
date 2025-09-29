@@ -23,6 +23,10 @@ const currentPageTitle = computed(() => {
 });
 
 const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Register');
+const routePageClass = computed(() => {
+  // Converte o nome da rota para um formato de classe CSS (ex: 'Dashboard' -> 'dashboard-page')
+  return route.name ? `${route.name.toLowerCase()}-page` : '';
+});
 </script>
 
 
