@@ -108,6 +108,9 @@ onMounted(buscarDados);
 </script>
 
 <style scoped>
+.main-layout .content-wrapper {
+    margin-left: 160px;
+}
 .view-container {
   padding: 30px;
 }
