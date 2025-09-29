@@ -109,7 +109,7 @@ onMounted(buscarDados);
 
 <style scoped>
 .view-container {
-  padding: 60px;
+  padding: 90px;
 }
 
 .view-title {
@@ -133,7 +133,7 @@ onMounted(buscarDados);
 
 .stat-card {
   background-color: #ffffff;
-  padding: 45px 40px;
+  padding: 55px 50px;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
