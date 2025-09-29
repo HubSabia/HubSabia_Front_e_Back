@@ -63,6 +63,9 @@ button:focus-visible {
   margin: 0 auto;
   text-align: center;
 }
+.dashboard-page .main-layout .content-wrapper #teste {
+  margin-left: 0; /* Ou o novo valor desejado, ex: 50px */
+}
 
 @media (prefers-color-scheme: light) {
   :root {
