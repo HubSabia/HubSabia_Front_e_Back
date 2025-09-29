@@ -50,25 +50,27 @@
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
 
-// MUDANÇA: Importa TODOS os componentes filhos que esta página utiliza
-import AddCampaignCard from '@/components/AddCampaignCard.vue';
-import CampaignsTable from '@/components/CampaignsTable.vue';
+// Suas importações de componentes (se você estiver usando a versão refatorada)
+// import CampaignsTable from '@/components/CampaignsTable.vue'; 
 import CampaignModal from '@/components/CampaignModal.vue';
 
-// A lógica de estado e as funções de manipulação de dados permanecem aqui
+// A lógica de estado e as funções de manipulação de dados
 const campanhas = ref([]);
 const isModalVisible = ref(false);
 const campanhaParaEditar = ref(null);
+const isLoading = ref(true); // Adicionando para uma melhor UX
 
 // --- Funções CRUD (Lógica Central) ---
-// Estas funções são chamadas em resposta aos eventos dos componentes filhos.
 
 const buscarCampanhas = async () => {
+  isLoading.value = true;
   try {
     const response = await apiClient.get('/campanhas');
     campanhas.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar campanhas:", error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -97,17 +99,25 @@ const handleExcluir = async (campanhaId) => {
   }
 };
 
-// Esta função é chamada quando o AddCampaignCard emite o evento 'click'
 const handleCriar = () => {
   campanhaParaEditar.value = null;
   isModalVisible.value = true;
 };
 
-// Esta função é chamada quando a CampaignsTable emite o evento 'edit'
 const handleEditar = (campanha) => {
   campanhaParaEditar.value = campanha;
   isModalVisible.value = true;
 };
+
+// ==========================================================
+// CORREÇÃO: Adicionando a função 'formatarData' que estava faltando
+// ==========================================================
+const formatarData = (data) => {
+  if (!data) return '';
+  // Formata a data para o padrão dd/mm/aaaa
+  return new Date(data).toLocaleDateString('pt-BR');
+};
+
 
 // --- Lifecycle Hook ---
 onMounted(buscarCampanhas);
