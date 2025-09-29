@@ -127,8 +127,8 @@ onMounted(buscarCampanhas);
 /* ESTILOS PADRONIZADOS PARA A VIEW */
 .view-container {
   padding: 2rem;
-  background-color: #e9ecef; /* Fundo cinza claro da página */
-  min-height: calc(100vh - 70px); /* Ocupa a altura da tela menos o header */
+  background-color: #F9F9F9;
+  min-height: calc(100vh - 70px);
 }
 
 .view-header {
@@ -160,6 +160,8 @@ onMounted(buscarCampanhas);
 
 /* ESTILOS DO CONTAINER DA LISTA/TABELA */
 .list-card {
+  width: 800px;
+  height: 700px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
