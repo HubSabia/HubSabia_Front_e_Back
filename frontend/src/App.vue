@@ -60,7 +60,7 @@ body {
   display: flex;
   min-height: 100vh;
   max-width: 1280px;
-
+  margin: 0 auto;
   text-align: center;
 }
 .main-layout {
@@ -77,7 +77,7 @@ body {
 #app.main-layout .content-wrapper {
   margin-left: 260px; /* Margem padrão quando o sidebar está presente */
 }
-#app.main-layout.dashboard-page .content-wrapper .main-content #teste {
+#app.main-layout .dashboard-page .content-wrapper .main-content #teste {
   margin-left: 0 !important; /* Mude para o valor desejado */
 }
 
