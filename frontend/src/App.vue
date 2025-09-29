@@ -75,7 +75,7 @@ body {
 .main-layout .content-wrapper {
   margin-left: 260px; 
 }
-.dashboard .main-layout .content-wrapper #teste {
+.dashboard-page .main-layout .content-wrapper #teste {
   margin-left: 0; /* Ou o novo valor desejado, ex: 50px */
 }
 
