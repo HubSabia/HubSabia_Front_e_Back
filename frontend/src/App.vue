@@ -92,7 +92,7 @@ body {
 #app.main-layout .content-wrapper {
   margin-left: 260px; /* Margem padrão quando o sidebar está presente */
 }
-#app.main-layout .dashboard-page .content-wrapper .main-content #teste {
+#app.main-layout .dashboard-page .content-wrapper{
   margin-left: 0 !important; /* Mude para o valor desejado */
 }
 
