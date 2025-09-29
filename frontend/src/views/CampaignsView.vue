@@ -1,21 +1,46 @@
 <template>
   <div class="view-container">
     <header class="view-header">
-      <h2>Campanhas</h2>
+      <h2>Criar Campanhas</h2>
+      <button class="btn-primary" @click="handleCriar">Adicionar</button>
     </header>
-    <!-- Usando o componente da Tabela -->
-    <CampaignsTable 
-      :campanhas="campanhas"   
-      @edit="handleEditar"     
-      @delete="handleExcluir"
-      @add="handleCriar"
-    />
-    
-    <!-- Usando o componente do Modal -->
-    <CampaignModal 
-      v-model="isModalVisible" 
+
+    <div class="list-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Período</th>
+            <th>Público</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoading">
+            <td colspan="5" class="message">Carregando campanhas...</td>
+          </tr>
+          <tr v-if="!isLoading && campanhas.length === 0">
+            <td colspan="5" class="message">Nenhuma campanha encontrada.</td>
+          </tr>
+          <tr v-for="campanha in campanhas" :key="campanha._id">
+            <td>{{ campanha.nome }}</td>
+            <td>{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
+            <td>{{ campanha.publico_alvo }}</td>
+            <td>{{ campanha.status }}</td>
+            <td class="actions-buttons">
+              <button class="btn-edit" @click="handleEditar(campanha)">Editar</button>
+              <button class="btn-delete" @click="handleExcluir(campanha._id)">Excluir</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <CampaignModal
+      v-model="isModalVisible"
       :campaign-to-edit="campanhaParaEditar"
-      @campaign-created="adicionarNovaCampanhaNaLista" 
+      @campaign-created="adicionarNovaCampanhaNaLista"
       @campaign-updated="atualizarCampanhaNaLista"
     />
   </div>
@@ -89,11 +114,107 @@ onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
-/* 
-  O CSS da página fica super limpo.
-  O CSS do card de criação foi movido para o componente AddCampaignCard.vue.
-*/
-.view-container { padding: 2rem; }
-.view-header h2 { font-size: 1.8rem; font-weight: 600; margin-bottom: 1.5rem; }
-.card-grid { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
+/* ESTILOS PADRONIZADOS PARA A VIEW */
+.view-container {
+  padding: 2rem;
+  background-color: #e9ecef; /* Fundo cinza claro da página */
+  min-height: calc(100vh - 70px);
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.view-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.btn-primary {
+  background-color: #28a745; /* Verde Adicionar */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+.btn-primary:hover {
+  background-color: #218838;
+}
+
+/* ESTILOS DO CONTAINER DA LISTA (AGORA PARA A TABELA) */
+.list-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow: hidden; /* Importante para as bordas arredondadas da tabela */
+}
+
+/* ESTILOS DA TABELA */
+.data-table {
+  width: 100%;
+  border-collapse: collapse; /* Remove espaçamento entre células */
+}
+
+.data-table th, .data-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.data-table thead {
+  background-color: #f8f9fa; /* Fundo suave para o cabeçalho */
+}
+
+.data-table th {
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none; /* Remove a última borda para um visual limpo */
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.actions-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions-buttons button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+}
+
+.actions-buttons button:hover {
+  opacity: 0.85;
+}
+
+.btn-edit { background-color: #0d6efd; } /* Azul */
+.btn-delete { background-color: #dc3545; } /* Vermelho */
+
+.message {
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
 </style>
