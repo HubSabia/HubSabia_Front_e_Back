@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ 'login-layout': isLoginPage, 'main-layout': !isLoginPage }">
+  <div id="app" :class="[{ 'login-layout': isLoginPage, 'main-layout': !isLoginPage }, routePageClass]">
     <MainSidebar v-if="!isLoginPage" />
     <div class="content-wrapper">
       <Header v-if="!isLoginPage" :pageTitle="currentPageTitle" />
