@@ -60,7 +60,7 @@ body {
   display: flex;
   min-height: 100vh;
   max-width: 1280px;
-  margin: 0 auto;
+
   text-align: center;
 }
 .main-layout {
