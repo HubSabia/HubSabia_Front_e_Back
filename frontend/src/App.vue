@@ -36,7 +36,7 @@ const routePageClass = computed(() => {
   --secondary-color: #6c757d;
   --sidebar-bg: #212529;
   --header-bg: #ffffff;
-  --content-bg: #f8f9fa;
+  --content-bg: #F2F2F2;
   --text-color: #212529;
   --text-color-light: #f8f9fa;
   --border-color: #dee2e6;
@@ -44,9 +44,6 @@ const routePageClass = computed(() => {
   --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif, 'Inter';
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #F2F2F2;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
