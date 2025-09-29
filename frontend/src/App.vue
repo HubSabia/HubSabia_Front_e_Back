@@ -72,11 +72,11 @@ body {
   flex-direction: column;
 }
 
-.main-layout .content-wrapper {
-  margin-left: 260px; 
+#app.main-layout .content-wrapper {
+  margin-left: 260px; /* Margem padrão quando o sidebar está presente */
 }
-.main-layout .dashboard-page  .content-wrapper #teste {
-  margin-left: 0; /* Ou o novo valor desejado, ex: 50px */
+#app.main-layout.dashboard-page .content-wrapper .main-content #teste {
+  margin-left: 0 !important; /* Mude para o valor desejado */
 }
 
 .main-content {
