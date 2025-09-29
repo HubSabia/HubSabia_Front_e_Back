@@ -109,7 +109,7 @@ onMounted(buscarDados);
 
 <style scoped>
 .view-container {
-  padding: 30px;
+  padding: 60px;
 }
 
 .view-title {
