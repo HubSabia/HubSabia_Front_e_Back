@@ -81,7 +81,8 @@ onMounted(buscarChatbots);
 <style scoped>
 .view-container {
   padding: 2rem;
-  background-color: #e9ecef; 
+  background-color: #F9F9F9;
+  min-height: calc(100vh - 70px);
 }
 
 .view-header {
@@ -98,7 +99,7 @@ onMounted(buscarChatbots);
 }
 
 .btn-primary {
-  background-color: #28a745; 
+  background-color: #28a745; /* Verde Adicionar */
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -110,8 +111,9 @@ onMounted(buscarChatbots);
 .btn-primary:hover {
   background-color: #218838;
 }
-
 .bots-list-container {
+  width: 800px;
+  height: 700px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
