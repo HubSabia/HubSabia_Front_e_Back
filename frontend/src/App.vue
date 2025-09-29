@@ -41,8 +41,7 @@ const routePageClass = computed(() => {
   --text-color-light: #f8f9fa;
   --border-color: #dee2e6;
   --card-bg: #ffffff;
-  --font-family: 'Inter', sans-serif;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif, 'Inter';
   line-height: 1.5;
   font-weight: 400;
   }
