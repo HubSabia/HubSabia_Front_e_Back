@@ -101,7 +101,7 @@ ${mensagemUsuario}
 `;
         
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" /*, safetySettings*/ });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" /*, safetySettings*/ });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
