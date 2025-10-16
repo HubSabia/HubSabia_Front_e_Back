@@ -6,7 +6,6 @@
     </header>
 
     <div class="bots-list-container">
-      <!-- Cabeçalho da Lista -->
       <div class="list-header">
         <span class="col-nome">Nome</span>
         <span class="col-campanha">Campanha Associada</span>
@@ -15,7 +14,6 @@
         <span class="col-acoes">Ações</span>
       </div>
 
-      <!-- Lista de Bots -->
       <div class="bots-list">
         <div v-if="isLoading" class="loading-message">Carregando chatbots...</div>
         
@@ -27,30 +25,24 @@
           <div class="col-nome">{{ chatbot.nome }}</div>
           <div class="col-campanha">{{ chatbot.campanha?.nome || 'N/A' }}</div>
           <div class="col-status">{{ chatbot.status }}</div>
-          <div class="col-acoes actions-buttons">
-            <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
-            <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
-            <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-     <div class="col-link">
+          
+          <!-- Bloco do Link Público, agora no lugar certo -->
+          <div class="col-link">
             <button v-if="chatbot.status === 'Ativo'" @click="copiarLink(chatbot._id)" class="btn-copy">
               Copiar Link
             </button>
             <span v-else class="link-inactive">Ative o bot</span>
           </div>
           
+          <!-- Bloco das Ações -->
           <div class="col-acoes actions-buttons">
             <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
             <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
             <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> <!-- Fim da div do v-for -->
+      </div> <!-- Fim de .bots-list -->
+    </div> <!-- Fim de .bots-list-container -->
   
     <ChatbotModal
       v-model="isModalVisible"
@@ -105,7 +97,6 @@ const iniciarConversa = (chatbotId) => { router.push(`/chatbot/${chatbotId}`); }
 onMounted(buscarChatbots);
 </script>
 
-<style scoped>
 <style scoped>
 .view-container {
   padding: 2rem;
