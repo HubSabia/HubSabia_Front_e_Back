@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Chatbot = require('../models/Chatbot');
 const Usuario = require('../models/Usuario');
+const Edital = require('../models/Edital');
+const Campanha = require('../models/Campanha');
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -14,6 +16,7 @@ router.get('/chatbots/:id', async (req, res) => {
         }
         res.json(chatbot);
     } catch (err) {
+        console.error("Erro ao buscar chatbot público:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
@@ -34,25 +37,34 @@ router.post('/chatbots/:id/interagir', async (req, res) => {
             return res.status(403).json({ msg: 'Este chatbot não está disponível para conversa no momento.' });
         }
         
-        // MUDANÇA CRUCIAL: Busca o criador do chatbot para pegar a chave de API.
         const criador = await Usuario.findById(chatbot.criador);
         if (!criador || !criador.geminiApiKey) {
             return res.status(500).json({ msg: 'O proprietário deste chatbot não configurou uma chave de API válida.' });
         }
         
-        // Inicializa a IA com a chave do CRIADOR do bot
         const genAI = new GoogleGenerativeAI(criador.geminiApiKey);
 
-        // A lógica de data, contexto e prompt continua a mesma
         const hoje = new Date();
         const dataFim = new Date(chatbot.campanha.periodo_fim);
-        let infoDeData = ""; // Adapte sua lógica de data aqui
+        let infoDeData = "";
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n');
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
-        const prompt = `INSTRUÇÕES... PERGUNTA DO USUÁRIO: ${mensagemUsuario}`; // Seu prompt completo
+        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+    1. Você é um assistente virtual do IFPR.
+    2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
+    3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
+    4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
+    5. Não invente informações nem responda a perguntas sobre outros tópicos.
+    6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
+
+    ---
+    CONTEXTO DOS EDITAIS:
+    ${contexto}
+    ---
+    PERGUNTA DO USUÁRIO:${mensagemUsuario}`; // Seu prompt completo
         
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
         const result = await model.generateContent(prompt);
         const respostaDaIA = result.response.text();
         
@@ -60,7 +72,6 @@ router.post('/chatbots/:id/interagir', async (req, res) => {
 
     } catch (err) {
         console.error("Erro na interação pública:", err.message);
-        // Verifica se o erro é da API do Google para dar uma resposta melhor
         if (err.name === 'GoogleGenerativeAIFetchError') {
             return res.status(503).json({ msg: 'O serviço de IA está indisponível ou a chave de API é inválida.' });
         }
