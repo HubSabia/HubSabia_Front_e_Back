@@ -223,4 +223,3 @@ onMounted(buscarChatbots);
   font-style: italic;
 }
 </style>
-</style>
