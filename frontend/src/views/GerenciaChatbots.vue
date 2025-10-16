@@ -11,6 +11,7 @@
         <span class="col-nome">Nome</span>
         <span class="col-campanha">Campanha Associada</span>
         <span class="col-status">Status</span>
+        <span class="col-link">Link Público</span>
         <span class="col-acoes">Ações</span>
       </div>
 
@@ -35,6 +36,22 @@
       </div>
     </div>
 
+     <div class="col-link">
+            <button v-if="chatbot.status === 'Ativo'" @click="copiarLink(chatbot._id)" class="btn-copy">
+              Copiar Link
+            </button>
+            <span v-else class="link-inactive">Ative o bot</span>
+          </div>
+          
+          <div class="col-acoes actions-buttons">
+            <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
+            <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
+            <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
     <ChatbotModal
       v-model="isModalVisible"
       :chatbot-to-edit="chatbotParaEditar"
@@ -75,9 +92,20 @@ const handleCriar = () => { chatbotParaEditar.value = null; isModalVisible.value
 const handleEditar = (chatbot) => { chatbotParaEditar.value = chatbot; isModalVisible.value = true; };
 const iniciarConversa = (chatbotId) => { router.push(`/chatbot/${chatbotId}`); };
 
+  const copiarLink = (chatbotId) => {
+  const publicUrl = `${window.location.origin}/#/chat-publico/${chatbotId}`;
+  navigator.clipboard.writeText(publicUrl).then(() => {
+    alert('Link público copiado para a área de transferência!');
+  }).catch(err => {
+    console.error('Erro ao copiar o link:', err);
+    alert('Não foi possível copiar o link.');
+  });
+};
+  
 onMounted(buscarChatbots);
 </script>
 
+<style scoped>
 <style scoped>
 .view-container {
   padding: 2rem;
@@ -99,7 +127,7 @@ onMounted(buscarChatbots);
 }
 
 .btn-primary {
-  background-color: #28a745; /* Verde Adicionar */
+  background-color: #28a745;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -112,8 +140,6 @@ onMounted(buscarChatbots);
   background-color: #218838;
 }
 .bots-list-container {
-  width: 800px;
-  height: 700px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -122,10 +148,11 @@ onMounted(buscarChatbots);
 
 .list-header, .bot-item {
   display: grid;
-  grid-template-columns: 1.5fr 2fr 1fr 2.5fr; 
+  grid-template-columns: 1.5fr 2fr 1fr 1.5fr 3fr; 
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #dee2e6;
+  gap: 1rem;
 }
 
 .list-header {
@@ -133,6 +160,7 @@ onMounted(buscarChatbots);
   color: #6c757d;
   text-transform: uppercase;
   font-size: 0.8rem;
+  background-color: #f8f9fa;
 }
 
 .bot-item {
@@ -147,7 +175,7 @@ onMounted(buscarChatbots);
   background-color: #f8f9fa;
 }
 
-.col-nome, .col-campanha, .col-status, .col-acoes {
+.col-nome, .col-campanha, .col-status, .col-link, .col-acoes {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -156,6 +184,7 @@ onMounted(buscarChatbots);
 .actions-buttons {
   display: flex;
   gap: 0.5rem;
+  justify-content: flex-start;
 }
 
 .actions-buttons button {
@@ -181,4 +210,26 @@ onMounted(buscarChatbots);
   text-align: center;
   color: #6c757d;
 }
+
+.btn-copy {
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+}
+.btn-copy:hover {
+  opacity: 0.85;
+}
+
+.link-inactive {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-style: italic;
+}
+</style>
 </style>
