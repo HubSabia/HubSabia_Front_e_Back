@@ -35,6 +35,7 @@ app.use('/api/chatbots', require('./routes/chatbots'));
 app.use('/api/editais', require('./routes/editais'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/public', require('./routes/public'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 // MUDANÇA: Registrando o novo conjunto de rotas de usuários
 app.use('/api/usuarios', require('./routes/usuarios'));
