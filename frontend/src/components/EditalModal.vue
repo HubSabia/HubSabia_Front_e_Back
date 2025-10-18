@@ -99,4 +99,37 @@ watch(() => props.modelValue, (isOpening) => {
 .btn-primary, .btn-secondary { padding: 0.6rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-weight: 500; }
 .btn-primary { background-color: #007bff; color: white; }
 .btn-secondary { background-color: #6c757d; color: white; }
+
+@media (max-width: 767px) {
+  .modal-content {
+    /* Faz o modal ocupar quase toda a tela */
+    width: 95vw; /* 95% da largura da tela */
+    height: 90vh; /* 90% da altura da tela */
+    max-width: none; /* Remove qualquer limite de largura máxima */
+    
+    padding: 1.5rem 1rem; /* Reduz o padding interno */
+    
+    /* Adiciona scroll se o conteúdo for muito grande */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Controla o scroll no container do formulário */
+  }
+
+  /* Faz o formulário ser a área de scroll, não o modal inteiro */
+  .modal-content form {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 10px; /* Espaço para a barra de rolagem */
+  }
+
+  /* Empilha os campos que ficavam lado a lado */
+  .form-group-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal-footer {
+    margin-top: 1.5rem;
+  }
+}
 </style>
