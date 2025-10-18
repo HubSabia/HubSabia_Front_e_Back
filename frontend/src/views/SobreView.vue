@@ -1,7 +1,7 @@
 <template>
   <div class="view-container">
     <header class="view-header">
-      <h2>Sobre o Projeto</h2>
+      <h2>Integrantes</h2>
     </header>
     
     <div class="authors-section">

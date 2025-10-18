@@ -106,20 +106,160 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.chat-view { display: flex; justify-content: center; align-items: center; height: calc(100vh - 60px); background-color: #f4f7f9; }
-.chat-container { width: 100%; max-width: 800px; height: 90%; background: white; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-.chat-header { padding: 1rem; border-bottom: 1px solid #e9ecef; text-align: center; }
-.campaign-context { font-size: 0.8rem; color: #6c757d; }
-.messages-area { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
-.message-bubble { max-width: 75%; padding: 0.75rem 1rem; border-radius: 18px; line-height: 1.5; }
-.message-bubble.user { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-.message-bubble.bot { background-color: #e9ecef; color: #343a40; align-self: flex-start; border-bottom-left-radius: 4px; }
-.chat-footer { padding: 1rem; border-top: 1px solid #e9ecef; }
-.message-form { display: flex; gap: 0.5rem; }
-.message-form input { flex-grow: 1; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 18px; }
-.message-form button { padding: 0.75rem 1.5rem; border: none; background-color: #007bff; color: white; border-radius: 18px; cursor: pointer; }
-.typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #adb5bd; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+.chat-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* MUDANÇA: Ocupa 100% do espaço do .main-content */
+  width: 100%;
+  height: 100%;
+  background-color: var(--content-bg);
+}
+
+.chat-container {
+  width: 100%;
+  height: 100%;
+  max-width: 900px; /* Aumenta um pouco a largura máxima em desktops */
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Garante que o conteúdo não vaze */
+}
+
+.chat-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  background-color: var(--card-bg);
+  flex-shrink: 0; /* Impede que o header encolha */
+}
+
+.chat-header h2 {
+  font-size: 1.25rem;
+  color: var(--text-color-dark);
+}
+
+.campaign-context {
+  font-size: 0.85rem;
+  color: var(--text-color-muted);
+}
+
+.messages-area {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 0.75rem 1.25rem;
+  border-radius: 20px;
+  line-height: 1.5;
+  word-wrap: break-word; /* Garante a quebra de palavras longas */
+}
+
+.message-bubble p {
+  margin: 0; /* Remove margens padrão do parágrafo */
+}
+
+.message-bubble.user {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  align-self: flex-end;
+  border-bottom-right-radius: 5px;
+}
+
+.message-bubble.bot {
+  background-color: #e9ecef;
+  color: var(--text-color-dark);
+  align-self: flex-start;
+  border-bottom-left-radius: 5px;
+}
+
+.chat-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  flex-shrink: 0;
+}
+
+.message-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.message-form input {
+  flex-grow: 1;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 22px; /* Deixa o input totalmente arredondado */
+  font-size: 1rem;
+}
+
+.message-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.message-form button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 22px; /* Deixa o botão totalmente arredondado */
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+.message-form button:hover {
+  background-color: #0b5ed7;
+}
+.message-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-color-muted);
+  margin: 0 2px;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
 .typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
 .typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+
+/* RESPONSIVIDADE */
+@media (max-width: 767px) {
+  .chat-view {
+    /* Em celulares, o chat ocupa 100% da tela, sem padding externo */
+    padding: 0;
+    height: 100%;
+  }
+
+  .chat-container {
+    /* Remove a borda e a sombra, fazendo o chat se sentir mais "nativo" */
+    border-radius: 0;
+    box-shadow: none;
+    height: 100%;
+  }
+
+  .messages-area {
+    padding: 1rem;
+  }
+
+  .chat-footer {
+    padding: 0.75rem 1rem;
+  }
+}
 </style>
