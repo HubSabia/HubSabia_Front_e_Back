@@ -225,10 +225,6 @@ onMounted(buscarEditais);
     grid-template-columns: 1fr; /* Muda para uma única coluna */
     gap: 1rem; /* Aumenta o espaçamento vertical */
   }
-  .item-description {
-    white-space: normal; /* Permite que a descrição quebre a linha */
-    max-width: 100%;
-  }
   .item-actions {
     justify-content: flex-start; /* Alinha os botões à esquerda */
   }
