@@ -1,22 +1,24 @@
 <template>
-  <div id="sobrebot-view">
+  <div class="view-container">
+    <header class="view-header">
+      <h2>Sobre o Projeto</h2>
+    </header>
+    
     <div class="authors-section">
-      <!-- A tag <a> é o card em si (a classe .author está nela) -->
-      <a v-for="(author, index) in authors" 
-         :key="index" 
+      <!-- O 'v-for' agora itera sobre os cards -->
+      <a v-for="author in authors" 
+         :key="author.name" 
          :href="author.link" 
          target="_blank" 
          rel="noopener noreferrer"
-         class="author"> <!-- a classe 'author' está aqui -->
+         class="author-card">
 
-        <img :src="author.image" 
-             :alt="'Foto de perfil de ' + author.name" 
-             loading="lazy"
-             width="150"
-             height="150">
+        <img :src="author.image" :alt="'Foto de ' + author.name">
         
-        <h3>{{ author.name }}</h3>
-        <p>{{ author.description }}</p>
+        <div class="author-info">
+          <h3>{{ author.name }}</h3>
+          <p>{{ author.description }}</p>
+        </div>
       </a>
     </div>
   </div>
@@ -60,100 +62,87 @@ const authors = ref([
 </script>
 
 <style scoped>
-/* --- ESTILOS GERAIS E PARA DESKTOP (Telas Grandes) --- */
+.view-container {
+  padding: 2rem;
+}
 
-#sobrebot-view {
-  padding: 20px;
-  transition: margin-left 0.3s ease; 
+.view-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #333;
 }
 
 .authors-section {
   display: grid;
-  grid-template-columns: repeat(1, minmax(420px, 1fr));
-  gap: 25px;
-  padding: 40px 0;
+  /* Cria uma grade responsiva: colunas com no mínimo 350px de largura */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
 }
 
-/* O container do card que é um link clicável */
-.author {
-  width: 22%; 
-  min-width: 980px; 
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  background-color: #fff;
-  transition: transform 0.2s ease-in-out;
-  text-decoration: none; /* Garante que o container não tenha sublinhado */
+.author-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 1.5rem;
   
-  /* Faz com que o conteúdo dentro dele se alinhe verticalmente */
-  display: flex; /* Transforma o filho em um container flexível também */
-  align-items: center; /* Alinha a imagem e o texto verticalmente */
-  gap: 20px; /* Adiciona um espaço entre a imagem e o texto */
-  /* Outros estilos para o filho, se precisar */
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.author:hover {
+.author-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-.author img {
-  width: 150px;
-  height: 150px;
+.author-card img {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 15px;
   border: 3px solid #f0f0f0;
 }
 
-/* ESTILO DO NOME DO AUTOR */
-.author h3 {
-  font-size: 1.2em;
-  font-weight: bold;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  color: #333; /* Cor preta/cinza escuro padrão */
-  text-decoration: none; /* Sem sublinhado */
+.author-info {
+  text-align: left;
 }
 
-/* ESTILO DA DESCRIÇÃO */
-.author p {
-  font-size: 1em;
-  color: #555; /* Cinza um pouco mais claro para a descrição */
-  text-decoration: none; /* Sem sublinhado */
-  flex-grow: 1; /* Ajuda a alinhar a altura dos cards se as descrições tiverem tamanhos diferentes */
+.author-info h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #343a40;
 }
 
-/* --- MEDIA QUERIES (Mantidas para responsividade) --- */
-@media (max-width: 1024px) {
-  .author {
-    width: 45%; 
-  }
+.author-info p {
+  font-size: 0.95rem;
+  color: #6c757d;
 }
 
-@media (max-width: 768px) {
-  #sobrebot-view {
-    margin-left: 0; 
-    padding: 15px;
+/* RESPONSIVIDADE PARA CELULARES */
+@media (max-width: 767px) {
+  .view-container {
+    padding: 1rem;
   }
   .authors-section {
-    gap: 15px;
-    justify-content: center;
+    /* Garante uma única coluna em celulares */
+    grid-template-columns: 1fr;
   }
-  .author {
-    width: 90%; 
-    min-width: unset;
+  .author-card {
+    flex-direction: column; /* Empilha a imagem e o texto */
+    text-align: center;
   }
-  .author h3 {
-    font-size: 1.1em;
+  .author-card img {
+    width: 120px;
+    height: 120px;
   }
-  .author p {
-    font-size: 0.9em;
+  .author-info {
+    text-align: center;
   }
-}
-
-body {
-  background-color: #f8f8f8;
-  font-family: 'Arial', sans-serif;
 }
 </style>
