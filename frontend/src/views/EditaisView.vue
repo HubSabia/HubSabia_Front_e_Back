@@ -1,18 +1,16 @@
 <template>
   <div class="view-container">
     <header class="view-header">
-      <h2>Bibliotecas de Editais</h2>
-      <button class="btn-primary" @click="handleCriar">Adicionar</button>
+      <h2>Biblioteca de Editais</h2>
+      <button class="btn-primary" @click="handleCriar">Adicionar Novo Edital</button>
     </header>
 
     <div class="list-container">
-      <!-- Cabeçalho da Lista (opcional, pode ser removido se preferir) -->
       <div class="list-header">
         <span>Informações do Edital</span>
         <span>Ações</span>
       </div>
 
-      <!-- Lista de Itens -->
       <div class="item-list">
         <div v-if="isLoading" class="message">Carregando editais...</div>
         <div v-if="!isLoading && editais.length === 0" class="message">
@@ -21,7 +19,8 @@
         <div v-for="edital in editais" :key="edital._id" class="item-card">
           <div class="item-info">
             <span class="item-name">{{ edital.titulo }}</span>
-            <span class="item-description">{{ edital.conteudo | truncate }}</span>
+            <!-- Removi o filtro 'truncate' que não estava definido. A quebra de linha no CSS lida com textos longos. -->
+            <span class="item-description">{{ edital.conteudo }}</span>
           </div>
           <div class="item-actions">
             <button class="btn-edit" @click="handleEditar(edital)">Editar</button>
@@ -41,6 +40,7 @@
 </template>
 
 <script setup>
+// Seu <script setup> atualizado para a refatoração
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
 import EditalModal from '@/components/EditalModal.vue';
@@ -48,40 +48,36 @@ import EditalModal from '@/components/EditalModal.vue';
 const editais = ref([]);
 const isModalVisible = ref(false);
 const editalParaEditar = ref(null);
+const isLoading = ref(true);
 
 const buscarEditais = async () => {
+  isLoading.value = true;
   try {
     const response = await apiClient.get('/editais');
     editais.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar editais:", error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const formatarData = (data) => {
-  if (!data) return '';
-  return new Date(data).toLocaleDateString('pt-BR');
-};
+const adicionarNovoEditalNaLista = (novoEdital) => { editais.value.unshift(novoEdital); };
+const atualizarEditalNaLista = (editalAtualizado) => { const index = editais.value.findIndex(e => e._id === editalAtualizado._id); if (index !== -1) { editais.value[index] = editalAtualizado; } };
 
-const handleCriar = () => {
-  editalParaEditar.value = null;
-  isModalVisible.value = true;
-};
-
-const handleEditar = (edital) => {
-  editalParaEditar.value = edital;
-  isModalVisible.value = true;
-};
+const handleCriar = () => { editalParaEditar.value = null; isModalVisible.value = true; };
+const handleEditar = (edital) => { editalParaEditar.value = edital; isModalVisible.value = true; };
 
 const handleExcluir = async (editalId) => {
   if (window.confirm('Tem certeza que deseja excluir este edital?')) {
     try {
       await apiClient.delete(`/editais/${editalId}`);
-      buscarEditais();
+      // Atualiza a lista removendo o item excluído
+      editais.value = editais.value.filter(e => e._id !== editalId);
       alert('Edital excluído com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir edital:', error);
-      alert('Não foi possível excluir o edital.');
+      alert(error.response?.data?.msg || 'Não foi possível excluir o edital.');
     }
   }
 };
@@ -111,7 +107,7 @@ onMounted(buscarEditais);
 }
 
 .btn-primary {
-  background-color: #28a745; /* Verde Adicionar */
+  background-color: #28a745;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -124,14 +120,11 @@ onMounted(buscarEditais);
   background-color: #218838;
 }
 
-/* ESTILOS DO CONTAINER DA LISTA */
 .list-container {
-  width: 800px;
-  height: 700px;
+  /* MUDANÇA: Removido o tamanho fixo para ser responsivo */
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  overflow: hidden; /* Garante que as bordas da tabela fiquem contidas */
 }
 
 .list-header {
@@ -145,10 +138,9 @@ onMounted(buscarEditais);
   border-bottom: 1px solid #dee2e6;
 }
 
-/* ESTILOS DOS CARDS INDIVIDUAIS NA LISTA */
 .item-card {
   display: grid;
-  grid-template-columns: 1fr auto; /* Coluna da informação cresce, coluna das ações tem tamanho automático */
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 1.5rem;
   padding: 1.5rem;
@@ -161,14 +153,14 @@ onMounted(buscarEditais);
 }
 
 .item-card:hover {
-  background-color: #f8f9fa; /* Efeito suave ao passar o mouse */
+  background-color: #f8f9fa;
 }
 
 .item-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  overflow: hidden; /* Evita que o texto vaze */
+  overflow: hidden;
 }
 
 .item-name {
@@ -180,10 +172,10 @@ onMounted(buscarEditais);
 .item-description {
   font-size: 0.9rem;
   color: #6c757d;
-  white-space: nowrap; /* Impede a quebra de linha */
-  overflow: hidden; /* Esconde o texto que transborda */
-  text-overflow: ellipsis; /* Adiciona "..." ao final do texto longo */
-  max-width: 90%; /* Garante que não empurre os botões */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
 }
 
 .item-actions {
@@ -206,13 +198,38 @@ onMounted(buscarEditais);
   opacity: 0.85;
 }
 
-.btn-edit { background-color: #0d6efd; } /* Azul */
-.btn-delete { background-color: #dc3545; } /* Vermelho */
+.btn-edit { background-color: #0d6efd; }
+.btn-delete { background-color: #dc3545; }
 
 .message {
   padding: 2rem;
   text-align: center;
   color: #6c757d;
   font-style: italic;
+}
+
+@media (max-width: 767px) {
+  .view-container {
+    padding: 1rem;
+  }
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .list-header {
+    display: none; /* Esconde o cabeçalho em telas pequenas */
+  }
+  .item-card {
+    grid-template-columns: 1fr; /* Muda para uma única coluna */
+    gap: 1rem; /* Aumenta o espaçamento vertical */
+  }
+  .item-description {
+    white-space: normal; /* Permite que a descrição quebre a linha */
+    max-width: 100%;
+  }
+  .item-actions {
+    justify-content: flex-start; /* Alinha os botões à esquerda */
+  }
 }
 </style>
