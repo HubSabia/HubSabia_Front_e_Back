@@ -229,18 +229,18 @@ onMounted(buscarCampanhas);
 
 @media (max-width: 767px) {
   /* 1. Esconde o cabeçalho da tabela, pois não o usaremos no layout de card */
-  .users-table thead {
+  .data-table thead {
     display: none;
   }
 
   /* 2. Transforma a tabela, o corpo, as linhas e as células em blocos empilhados */
-  .users-table, .users-table tbody, .users-table tr, .users-table td {
+  .data-table, .data-table tbody, .data-table tr, .data-table td {
     display: block;
     width: 100%;
   }
 
   /* 3. Cada linha agora se parece com um "card" */
-  .users-table tr {
+  .data-table tr {
     margin-bottom: 1rem;
     border: 1px solid #dee2e6;
     border-radius: 8px;
@@ -248,7 +248,7 @@ onMounted(buscarCampanhas);
   }
 
   /* 4. Cada célula se torna uma linha dentro do card */
-  .users-table td {
+  .data-table td {
     display: flex;
     justify-content: space-between; /* Alinha o rótulo à esquerda e o valor à direita */
     align-items: center;
@@ -256,12 +256,12 @@ onMounted(buscarCampanhas);
     border-bottom: 1px solid #f1f1f1;
   }
 
-  .users-table tr:last-child td:last-child {
+  .data-table tr:last-child td:last-child {
     border-bottom: none; /* Remove a borda da última célula do último card */
   }
 
   /* 5. A mágica: Adiciona o rótulo (que pegamos do 'data-label') antes do conteúdo da célula */
-  .users-table td[data-label]::before {
+  .data-table td[data-label]::before {
     content: attr(data-label);
     font-weight: 600;
     margin-right: 1rem;
