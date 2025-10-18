@@ -1,0 +1,32 @@
+/* 1. PALETA DE CORES MAIS COESA E PROFISSIONAL */
+:root {
+  --primary-color: #0d6efd;      /* Azul vibrante para ações principais */
+  --secondary-color: #6c757d;    /* Cinza para ações secundárias */
+  
+  --sidebar-bg: #1f2937;         /* Cinza-azulado escuro para a sidebar */
+  --header-bg: #ffffff;          /* Branco para o header */
+  --content-bg: #f8f9fa;         /* Cinza muito claro para o fundo do conteúdo */
+
+  --text-color-dark: #212529;    /* Preto suave para textos principais */
+  --text-color-light: #f8f9fa;   /* Branco para textos em fundos escuros */
+  --text-color-muted: #6c757d;   /* Cinza para textos secundários */
+  
+  --border-color: #dee2e6;        /* Cinza claro para bordas e divisórias */
+  --card-bg: #ffffff;            /* Branco para cards */
+
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 2. RESET E ESTILOS GLOBAIS MAIS LIMPOS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--content-bg);
+  color: var(--text-color-dark);
+  line-height: 1.6;
+}
