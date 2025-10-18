@@ -62,27 +62,24 @@
           </li>
         </ul>
       </nav>
-      <!-- O footer com o botão Sair foi removido daqui e movido para o Header.vue -->
     </div>
   </aside>
 </template>
 
 <script setup>
 import { isAdmin } from '@/utils/auth';
-// MUDANÇA: Importamos a store de layout que controla a visibilidade
 import { useLayoutStore } from '@/stores/layout';
 
 const userIsAdmin = isAdmin();
-// MUDANÇA: Criamos uma instância da store para usar no template
 const layoutStore = useLayoutStore();
 </script>
 
 <style scoped>
-/* ESTILOS ATUALIZADOS PARA O NOVO DESIGN RESPONSIVO */
+
 .sidebar {
   width: 260px;
-  background-color: #14333A;
-  color: #E3E3E3;
+  background-color: var(--sidebar-bg); /* Usa a cor definida no App.vue */
+  color: var(--text-color-light);
   height: 100vh;
   position: fixed;
   left: 0;
@@ -90,9 +87,9 @@ const layoutStore = useLayoutStore();
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid #134EB3;
-  z-index: 1001; /* Fica na frente do overlay */
-  transition: left 0.3s ease; /* Anima o deslizamento */
+  border-right: 1px solid var(--border-color); /* Usa a cor de borda global */
+  z-index: 1001;
+  transition: left 0.3s ease;
 }
 
 .logo-container {
@@ -100,9 +97,9 @@ const layoutStore = useLayoutStore();
   align-items: center;
   padding: 1.5rem;
   gap: 0.75rem;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separador sutil */
   text-decoration: none;
-  color: #ffffff;
+  color: var(--text-color-light);
 }
 .logo-img { height: 40px; }
 .logo-text { font-size: 1.5rem; font-weight: 600; }
@@ -114,13 +111,17 @@ const layoutStore = useLayoutStore();
 }
 
 .main-block .navigation { padding-top: 1rem; }
-.footer-block { padding-bottom: 1rem; }
+.footer-block { 
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+  padding-bottom: 1rem; 
+}
 
 .nav-link {
   display: flex;
   align-items: center;
   padding: 0.9rem 1.5rem;
-  color: #9ca3af;
+  color: var(--text-color-muted); /* Cor para texto secundário */
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -128,21 +129,22 @@ const layoutStore = useLayoutStore();
 }
 
 .nav-link:hover {
-  background-color: #374151;
-  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color-light);
 }
 
 .nav-link.active {
-  background-color: #111827;
+  background-color: rgba(0, 0, 0, 0.2);
   color: #ffffff;
   font-weight: 600;
-  border-left-color: #3b82f6;
+  border-left-color: var(--primary-color); /* Usa a cor primária global */
 }
 
 .nav-link .icon {
   margin-right: 1rem;
   width: 24px;
   height: 24px;
+  /* Seus ícones aqui */
 }
 
 /* ESTILOS PARA O OVERLAY E COMPORTAMENTO MOBILE */
@@ -152,25 +154,22 @@ const layoutStore = useLayoutStore();
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000; /* Fica atrás da sidebar */
+  background-color: rgba(0, 0, 0, 0.6); /* Um pouco mais escuro para mais contraste */
+  z-index: 1000;
 }
 
 @media (min-width: 768px) {
-  /* Em telas grandes, o overlay nunca aparece */
   .sidebar-overlay {
     display: none;
   }
 }
 
 @media (max-width: 767px) {
-  /* Em telas pequenas, a sidebar fica escondida por padrão */
   .sidebar {
-    left: -260px;
+    left: -260px; /* Escondido por padrão */
   }
-  /* Quando a classe é adicionada via store, a sidebar aparece */
   .sidebar.is-mobile-open {
-    left: 0;
+    left: 0; /* Aparece quando a classe é adicionada */
   }
 }
 </style>

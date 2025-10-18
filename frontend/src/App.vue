@@ -25,16 +25,10 @@ const isLoginPage = computed(() => route.name === 'Login' || route.name === 'Reg
 
 <style>
 
-
-
-
-
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-
 
 /* 3. ESTRUTURA DE LAYOUT SIMPLIFICADA E ROBUSTA */
 #app {
