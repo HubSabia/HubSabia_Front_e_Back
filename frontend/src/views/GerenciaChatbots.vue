@@ -222,4 +222,55 @@ onMounted(buscarChatbots);
   color: #6c757d;
   font-style: italic;
 }
+
+@media (max-width: 767px) {
+  .view-container {
+    padding: 1rem;
+  }
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  /* Esconde o cabeçalho da lista */
+  .list-header {
+    display: none;
+  }
+
+  /* Transforma cada item da lista em um card */
+  .bot-item {
+    grid-template-columns: 1fr; /* Muda para uma única coluna */
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin: 0 1rem 1rem 1rem; /* Adiciona margem para separar os cards */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Adiciona os rótulos de volta usando pseudo-elementos ::before */
+  .col-nome::before { content: 'Nome: '; font-weight: 600; color: #333; }
+  .col-campanha::before { content: 'Campanha: '; font-weight: 600; color: #333; }
+  .col-status::before { content: 'Status: '; font-weight: 600; color: #333; }
+  .col-link::before { content: 'Link Público: '; font-weight: 600; color: #333; }
+  .col-acoes::before { content: 'Ações: '; font-weight: 600; color: #333; }
+  
+  /* Permite que o texto quebre a linha */
+  .col-nome, .col-campanha, .col-status, .col-link, .col-acoes {
+    white-space: normal;
+    display: block; /* Garante o comportamento correto com ::before */
+  }
+
+  .actions-buttons {
+    margin-top: 0.5rem;
+  }
+
+  /* Remove o container principal para os itens ficarem diretamente no fundo */
+  .bots-list-container {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
 </style>
