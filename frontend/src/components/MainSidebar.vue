@@ -1,5 +1,13 @@
 <template>
-  <aside class="sidebar">
+  <!-- O overlay que escurece o fundo e fecha a sidebar ao ser clicado -->
+  <div 
+    v-if="layoutStore.isSidebarVisible" 
+    class="sidebar-overlay" 
+    @click="layoutStore.closeSidebar"
+  ></div>
+
+  <!-- A sidebar em si. A classe 'is-mobile-open' controla sua visibilidade em telas pequenas -->
+  <aside class="sidebar" :class="{ 'is-mobile-open': layoutStore.isSidebarVisible }">
     <!-- Bloco Superior: Logo e Ações Principais -->
     <div class="main-block">
       <router-link to="/dashboard" class="logo-container">
@@ -54,30 +62,27 @@
           </li>
         </ul>
       </nav>
+      <!-- O footer com o botão Sair foi removido daqui e movido para o Header.vue -->
     </div>
   </aside>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
 import { isAdmin } from '@/utils/auth';
+// MUDANÇA: Importamos a store de layout que controla a visibilidade
+import { useLayoutStore } from '@/stores/layout';
 
-const router = useRouter();
 const userIsAdmin = isAdmin();
-
-const logout = () => {
-  localStorage.removeItem('authToken');
-  router.push("/login");
-};
+// MUDANÇA: Criamos uma instância da store para usar no template
+const layoutStore = useLayoutStore();
 </script>
 
 <style scoped>
-/* ESTILOS ATUALIZADOS PARA O NOVO DESIGN */
-
+/* ESTILOS ATUALIZADOS PARA O NOVO DESIGN RESPONSIVO */
 .sidebar {
   width: 260px;
-  background-color: #14333A; /* Cinza escuro azulado */
-  color: #E3E3E3; /* Cinza claro */
+  background-color: #14333A;
+  color: #E3E3E3;
   height: 100vh;
   position: fixed;
   left: 0;
@@ -86,6 +91,8 @@ const logout = () => {
   flex-direction: column;
   justify-content: space-between;
   border-right: 1px solid #134EB3;
+  z-index: 1001; /* Fica na frente do overlay */
+  transition: left 0.3s ease; /* Anima o deslizamento */
 }
 
 .logo-container {
@@ -113,7 +120,7 @@ const logout = () => {
   display: flex;
   align-items: center;
   padding: 0.9rem 1.5rem;
-  color: #9ca3af; /* Cinza médio */
+  color: #9ca3af;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -126,38 +133,44 @@ const logout = () => {
 }
 
 .nav-link.active {
-  background-color: #111827; /* Fundo mais escuro para ativo */
+  background-color: #111827;
   color: #ffffff;
   font-weight: 600;
-  border-left-color: #3b82f6; /* Azul vibrante */
+  border-left-color: #3b82f6;
 }
 
 .nav-link .icon {
   margin-right: 1rem;
   width: 24px;
   height: 24px;
-  /* Seus ícones aqui */
 }
 
-.sidebar-footer {
-  padding: 0 1.5rem;
+/* ESTILOS PARA O OVERLAY E COMPORTAMENTO MOBILE */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000; /* Fica atrás da sidebar */
 }
 
-.btn-logout {
-  width: 100%;
-  padding: 10px;
-  background-color: #374151;
-  color: #d1d5db;
-  border: 1px solid #4b5563;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  text-align: center;
-  transition: background-color 0.2s ease;
+@media (min-width: 768px) {
+  /* Em telas grandes, o overlay nunca aparece */
+  .sidebar-overlay {
+    display: none;
+  }
 }
 
-.btn-logout:hover {
-  background-color: #4b5563;
-  color: #ffffff;
+@media (max-width: 767px) {
+  /* Em telas pequenas, a sidebar fica escondida por padrão */
+  .sidebar {
+    left: -260px;
+  }
+  /* Quando a classe é adicionada via store, a sidebar aparece */
+  .sidebar.is-mobile-open {
+    left: 0;
+  }
 }
 </style>

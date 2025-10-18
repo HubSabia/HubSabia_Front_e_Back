@@ -1,7 +1,12 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-      <!-- CORREÇÃO: O título da página vindo do App.vue é exibido aqui -->
+
+      <button class="hamburger-button" @click="layoutStore.toggleSidebar">
+        ☰
+      </button>
+
+      <!-- O título da página vindo do App.vue é exibido aqui -->
       <h1 class="page-title">{{ pageTitle }}</h1>
 
       <!-- O menu de usuário fica à direita -->
@@ -28,11 +33,13 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { jwtDecode } from 'jwt-decode';
+import { useLayoutStore } from '@/stores/layout';
 
 defineProps({
   pageTitle: String
 });
 
+const layoutStore = useLayoutStore(); // Usa a store no componente
 const isDropdownOpen = ref(false);
 const router = useRouter();
 const route = useRoute();
@@ -169,5 +176,19 @@ onUnmounted(() => {
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+.hamburger-button {
+  display: none; /* Escondido por padrão */
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-right: 1rem;
+}
+
+@media (max-width: 767px) {
+  .hamburger-button {
+    display: block; /* Aparece em telas de celular */
+  }
 }
 </style>
