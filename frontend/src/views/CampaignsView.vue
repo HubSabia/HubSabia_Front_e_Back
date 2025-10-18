@@ -17,23 +17,25 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="isLoading">
-            <td colspan="5" class="message">Carregando campanhas...</td>
-          </tr>
-          <tr v-if="!isLoading && campanhas.length === 0">
-            <td colspan="5" class="message">Nenhuma campanha encontrada.</td>
-          </tr>
-          <tr v-for="campanha in campanhas" :key="campanha._id">
-            <td>{{ campanha.nome }}</td>
-            <td>{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
-            <td>{{ campanha.publico_alvo }}</td>
-            <td>{{ campanha.status }}</td>
-            <td class="actions-buttons">
-              <button class="btn-edit" @click="handleEditar(campanha)">Editar</button>
-              <button class="btn-delete" @click="handleExcluir(campanha._id)">Excluir</button>
-            </td>
-          </tr>
-        </tbody>
+  <tr v-if="isLoading">
+    <td colspan="5" class="message">Carregando campanhas...</td>
+  </tr>
+  <tr v-if="!isLoading && campanhas.length === 0">
+    <td colspan="5" class="message">Nenhuma campanha encontrada.</td>
+  </tr>
+  
+  <!-- MUDANÇA: Adicionados os atributos 'data-label' a cada <td> -->
+  <tr v-for="campanha in campanhas" :key="campanha._id">
+    <td data-label="Nome">{{ campanha.nome }}</td>
+    <td data-label="Período">{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
+    <td data-label="Público">{{ campanha.publico_alvo }}</td>
+    <td data-label="Status">{{ campanha.status }}</td>
+    <td data-label="Ações" class="actions-buttons">
+      <button class="btn-edit" @click="handleEditar(campanha)">Editar</button>
+      <button class="btn-delete" @click="handleExcluir(campanha._id)">Excluir</button>
+    </td>
+  </tr>
+</tbody>
       </table>
     </div>
 
@@ -157,8 +159,6 @@ onMounted(buscarCampanhas);
 
 /* ESTILOS DO CONTAINER DA LISTA/TABELA */
 .list-card {
-  width: 800px;
-  height: 700px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
