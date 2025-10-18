@@ -18,30 +18,29 @@
         </thead>
         <tbody>
           <tr v-for="usuario in usuarios" :key="usuario._id">
-            <td>{{ usuario.nome }}</td>
-            <td>{{ usuario.email }}</td>
-            <td>{{ formatarData(usuario.createdAt) }}</td>
-            <td>
-              <select 
-                class="role-select"
-                :value="usuario.role" 
-                @change="mudarPapel(usuario, $event.target.value)"
-                :disabled="usuario._id === currentUser.id"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </td>
-            <td>
-              <button 
-                class="btn-delete" 
-                @click="handleExcluir(usuario._id)"
-                :disabled="usuario._id === currentUser.id"
-              >
-                Excluir
-              </button>
-            </td>
-          </tr>
+    <td data-label="Nome">{{ usuario.nome }}</td>
+    <td data-label="Email">{{ usuario.email }}</td>
+    <td data-label="Data de Criação">{{ formatarData(usuario.createdAt) }}</td>
+    <td data-label="Papel">
+      <select 
+        :value="usuario.role" 
+        @change="mudarPapel(usuario, $event.target.value)"
+        :disabled="usuario._id === currentUser.id"
+      >
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+    </td>
+    <td data-label="Ações">
+      <button 
+        class="btn-delete" 
+        @click="handleExcluir(usuario._id)"
+        :disabled="usuario._id === currentUser.id"
+      >
+        Excluir
+      </button>
+    </td>
+  </tr>
           <tr v-if="!isLoading && usuarios.length === 0">
             <td colspan="5" class="no-data">Nenhum usuário encontrado.</td>
           </tr>
@@ -186,5 +185,47 @@ onMounted(buscarUsuarios);
   text-align: center;
   padding: 2rem;
   color: #777;
+}
+
+@media (max-width: 767px) {
+  /* 1. Esconde o cabeçalho da tabela, pois não o usaremos no layout de card */
+  .users-table thead {
+    display: none;
+  }
+
+  /* 2. Transforma a tabela, o corpo, as linhas e as células em blocos empilhados */
+  .users-table, .users-table tbody, .users-table tr, .users-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* 3. Cada linha agora se parece com um "card" */
+  .users-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  /* 4. Cada célula se torna uma linha dentro do card */
+  .users-table td {
+    display: flex;
+    justify-content: space-between; /* Alinha o rótulo à esquerda e o valor à direita */
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+  .users-table tr:last-child td:last-child {
+    border-bottom: none; /* Remove a borda da última célula do último card */
+  }
+
+  /* 5. A mágica: Adiciona o rótulo (que pegamos do 'data-label') antes do conteúdo da célula */
+  .users-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 1rem;
+    color: #333;
+  }
 }
 </style>
