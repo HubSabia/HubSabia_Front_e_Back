@@ -1,23 +1,21 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-
+      <!-- Botão Hambúrguer para telas pequenas -->
       <button class="hamburger-button" @click="layoutStore.toggleSidebar">
-        ☰
+        <!-- Substitua por um ícone SVG para um visual mais profissional -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
 
-      <!-- O título da página vindo do App.vue é exibido aqui -->
+      <!-- Título da Página -->
       <h1 class="page-title">{{ pageTitle }}</h1>
 
-      <!-- O menu de usuário fica à direita -->
+      <!-- Menu de Usuário -->
       <div class="user-menu" ref="userMenuRef">
-        <!-- O botão é o conjunto de Nome + Avatar -->
         <button @click="toggleDropdown" class="user-button">
           <span class="user-name">{{ userName }}</span>
           <div class="user-avatar">{{ userInitial }}</div>
         </button>
-
-        <!-- O dropdown agora contém 'Meu Perfil' e 'Sair' -->
         <transition name="fade">
           <div v-if="isDropdownOpen" class="dropdown-content">
             <router-link to="/perfil" class="dropdown-item">Meu Perfil</router-link>
@@ -93,11 +91,15 @@ onUnmounted(() => {
 
 <style scoped>
 .app-header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 1.5rem; /* Espaçamento padrão */
   height: 70px;
   display: flex;
   align-items: center;
+  position: sticky; /* Mantém o header no topo ao rolar */
+  top: 0;
+  z-index: 999;
 }
 
 .header-content {
@@ -105,17 +107,31 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 0 30px;
+}
+
+.hamburger-button {
+  display: none; /* Escondido em telas grandes */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: 1rem;
+  color: var(--text-color-dark);
 }
 
 .page-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #212529;
+  color: var(--text-color-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-menu {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .user-button {
@@ -125,44 +141,54 @@ onUnmounted(() => {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
   border-radius: 20px;
+  transition: background-color 0.2s;
+}
+
+.user-button:hover {
+  background-color: #f1f1f1;
 }
 
 .user-name {
   font-weight: 500;
-  color: #495057;
+  color: var(--text-color-muted);
 }
 
 .user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #0d6efd;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .dropdown-content {
   position: absolute;
   top: 120%;
   right: 0;
-  background-color: white;
+  background-color: var(--card-bg);
   box-shadow: 0 8px 16px rgba(0,0,0,0.1);
   border-radius: 8px;
+  border: 1px solid var(--border-color);
   overflow: hidden;
   z-index: 100;
   width: 180px;
 }
 
 .dropdown-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
   text-decoration: none;
-  color: #495057;
+  color: var(--text-color-dark);
+  font-size: 0.95rem;
   transition: background-color 0.2s;
 }
 
@@ -170,25 +196,35 @@ onUnmounted(() => {
   background-color: #f8f9fa;
 }
 
+/* Animação */
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-}
-.hamburger-button {
-  display: none; /* Escondido por padrão */
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  margin-right: 1rem;
+  transform: translateY(-10px);
 }
 
+/* RESPONSIVIDADE */
 @media (max-width: 767px) {
+  .app-header {
+    padding: 0 1rem; /* Menor espaçamento em telas pequenas */
+  }
+
   .hamburger-button {
-    display: block; /* Aparece em telas de celular */
+    display: block; /* Mostra o botão hambúrguer */
+  }
+
+  .page-title {
+    /* Centraliza o título quando o nome do usuário some */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Esconde o nome do usuário para economizar espaço */
+  .user-name {
+    display: none;
   }
 }
 </style>

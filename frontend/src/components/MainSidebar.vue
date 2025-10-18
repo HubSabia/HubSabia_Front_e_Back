@@ -12,7 +12,7 @@
     <div class="main-block">
       <router-link to="/dashboard" class="logo-container">
         <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
-        <span class="logo-text">Hub-SabIA</span>
+        <span class="logo-text">Hub-Sabiá</span>
       </router-link>
       <nav class="navigation">
         <ul>
