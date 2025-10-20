@@ -80,7 +80,17 @@ router.post('/:id/interagir', authMiddleware, async (req, res) => {
         
         const hoje = new Date();
         const dataFim = new Date(chatbot.campanha.periodo_fim);
-        let infoDeData = ""; // Adapte sua lógica de data aqui
+        let infoDeData = "";
+        if (hoje > dataFim) {
+            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
+        } else {
+            const diffTime = Math.abs(dataFim - hoje);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays <= 7) {
+                infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
+            }
+        }
+
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
@@ -101,7 +111,7 @@ ${mensagemUsuario}
 `;
         
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" /*, safetySettings*/ });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
