@@ -50,15 +50,16 @@
       @chatbot-created="adicionarNovoChatbotNaLista"
       @chatbot-updated="atualizarChatbotNaLista"
     />
-  </div>
 
-  <ConfirmModal
+    <ConfirmModal
     :isVisible="isConfirmModalVisible"
     title="Confirmar Exclusão"
     message="Você tem certeza que deseja excluir este chatbot? Esta ação não pode ser desfeita."
     @confirm="executeDelete"
     @cancel="closeConfirmModal"
   />
+  
+  </div>
 </template>
 
 <script setup>
