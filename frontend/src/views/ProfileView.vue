@@ -57,7 +57,7 @@ const salvarApiKey = async () => {
     successMessage.value = response.data.msg;
   } catch (error) {
     console.error("Erro ao salvar a chave de API:", error);
-    alert("Não foi possível salvar a chave. Tente novamente.");
+    toast.error("Não foi possível salvar a chave. Tente novamente.");
   } finally {
     isLoading.value = false;
   }

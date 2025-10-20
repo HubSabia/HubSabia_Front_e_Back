@@ -89,7 +89,7 @@ const mudarPapel = async (usuario, novoPapel) => {
     }
   } catch (error) {
     console.error("Erro ao mudar o papel:", error);
-    alert("Não foi possível atualizar o papel do usuário.");
+    toast.error('Não foi possível atualizar o papel do usuário.');
   }
 };
 
@@ -102,7 +102,7 @@ const handleExcluir = async (usuarioId) => {
     usuarios.value = usuarios.value.filter(u => u._id !== usuarioId);
   } catch(error) {
     console.error("Erro ao excluir usuário:", error);
-    alert(error.response?.data?.msg || "Não foi possível excluir o usuário.");
+    toast.error(error.response?.data?.msg || "Não foi possível excluir o usuário.");
   }
 };
     

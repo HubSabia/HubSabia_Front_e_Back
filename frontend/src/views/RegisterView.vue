@@ -3,7 +3,7 @@
     <div class="register-card">
       <div class="logo-area">
         <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
-        <h2 class="institution-name">INSTITUTO FEDERAL<br>Paraná</h2>
+        <h2 class="institution-name">Instituto Federal<br>Paraná</h2>
       </div>
       <h3 class="register-title">Criar Nova Conta</h3>
       <form @submit.prevent="handleRegister">

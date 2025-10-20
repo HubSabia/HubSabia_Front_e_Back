@@ -87,10 +87,10 @@ const iniciarConversa = (chatbotId) => { router.push(`/chatbot/${chatbotId}`); }
   const copiarLink = (chatbotId) => {
   const publicUrl = `${window.location.origin}/#/chat-publico/${chatbotId}`;
   navigator.clipboard.writeText(publicUrl).then(() => {
-    alert('Link público copiado para a área de transferência!');
+    toast.success('Link público copiado para a área de transferência!');
   }).catch(err => {
     console.error('Erro ao copiar o link:', err);
-    alert('Não foi possível copiar o link.');
+    toast.error('Não foi possível copiar o link.');
   });
 };
   

@@ -94,10 +94,10 @@ const handleExcluir = async (campanhaId) => {
   try {
     await apiClient.delete(`/campanhas/${campanhaId}`);
     campanhas.value = campanhas.value.filter(c => c._id !== campanhaId);
-    alert("Campanha excluída com sucesso!");
+    toast.success("Campanha excluída com sucesso!");
   } catch (error) {
     console.error("Erro ao excluir campanha:", error);
-    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível excluir a campanha.'}`);
+    toast.error(`Erro: ${error.response?.data?.msg || 'Não foi possível excluir a campanha.'}`);
   }
 };
 

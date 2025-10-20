@@ -74,10 +74,10 @@ const handleExcluir = async (editalId) => {
       await apiClient.delete(`/editais/${editalId}`);
       // Atualiza a lista removendo o item excluído
       editais.value = editais.value.filter(e => e._id !== editalId);
-      alert('Edital excluído com sucesso!');
+      toast.success('Edital excluído com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir edital:', error);
-      alert(error.response?.data?.msg || 'Não foi possível excluir o edital.');
+      toast.error(error.response?.data?.msg || 'Não foi possível excluir o edital.');
     }
   }
 };

@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="logo-area">
         <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="logo-img">
-        <h2 class="institution-name">INSTITUTO FEDERAL<br>Paraná</h2>
+        <h2 class="institution-name">Instituto Federal<br>Paraná</h2>
       </div>
       <h3 class="login-title">Acesso ao Sistema</h3>
       <form @submit.prevent="handleLogin">
