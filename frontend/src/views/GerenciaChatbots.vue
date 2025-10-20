@@ -51,6 +51,14 @@
       @chatbot-updated="atualizarChatbotNaLista"
     />
   </div>
+
+  <ConfirmModal
+    :isVisible="isConfirmModalVisible"
+    title="Confirmar Exclusão"
+    message="Você tem certeza que deseja excluir este chatbot? Esta ação não pode ser desfeita."
+    @confirm="executeDelete"
+    @cancel="closeConfirmModal"
+  />
 </template>
 
 <script setup>
@@ -59,6 +67,7 @@ import { useRouter } from 'vue-router';
 import apiClient from '@/services/api';
 import ChatbotModal from '@/components/ChatbotModal.vue';
 import { useToast } from "vue-toastification";
+import ConfirmModal from '@/components/ConfirmModal.vue';
 
 const chatbots = ref([]);
 const isModalVisible = ref(false);
@@ -66,6 +75,8 @@ const chatbotParaEditar = ref(null);
 const router = useRouter();
 const isLoading = ref(true);
 const toast = useToast();
+const isConfirmModalVisible = ref(false);
+const itemToDeleteId = ref(null);
 
 const buscarChatbots = async () => {
   isLoading.value = true;
@@ -94,15 +105,24 @@ const atualizarChatbotNaLista = (chatbotAtualizado) => {
 };
 
 const handleExcluir = async (chatbotId) => { 
-  if (!window.confirm("Você tem certeza que deseja excluir este chatbot?")) return;
-  try { 
-    await apiClient.delete(`/chatbots/${chatbotId}`); 
-    chatbots.value = chatbots.value.filter(c => c._id !== chatbotId);
+  itemToDeleteId.value = chatbotId;
+  isConfirmModalVisible.value = true;
+};
+
+const executeDelete = async () => {
+  isConfirmModalVisible.value = false; // Fecha o modal
+  try {
+    await apiClient.delete(`/chatbots/${itemToDeleteId.value}`);
+    chatbots.value = chatbots.value.filter(c => c._id !== itemToDeleteId.value);
     toast.success("Chatbot excluído com sucesso!");
-  } catch (error) { 
+  } catch (error) {
     console.error("Erro ao excluir", error);
     toast.error(error.response?.data?.msg || "Não foi possível excluir o chatbot.");
-  } 
+  }
+};
+
+const closeConfirmModal = () => {
+  isConfirmModalVisible.value = false;
 };
 
 const handleCriar = () => { chatbotParaEditar.value = null; isModalVisible.value = true; };
