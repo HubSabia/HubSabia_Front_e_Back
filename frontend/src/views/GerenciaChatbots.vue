@@ -59,11 +59,13 @@ import { useRouter } from 'vue-router';
 import apiClient from '@/services/api';
 import ChatbotModal from '@/components/ChatbotModal.vue';
 
+
 const chatbots = ref([]);
 const isModalVisible = ref(false);
 const chatbotParaEditar = ref(null);
 const router = useRouter();
 const isLoading = ref(true);
+const toast = useToast();
 
 const buscarChatbots = async () => {
   isLoading.value = true;
@@ -72,19 +74,42 @@ const buscarChatbots = async () => {
     chatbots.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar chatbots:", error);
+    toast.error("Não foi possível carregar os chatbots.");
   } finally {
     isLoading.value = false;
   }
 };
 
-const adicionarNovoChatbotNaLista = (novoChatbot) => { chatbots.value.unshift(novoChatbot); };
-const atualizarChatbotNaLista = (chatbotAtualizado) => { const index = chatbots.value.findIndex(c => c._id === chatbotAtualizado._id); if (index !== -1) { chatbots.value[index] = chatbotAtualizado; } };
-const handleExcluir = async (chatbotId) => { if (!window.confirm("Você tem certeza?")) return; try { await apiClient.delete(`/chatbots/${chatbotId}`); chatbots.value = chatbots.value.filter(c => c._id !== chatbotId); } catch (error) { console.error("Erro ao excluir", error); } };
+const adicionarNovoChatbotNaLista = (novoChatbot) => { 
+  chatbots.value.unshift(novoChatbot); 
+  toast.success(`Chatbot "${novoChatbot.nome}" criado com sucesso!`);
+};
+
+const atualizarChatbotNaLista = (chatbotAtualizado) => { 
+  const index = chatbots.value.findIndex(c => c._id === chatbotAtualizado._id); 
+  if (index !== -1) { 
+    chatbots.value[index] = chatbotAtualizado; 
+  }
+  toast.success(`Chatbot "${chatbotAtualizado.nome}" atualizado com sucesso!`);
+};
+
+const handleExcluir = async (chatbotId) => { 
+  if (!window.confirm("Você tem certeza que deseja excluir este chatbot?")) return;
+  try { 
+    await apiClient.delete(`/chatbots/${chatbotId}`); 
+    chatbots.value = chatbots.value.filter(c => c._id !== chatbotId);
+    toast.success("Chatbot excluído com sucesso!");
+  } catch (error) { 
+    console.error("Erro ao excluir", error);
+    toast.error(error.response?.data?.msg || "Não foi possível excluir o chatbot.");
+  } 
+};
+
 const handleCriar = () => { chatbotParaEditar.value = null; isModalVisible.value = true; };
 const handleEditar = (chatbot) => { chatbotParaEditar.value = chatbot; isModalVisible.value = true; };
 const iniciarConversa = (chatbotId) => { router.push(`/chatbot/${chatbotId}`); };
 
-  const copiarLink = (chatbotId) => {
+const copiarLink = (chatbotId) => {
   const publicUrl = `${window.location.origin}/#/chat-publico/${chatbotId}`;
   navigator.clipboard.writeText(publicUrl).then(() => {
     toast.success('Link público copiado para a área de transferência!');

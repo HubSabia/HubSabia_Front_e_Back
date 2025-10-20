@@ -16,7 +16,7 @@
           <input type="password" id="password" v-model="password" required placeholder="Digite sua senha">
         </div>
         <div class="form-actions">
-           <a href="#" class="forgot-password">Esqueci minha senha</a>
+           <a href="#" class="forgot-password"></a>
            <button type="submit" class="btn btn-primary login-button" :disabled="isLoading">
              {{ isLoading ? 'Entrando...' : 'Entrar' }}
            </button>
