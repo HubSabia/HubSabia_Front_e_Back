@@ -64,6 +64,7 @@ import ConfirmModal from '@/components/ConfirmModal.vue';
 // import CampaignsTable from '@/components/CampaignsTable.vue'; 
 import CampaignModal from '@/components/CampaignModal.vue';
 
+
 // A lógica de estado e as funções de manipulação de dados
 const campanhas = ref([]);
 const isModalVisible = ref(false);
@@ -71,7 +72,7 @@ const campanhaParaEditar = ref(null);
 const isLoading = ref(true); // Adicionando para uma melhor UX
 const isConfirmModalVisible = ref(false);
 const itemToDeleteId = ref(null);
-
+const toast = useToast();
 // --- Funções CRUD (Lógica Central) ---
 
 const buscarCampanhas = async () => {
@@ -105,21 +106,27 @@ const confirmarExclusao = async (campanhaId) => {
   isConfirmModalVisible.value = true;
 };
 
-const executeDelete = async () => {
-  closeConfirmModal(); // Fecha o modal
-  try {
-    await apiClient.delete(`/campanhas/${itemToDeleteId.value}`);
-    campanhas.value = campanhas.value.filter(c => c._id !== itemToDeleteId.value);
-    toast.success("Campanha excluída com sucesso!"); // Notificação
-  } catch (error) {
-    console.error("Erro ao excluir campanha:", error);
-    toast.error(error.response?.data?.msg || 'Não foi possível excluir a campanha.');
-  }
-};
-
 const closeConfirmModal = () => {
   isConfirmModalVisible.value = false;
   itemToDeleteId.value = null;
+};
+
+const executeDelete = async () => {
+  try {
+    if (!itemToDeleteId.value) { // Checagem de segurança
+      toast.error("Nenhum item selecionado para exclusão.");
+      closeConfirmModal();
+      return;
+    }
+    await apiClient.delete(`/campanhas/${itemToDeleteId.value}`);
+    chatbots.value = chatbots.value.filter(c => c._id !== itemToDeleteId.value);
+    toast.success("Campanha excluída com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir campanha:", error);
+    toast.error(error.response?.data?.msg || 'Não foi possível excluir a campanha.');
+  } finally {
+    closeConfirmModal();
+  }
 };
 
 const handleCriar = () => {
