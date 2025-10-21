@@ -59,20 +59,18 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
+import CampaignModal from '@/components/CampaignModal.vue';
 import { useToast } from "vue-toastification";
 import ConfirmModal from '@/components/ConfirmModal.vue';
-// import CampaignsTable from '@/components/CampaignsTable.vue'; 
-import CampaignModal from '@/components/CampaignModal.vue';
 
-
-// A lógica de estado e as funções de manipulação de dados
 const campanhas = ref([]);
 const isModalVisible = ref(false);
 const campanhaParaEditar = ref(null);
-const isLoading = ref(true); // Adicionando para uma melhor UX
+const isLoading = ref(true);
 const isConfirmModalVisible = ref(false);
 const itemToDeleteId = ref(null);
 const toast = useToast();
+
 // --- Funções CRUD (Lógica Central) ---
 
 const buscarCampanhas = async () => {
@@ -106,20 +104,18 @@ const confirmarExclusao = async (campanhaId) => {
   isConfirmModalVisible.value = true;
 };
 
-const closeConfirmModal = () => {
-  isConfirmModalVisible.value = false;
-  itemToDeleteId.value = null;
-};
-
 const executeDelete = async () => {
   try {
-    if (!itemToDeleteId.value) { // Checagem de segurança
+    if (!itemToDeleteId.value) {
       toast.error("Nenhum item selecionado para exclusão.");
       closeConfirmModal();
       return;
     }
     await apiClient.delete(`/campanhas/${itemToDeleteId.value}`);
-    chatbots.value = chatbots.value.filter(c => c._id !== itemToDeleteId.value);
+    
+    // CORREÇÃO: Usando a variável 'campanhas'
+    campanhas.value = campanhas.value.filter(c => c._id !== itemToDeleteId.value);
+    
     toast.success("Campanha excluída com sucesso!");
   } catch (error) {
     console.error("Erro ao excluir campanha:", error);
@@ -127,6 +123,11 @@ const executeDelete = async () => {
   } finally {
     closeConfirmModal();
   }
+};
+
+const closeConfirmModal = () => {
+  isConfirmModalVisible.value = false;
+  itemToDeleteId.value = null;
 };
 
 const handleCriar = () => {
