@@ -1,124 +1,70 @@
 <template>
-  <div class="view-container">
-    <header class="view-header">
-      <h2>Biblioteca de Editais</h2>
-      <button class="btn-primary" @click="handleCriar">Adicionar Novo Edital</button>
-    </header>
-
-    <div class="list-container">
-      <div class="list-header">
-        <span>Informações do Edital</span>
-        <span>Ações</span>
-      </div>
-
-      <div class="item-list">
-        <div v-if="isLoading" class="message">Carregando editais...</div>
-        <div v-if="!isLoading && editais.length === 0" class="message">
-          Nenhum edital encontrado. Clique em "Adicionar" para criar o primeiro.
-        </div>
-        <div v-for="edital in editais" :key="edital._id" class="item-card">
-          <div class="item-info">
-            <span class="item-name">{{ edital.titulo }}</span>
-            <span class="item-description">{{ edital.conteudo }}</span>
+  <transition name="fade">
+    <div v-if="modelValue" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3>{{ isEditMode ? 'Editar Edital' : 'Adicionar Edital à Biblioteca' }}</h3>
+          <button class="close-btn" @click="closeModal">&times;</button>
+        </header>
+        
+        <form @submit.prevent="handleSubmit">
+          <div class="form-group">
+            <label for="titulo">Título do Edital</label>
+            <input type="text" id="titulo" v-model="formData.titulo" required>
           </div>
-          <div class="item-actions">
-            <button class="btn-edit" @click="handleEditar(edital)">Editar</button>
-            <!-- MUDANÇA: Vamos usar o ConfirmModal para a exclusão -->
-            <button class="btn-delete" @click="confirmarExclusao(edital._id)">Excluir</button>
+          <div class="form-group">
+            <label for="conteudo">Conteúdo do Edital (Copiar e Colar)</label>
+            <textarea id="conteudo" v-model="formData.conteudo" rows="10" required></textarea>
           </div>
-        </div>
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
+            <button type="submit" class="btn-primary">Salvar Edital</button>
+          </footer>
+        </form>
       </div>
     </div>
-
-    <EditalModal
-      v-model="isModalVisible"
-      :edital-to-edit="editalParaEditar"
-      @edital-created="adicionarNovoEditalNaLista"
-      @edital-updated="atualizarEditalNaLista"
-    />
-
-    <!-- Modal de confirmação -->
-    <ConfirmModal
-      :isVisible="isConfirmModalVisible"
-      title="Confirmar Exclusão"
-      message="Você tem certeza que deseja excluir este edital? Esta ação não pode ser desfeita."
-      @confirm="executeDelete"
-      @cancel="closeConfirmModal"
-    />
-  </div>
+  </transition>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
-import EditalModal from '@/components/EditalModal.vue';
-// MUDANÇA 1: Importa o toast e o modal de confirmação
-import { useToast } from "vue-toastification";
-import ConfirmModal from '@/components/ConfirmModal.vue';
 
-const editais = ref([]);
-const isModalVisible = ref(false);
-const editalParaEditar = ref(null);
-const isLoading = ref(true);
+const props = defineProps({
+  modelValue: Boolean,
+  editalToEdit: { type: Object, default: null }
+});
+const emit = defineEmits(['update:modelValue', 'edital-created', 'edital-updated']);
+const formData = ref({});
+const isEditMode = computed(() => !!props.editalToEdit);
 
-// MUDANÇA 2: Variáveis para o modal de confirmação
-const isConfirmModalVisible = ref(false);
-const itemToDeleteId = ref(null);
+const closeModal = () => emit('update:modelValue', false);
 
-// MUDANÇA 3: Instancia o toast
-const toast = useToast();
-
-const buscarEditais = async () => {
-  isLoading.value = true;
+const handleSubmit = async () => {
   try {
-    const response = await apiClient.get('/editais');
-    editais.value = response.data;
+    if (isEditMode.value) {
+      const response = await apiClient.put(`/editais/${props.editalToEdit._id}`, formData.value);
+      emit('edital-updated', response.data);
+    } else {
+      const response = await apiClient.post('/editais', formData.value);
+      emit('edital-created', response.data);
+    }
+    closeModal();
   } catch (error) {
-    console.error("Erro ao buscar editais:", error);
-    toast.error("Não foi possível carregar os editais.");
-  } finally {
-    isLoading.value = false;
+    console.error("Erro ao salvar edital:", error);
+    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível salvar o edital.'}`);
   }
 };
 
-const adicionarNovoEditalNaLista = (novoEdital) => { 
-  editais.value.unshift(novoEdital);
-  toast.success(`Edital "${novoEdital.titulo}" criado com sucesso!`);
-};
-
-const atualizarEditalNaLista = (editalAtualizado) => { 
-  const index = editais.value.findIndex(e => e._id === editalAtualizado._id); 
-  if (index !== -1) { editais.value[index] = editalAtualizado; }
-  toast.success(`Edital "${editalAtualizado.titulo}" atualizado com sucesso!`);
-};
-
-const handleCriar = () => { editalParaEditar.value = null; isModalVisible.value = true; };
-const handleEditar = (edital) => { editalParaEditar.value = edital; isModalVisible.value = true; };
-
-// MUDANÇA 4: A lógica de exclusão agora usa o modal de confirmação
-const confirmarExclusao = (editalId) => {
-  itemToDeleteId.value = editalId;
-  isConfirmModalVisible.value = true;
-};
-
-const executeDelete = async () => {
-  closeConfirmModal();
-  try {
-    await apiClient.delete(`/editais/${itemToDeleteId.value}`);
-    editais.value = editais.value.filter(e => e._id !== itemToDeleteId.value);
-    toast.success('Edital excluído com sucesso!');
-  } catch (error) {
-    console.error('Erro ao excluir edital:', error);
-    toast.error(error.response?.data?.msg || 'Não foi possível excluir o edital.');
+watch(() => props.modelValue, (isOpening) => {
+  if (isOpening) {
+    if (isEditMode.value) {
+      formData.value = { ...props.editalToEdit };
+    } else {
+      formData.value = { titulo: '', conteudo: '' };
+    }
   }
-};
-
-const closeConfirmModal = () => {
-  isConfirmModalVisible.value = false;
-  itemToDeleteId.value = null;
-};
-
-onMounted(buscarEditais);
+});
 </script>
 
 
