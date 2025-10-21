@@ -22,7 +22,6 @@
           </div>
           <div class="item-actions">
             <button class="btn-edit" @click="handleEditar(edital)">Editar</button>
-            <!-- MUDANÇA: O clique agora chama 'confirmarExclusao' -->
             <button class="btn-delete" @click="confirmarExclusao(edital._id)">Excluir</button>
           </div>
         </div>
@@ -96,19 +95,32 @@ const handleEditar = (edital) => { editalParaEditar.value = edital; isModalVisib
 
 // MUDANÇA: 'handleExcluir' foi dividido em 'confirmar' e 'executar'
 const confirmarExclusao = (editalId) => {
+  if (!editalId) {
+    toast.error("ID do edital não encontrado.");
+    return;
+  }
   itemToDeleteId.value = editalId;
   isConfirmModalVisible.value = true;
 };
 
 const executeDelete = async () => {
-  closeConfirmModal();
+  // Checagem de segurança extra
+  if (!itemToDeleteId.value) {
+    toast.error("Erro: Nenhum item selecionado para exclusão.");
+    closeConfirmModal();
+    return;
+  }
   try {
+    // Agora temos certeza que itemToDeleteId.value tem um ID
     await apiClient.delete(`/editais/${itemToDeleteId.value}`);
     editais.value = editais.value.filter(e => e._id !== itemToDeleteId.value);
     toast.success('Edital excluído com sucesso!');
   } catch (error) {
     console.error('Erro ao excluir edital:', error);
     toast.error(error.response?.data?.msg || 'Não foi possível excluir o edital.');
+  } finally {
+    // Fecha o modal e limpa o ID, independentemente do resultado
+    closeConfirmModal();
   }
 };
 
