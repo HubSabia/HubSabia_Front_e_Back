@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /chat-publico/
+
+Disallow: /dashboard
+Disallow: /login
+Disallow: /campanhas
+# ... (bloqueie todas as suas páginas de admin)
+
+Sitemap: https://hub-sabia-front-e-back.vercel.app/sitemap.xml
