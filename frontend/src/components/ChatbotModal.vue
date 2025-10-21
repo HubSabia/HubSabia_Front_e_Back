@@ -14,7 +14,8 @@
           <div class="form-group">
             <label for="campanha">Associar à Campanha</label>
             <select id="campanha" v-model="formData.campanha" required>
-              <option disabled value="">Selecione uma campanha</option>
+              <option v-if="isLoadingCampanhas" disabled value="">Carregando campanhas...</option>
+              <option v-else disabled value="">Selecione uma campanha</option>
               <option v-for="c in campanhas" :key="c._id" :value="c._id">{{ c.nome }}</option>
             </select>
           </div>
@@ -29,7 +30,9 @@
         </div>
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
-          <button type="submit" class="btn-primary">Salvar Chatbot</button>
+          <button type="submit" class="btn-primary" :disabled="isLoadingSubmit">
+            {{ isLoadingSubmit ? 'Salvando...' : 'Salvar Chatbot' }}
+          </button>
         </footer>
       </form>
     </div>
@@ -39,6 +42,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
+import { useToast } from "vue-toastification";
 
 const props = defineProps({
   modelValue: Boolean,
@@ -49,17 +53,27 @@ const emit = defineEmits(['update:modelValue', 'chatbot-created', 'chatbot-updat
 const formData = ref({});
 const campanhas = ref([]);
 const isEditMode = computed(() => !!props.chatbotToEdit);
+const isLoadingCampanhas = ref(false);
+const isLoadingSubmit = ref(false);
+const toast = useToast();
 
 const fetchCampanhas = async () => {
+  isLoadingCampanhas.value = true;
   try {
     const response = await apiClient.get('/campanhas');
     campanhas.value = response.data;
-  } catch (error) { console.error("Erro ao buscar campanhas:", error); }
+  } catch (error) {
+    console.error("Erro ao buscar campanhas:", error);
+    toast.error("Não foi possível carregar a lista de campanhas.");
+  } finally {
+    isLoadingCampanhas.value = false;
+  }
 };
 
 const closeModal = () => emit('update:modelValue', false);
 
 const handleSubmit = async () => {
+  isLoadingSubmit.value = true;
   try {
     if (isEditMode.value) {
       const response = await apiClient.put(`/chatbots/${props.chatbotToEdit._id}`, formData.value);
@@ -68,11 +82,13 @@ const handleSubmit = async () => {
       const response = await apiClient.post('/chatbots', formData.value);
       emit('chatbot-created', response.data);
     }
-    alert('Chatbot salvo com sucesso!');
+
     closeModal();
   } catch (error) {
     console.error("Erro ao salvar chatbot:", error);
-    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível salvar o chatbot.'}`);
+    toast.error(error.response?.data?.msg || 'Não foi possível salvar o chatbot.');
+  } finally {
+    isLoadingSubmit.value = false;
   }
 };
 

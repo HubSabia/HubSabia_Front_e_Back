@@ -2,7 +2,7 @@
   <div class="view-container">
     <header class="view-header">
       <h2>Biblioteca de Editais</h2>
-      <button class="btn-primary" @click="handleCriar">Adicionar Novo Edital</button>
+      <button class="btn-primary" @click="handleCriar">Adicionar</button>
     </header>
 
     <div class="list-container">
