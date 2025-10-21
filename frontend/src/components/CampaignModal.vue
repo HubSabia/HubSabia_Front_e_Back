@@ -44,6 +44,7 @@
         <!-- SEÇÃO PARA ASSOCIAR EDITAIS -->
         <div class="form-group">
           <label>Associar Editais</label>
+          <div v-if="isLoadingEditais" class="loading-message">Carregando editais...</div>
           <div v-if="listaDeEditais.length > 0" class="edital-selector-list">
             <div v-for="edital in listaDeEditais" :key="edital._id" class="edital-checkbox-item">
               <input type="checkbox" :id="`edital-${edital._id}`" :value="edital._id" v-model="formData.editais">
@@ -55,7 +56,9 @@
         
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
-          <button type="submit" class="btn-primary">Salvar Campanha</button>
+          <button type="submit" class="btn-primary" :disabled="isLoadingSubmit">
+            {{ isLoadingSubmit ? 'Salvando...' : 'Salvar Campanha' }}
+          </button>
         </footer>
       </form>
     </div>
@@ -65,6 +68,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
+import { useToast } from "vue-toastification";
 
 // --- DEFINIÇÕES COMPLETAS ---
 const props = defineProps({
@@ -80,16 +84,23 @@ const emit = defineEmits(['update:modelValue', 'campaign-created', 'campaign-upd
 const formData = ref({});
 const isEditMode = computed(() => !!props.campaignToEdit);
 const listaDeEditais = ref([]);
+const isLoadingEditais = ref(false);
+const isLoadingSubmit = ref(false);
 
 // --- FUNÇÕES ---
 
+const toast = useToast();
+
 const buscarEditaisDisponiveis = async () => {
+  isLoadingEditais.value = true;
   try {
     const response = await apiClient.get('/editais');
     listaDeEditais.value = response.data;
   } catch (error) {
     console.error("Não foi possível carregar a lista de editais:", error);
-    listaDeEditais.value = []; // Garante que a lista fique vazia em caso de erro
+    toast.error("Não foi possível carregar os editais.");
+  } finally {
+    isLoadingEditais.value = false;
   }
 };
 
@@ -98,6 +109,7 @@ const closeModal = () => {
 };
 
 const handleSubmit = async () => {
+  isLoadingSubmit.value = true;
   try {
     if (isEditMode.value) {
       const response = await apiClient.put(`/campanhas/${props.campaignToEdit._id}`, formData.value);
@@ -106,11 +118,12 @@ const handleSubmit = async () => {
       const response = await apiClient.post('/campanhas', formData.value);
       emit('campaign-created', response.data);
     }
-    alert('Campanha salva com sucesso!');
     closeModal();
   } catch (error) {
     console.error("Erro ao salvar campanha:", error);
-    alert(`Erro: ${error.response?.data?.msg || 'Não foi possível salvar a campanha.'}`);
+    toast.error(error.response?.data?.msg || 'Não foi possível salvar a campanha.');
+  } finally {
+    isLoadingSubmit.value = false;
   }
 };
 
