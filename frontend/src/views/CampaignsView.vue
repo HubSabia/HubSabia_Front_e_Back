@@ -16,7 +16,7 @@
             <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
+      <tbody>
   <tr v-if="isLoading">
     <td colspan="5" class="message">Carregando campanhas...</td>
   </tr>
@@ -32,7 +32,7 @@
     <td data-label="Status">{{ campanha.status }}</td>
     <td data-label="Ações" class="actions-buttons">
       <button class="btn-edit" @click="handleEditar(campanha)">Editar</button>
-      <button class="btn-delete" @click="handleExcluir(campanha._id)">Excluir</button>
+      <button class="btn-delete" @click="confirmarExclusao(campanha._id)">Excluir</button>
     </td>
   </tr>
 </tbody>
@@ -45,14 +45,22 @@
       @campaign-created="adicionarNovaCampanhaNaLista"
       @campaign-updated="atualizarCampanhaNaLista"
     />
+
+    <ConfirmModal
+      :isVisible="isConfirmModalVisible"
+      title="Confirmar Exclusão"
+      message="Você tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita."
+      @confirm="executeDelete"
+      @cancel="closeConfirmModal"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
-
-// Suas importações de componentes (se você estiver usando a versão refatorada)
+import { useToast } from "vue-toastification";
+import ConfirmModal from '@/components/ConfirmModal.vue';
 // import CampaignsTable from '@/components/CampaignsTable.vue'; 
 import CampaignModal from '@/components/CampaignModal.vue';
 
@@ -61,6 +69,8 @@ const campanhas = ref([]);
 const isModalVisible = ref(false);
 const campanhaParaEditar = ref(null);
 const isLoading = ref(true); // Adicionando para uma melhor UX
+const isConfirmModalVisible = ref(false);
+const itemToDeleteId = ref(null);
 
 // --- Funções CRUD (Lógica Central) ---
 
@@ -71,6 +81,7 @@ const buscarCampanhas = async () => {
     campanhas.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar campanhas:", error);
+    toast.error("Não foi possível carregar as campanhas.");
   } finally {
     isLoading.value = false;
   }
@@ -78,6 +89,7 @@ const buscarCampanhas = async () => {
 
 const adicionarNovaCampanhaNaLista = (novaCampanha) => {
   campanhas.value.unshift(novaCampanha);
+  toast.success(`Campanha "${novaCampanha.nome}" criada com sucesso!`);
 };
 
 const atualizarCampanhaNaLista = (campanhaAtualizada) => {
@@ -85,20 +97,29 @@ const atualizarCampanhaNaLista = (campanhaAtualizada) => {
   if (index !== -1) {
     campanhas.value[index] = campanhaAtualizada;
   }
+  toast.success(`Campanha "${campanhaAtualizada.nome}" atualizada com sucesso!`);
 };
 
-const handleExcluir = async (campanhaId) => {
-  if (!window.confirm("Você tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita.")) {
-    return;
-  }
+const confirmarExclusao = async (campanhaId) => {
+  itemToDeleteId.value = campanhaId;
+  isConfirmModalVisible.value = true;
+};
+
+const executeDelete = async () => {
+  closeConfirmModal(); // Fecha o modal
   try {
-    await apiClient.delete(`/campanhas/${campanhaId}`);
-    campanhas.value = campanhas.value.filter(c => c._id !== campanhaId);
-    toast.success("Campanha excluída com sucesso!");
+    await apiClient.delete(`/campanhas/${itemToDeleteId.value}`);
+    campanhas.value = campanhas.value.filter(c => c._id !== itemToDeleteId.value);
+    toast.success("Campanha excluída com sucesso!"); // Notificação
   } catch (error) {
     console.error("Erro ao excluir campanha:", error);
-    toast.error(`Erro: ${error.response?.data?.msg || 'Não foi possível excluir a campanha.'}`);
+    toast.error(error.response?.data?.msg || 'Não foi possível excluir a campanha.');
   }
+};
+
+const closeConfirmModal = () => {
+  isConfirmModalVisible.value = false;
+  itemToDeleteId.value = null;
 };
 
 const handleCriar = () => {
