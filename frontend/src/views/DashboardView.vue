@@ -31,19 +31,6 @@
         <div class="stat-label">Usuários</div>
         <router-link to="/usuarios" class="card-link">Ver todos</router-link>
       </div>
-
-      <div class="stat-card">
-    <div class="stat-number">{{ stats.profundidade?.duracaoMedia.toFixed(1) || 0 }}</div>
-    <div class="stat-label">Média de Mensagens / Conversa</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-number">{{ stats.profundidade?.conversasCurtas || 0 }}</div>
-    <div class="stat-label">Conversas Curtas (≤ 3 msgs)</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-number">{{ stats.profundidade?.conversasLongas || 0 }}</div>
-    <div class="stat-label">Conversas Longas (> 3 msgs)</div>
-  </div>
     </div>
 
     <!-- Atividade Recente -->
@@ -60,31 +47,6 @@
         </div>
       </div>
       <p v-else class="no-activity">Nenhuma campanha ativa no momento.</p>
-
-      <div class="analysis-grid">
-  <!-- Módulo Top Chatbots -->
-  <div class="analysis-card">
-    <h3 class="list-title">Top 5 Chatbots Mais Usados</h3>
-    <ul v-if="stats.topChatbots?.length > 0">
-      <li v-for="bot in stats.topChatbots" :key="bot.nome">
-        <span>{{ bot.nome }}</span>
-        <strong>{{ bot.totalConversas }} conversas</strong>
-      </li>
-    </ul>
-    <p v-else class="no-activity">Nenhum dado de uso ainda.</p>
-  </div>
-
-  <!-- Módulo Análise de Falhas -->
-  <div class="analysis-card">
-    <h3 class="list-title">Respostas de Falha Recentes</h3>
-    <ul v-if="stats.falhas?.length > 0">
-      <li v-for="(falha, index) in stats.falhas" :key="index">
-        <p>"{{ falha.textoFalha }}"</p>
-      </li>
-    </ul>
-    <p v-else class="no-activity">Nenhuma falha detectada.</p>
-  </div>
-</div>
     </div>
   </div>
 </template>
@@ -101,10 +63,7 @@ const stats = ref({
   campanhas: 0,
   chatbots: 0,
   usuarios: 0,
-  atividadeRecente: null,
-  profundidade: null,
-  topChatbots: [],
-  falhas: []
+  atividadeRecente: null
 });
 
 const buscarEstatisticas = async () => {
@@ -235,31 +194,6 @@ onMounted(buscarEstatisticas);
 .loading-message, .no-activity {
   color: var(--text-color-muted);
   font-style: italic;
-}
-
-.analysis-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-.analysis-card {
-  background-color: var(--card-bg);
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-.analysis-card ul {
-  list-style: none;
-  padding: 0;
-}
-.analysis-card li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-.analysis-card li:last-child {
-  border-bottom: none;
 }
 
 /* RESPONSIVIDADE */

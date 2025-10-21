@@ -10,7 +10,6 @@
         <span>Informações do Edital</span>
         <span>Ações</span>
       </div>
-
       <div class="item-list">
         <div v-if="isLoading" class="message">Carregando editais...</div>
         <div v-if="!isLoading && editais.length === 0" class="message">
@@ -19,12 +18,12 @@
         <div v-for="edital in editais" :key="edital._id" class="item-card">
           <div class="item-info">
             <span class="item-name">{{ edital.titulo }}</span>
-            <!-- Removi o filtro 'truncate' que não estava definido. A quebra de linha no CSS lida com textos longos. -->
             <span class="item-description">{{ edital.conteudo }}</span>
           </div>
           <div class="item-actions">
             <button class="btn-edit" @click="handleEditar(edital)">Editar</button>
-            <button class="btn-delete" @click="handleExcluir(edital._id)">Excluir</button>
+            <!-- MUDANÇA: O clique agora chama 'confirmarExclusao' -->
+            <button class="btn-delete" @click="confirmarExclusao(edital._id)">Excluir</button>
           </div>
         </div>
       </div>
@@ -36,19 +35,37 @@
       @edital-created="adicionarNovoEditalNaLista"
       @edital-updated="atualizarEditalNaLista"
     />
+
+    <!-- MUDANÇA: Modal de confirmação adicionado -->
+    <ConfirmModal
+      :isVisible="isConfirmModalVisible"
+      title="Confirmar Exclusão"
+      message="Você tem certeza que deseja excluir este edital da biblioteca? Ele pode estar em uso por campanhas."
+      @confirm="executeDelete"
+      @cancel="closeConfirmModal"
+    />
   </div>
 </template>
 
 <script setup>
-// Seu <script setup> atualizado para a refatoração
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
 import EditalModal from '@/components/EditalModal.vue';
+// MUDANÇA: Importa o toast e o modal de confirmação
+import { useToast } from "vue-toastification";
+import ConfirmModal from '@/components/ConfirmModal.vue';
 
 const editais = ref([]);
 const isModalVisible = ref(false);
 const editalParaEditar = ref(null);
 const isLoading = ref(true);
+
+// MUDANÇA: Variáveis para o modal de confirmação
+const isConfirmModalVisible = ref(false);
+const itemToDeleteId = ref(null);
+
+// MUDANÇA: Instancia o toast
+const toast = useToast();
 
 const buscarEditais = async () => {
   isLoading.value = true;
@@ -57,34 +74,51 @@ const buscarEditais = async () => {
     editais.value = response.data;
   } catch (error) {
     console.error("Erro ao buscar editais:", error);
+    toast.error("Não foi possível carregar os editais.");
   } finally {
     isLoading.value = false;
   }
 };
 
-const adicionarNovoEditalNaLista = (novoEdital) => { editais.value.unshift(novoEdital); };
-const atualizarEditalNaLista = (editalAtualizado) => { const index = editais.value.findIndex(e => e._id === editalAtualizado._id); if (index !== -1) { editais.value[index] = editalAtualizado; } };
+const adicionarNovoEditalNaLista = (novoEdital) => { 
+  editais.value.unshift(novoEdital);
+  toast.success(`Edital "${novoEdital.titulo}" criado com sucesso!`);
+};
+
+const atualizarEditalNaLista = (editalAtualizado) => { 
+  const index = editais.value.findIndex(e => e._id === editalAtualizado._id); 
+  if (index !== -1) { editais.value[index] = editalAtualizado; }
+  toast.success(`Edital "${editalAtualizado.titulo}" atualizado com sucesso!`);
+};
 
 const handleCriar = () => { editalParaEditar.value = null; isModalVisible.value = true; };
 const handleEditar = (edital) => { editalParaEditar.value = edital; isModalVisible.value = true; };
 
-const handleExcluir = async (editalId) => {
-  if (window.confirm('Tem certeza que deseja excluir este edital?')) {
-    try {
-      await apiClient.delete(`/editais/${editalId}`);
-      // Atualiza a lista removendo o item excluído
-      editais.value = editais.value.filter(e => e._id !== editalId);
-      toast.success('Edital excluído com sucesso!');
-    } catch (error) {
-      console.error('Erro ao excluir edital:', error);
-      toast.error(error.response?.data?.msg || 'Não foi possível excluir o edital.');
-    }
+// MUDANÇA: 'handleExcluir' foi dividido em 'confirmar' e 'executar'
+const confirmarExclusao = (editalId) => {
+  itemToDeleteId.value = editalId;
+  isConfirmModalVisible.value = true;
+};
+
+const executeDelete = async () => {
+  closeConfirmModal();
+  try {
+    await apiClient.delete(`/editais/${itemToDeleteId.value}`);
+    editais.value = editais.value.filter(e => e._id !== itemToDeleteId.value);
+    toast.success('Edital excluído com sucesso!');
+  } catch (error) {
+    console.error('Erro ao excluir edital:', error);
+    toast.error(error.response?.data?.msg || 'Não foi possível excluir o edital.');
   }
+};
+
+const closeConfirmModal = () => {
+  isConfirmModalVisible.value = false;
+  itemToDeleteId.value = null;
 };
 
 onMounted(buscarEditais);
 </script>
-
 <style scoped>
 /* ESTILOS PADRONIZADOS PARA A VIEW */
 .view-container {
