@@ -1,3 +1,5 @@
+// Em backend/server.js
+
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -8,34 +10,40 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = ['https://hub-sabia-front-e-back.vercel.app'];
+// --- CONFIGURAÇÃO DE SEGURANÇA DO CORS (VERSÃO FINAL) ---
+
+// Lista de domínios que podem acessar sua API
+const allowedOrigins = [
+    'https://hub-sabia-front-e-back.vercel.app'
+];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Permite requisições sem 'origin' (ex: Postman, apps mobile)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'A política de CORS para este site não permite acesso da Origem especificada.';
-      return callback(new Error(msg), false);
+    // Permite requisições da mesma origem ou da lista de permissões
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Não permitido pela política de CORS'));
     }
-    return callback(null, true);
   }
 };
 
+// MUDANÇA CRÍTICA: Habilita a resposta para a requisição preflight (OPTIONS)
+// que o navegador envia antes do POST/PUT/DELETE. Isso deve vir ANTES de suas rotas.
+app.options('*', cors());
+
+// Aplica sua configuração de CORS para todas as outras requisições
 app.use(cors(corsOptions)); 
 
 // Permite que o servidor entenda o corpo de requisições no formato JSON.
 app.use(express.json()); 
 
 // --- CONEXÃO COM O BANCO DE DADOS ---
-// Conecta ao MongoDB usando a string de conexão do seu arquivo .env
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB (HubSabia) conectado com sucesso!'))
   .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // --- ROTAS DA API ---
-// Registra as rotas para autenticação e campanhas.
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/campanhas', require('./routes/campanhas'));
 app.use('/api/chatbots', require('./routes/chatbots'));
@@ -43,17 +51,8 @@ app.use('/api/editais', require('./routes/editais'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/dashboard', require('./routes/dashboard'));
-
-// MUDANÇA: Registrando o novo conjunto de rotas de usuários
 app.use('/api/usuarios', require('./routes/usuarios'));
 
-
-// Rota de teste inicial para verificar se a API está online.
-app.get('/', (req, res) => {
-    res.send('API do HubSabia está no ar!');
-});
-
 // --- INICIA O SERVIDOR ---
-// A Render fornecerá a porta através de process.env.PORT.
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
