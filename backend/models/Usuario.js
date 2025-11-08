@@ -14,21 +14,37 @@ const UsuarioSchema = new mongoose.Schema({
     },
     senha_hash: {
         type: String,
-        required: [true, 'A senha é obrigatória.']
+        required: false 
     },
-    // MUDANÇA: Adicionando o campo de papel (role)
     role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
     },
+
+    // ==========================================================
+    // --- NOVOS CAMPOS PARA VERIFICAÇÃO DE EMAIL ---
+    // ==========================================================
+    isVerificado: {
+        type: Boolean,
+        default: false // O usuário sempre começa como "não verificado".
+    },
+    verificationToken: {
+        type: String,
+        select: false // Garante que este token não seja enviado em respostas da API por padrão.
+    },
+    verificationTokenExpires: {
+        type: Date,
+        select: false // Também não será enviado por padrão.
+    },
+    // ==========================================================
+
     geminiApiKey: {
         type: String,
         trim: true
     }
-}, { timestamps: true }); // Adicionamos timestamps para data_criacao
+}, { timestamps: true });
 
-// Seu hook de criptografia de senha continua perfeito
 UsuarioSchema.pre('save', async function(next) {
     if (!this.isModified('senha_hash')) {
         return next();

@@ -4,15 +4,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // ==========================================================
-// MUDANÇA 1: Importar os validadores
-// ==========================================================
-const validator = require('validator');
-const passwordValidator = require('password-validator');
-
-// ==========================================================
-// MUDANÇA 2: Criar o esquema da senha forte
+// Senha forte
 // ==========================================================
 const passwordSchema = new passwordValidator();
 passwordSchema
@@ -24,61 +20,103 @@ passwordSchema
 
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
-	max: 5,
+	max: 10,
 	message: { msg: 'Tentativas excedidas' },
     skip: (req, res) => req.method === 'OPTIONS',
 	standardHeaders: true,
 	legacyHeaders: false,
 });
 
-// ==========================================================
-// ROTA DE REGISTRO - ATUALIZADA
-// ==========================================================
+
+//post registrar
+
 router.post('/registrar', authLimiter, async (req, res) => {
     const { nome, email, senha } = req.body;
     
-    // Checagem inicial dos campos
     if (!nome || !email || !senha) {
-        return res.status(400).json({ msg: 'Por favor, inclua todos os campos: nome, email e senha.' });
+        return res.status(400).json({ msg: 'Por favor, inclua todos os campos.' });
     }
 
     try {
-        // ==========================================================
-        // MUDANÇA 3: Adicionar a validação de segurança aqui
-        // ==========================================================
         if (!validator.isEmail(email)) {
             return res.status(400).json({ msg: 'Formato de email inválido.' });
         }
-        
         const errosSenha = passwordSchema.validate(senha, { list: true });
         if (errosSenha.length > 0) {
-            // Retorna o primeiro erro da lista para ser mais específico
             return res.status(400).json({ msg: `Senha fraca: ${errosSenha[0]}` });
         }
-        // ==========================================================
-        
+
+        // Verifica se o email já existe
         let usuario = await Usuario.findOne({ email: email.toLowerCase() });
         if (usuario) {
             return res.status(400).json({ msg: 'Um usuário com este e-mail já existe.' });
         }
 
+        // Cria a instância do usuário (ainda não salva)
         usuario = new Usuario({
             nome,
             email,
-            // CORREÇÃO DE SEGURANÇA: NUNCA salve a senha pura. Sempre o hash.
-            senha_hash: senha // A senha será hasheada na próxima linha
+            senha_hash: senha // O hook pre-save irá criptografar isso
         });
 
-        // CORREÇÃO DE SEGURANÇA: Criptografar a senha ANTES de salvar
-        const salt = await bcrypt.genSalt(10);
-        usuario.senha_hash = await bcrypt.hash(senha, salt);
+        // Gerar e salvar o token de verificação
+        
+        const verificationToken = crypto.randomBytes(32).toString('hex');
 
+        // É uma boa prática de segurança armazenar o hash do token, não o token puro.
+        usuario.verificationToken = crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+
+        // Define a expiração do token para 10 minutos a partir de agora
+        usuario.verificationTokenExpires = Date.now() + 10 * 60 * 1000;
+
+        // Agora sim, salva o usuário no banco com os dados de verificação
         await usuario.save();
-        res.status(201).json({ msg: 'Usuário registrado com sucesso!' });
+
+        // ==========================================================
+        // Enviar o email de verificação
+        // ==========================================================
+        // O link que o usuário vai clicar
+        const verificationUrl = `${process.env.FRONTEND_URL}/verificar-email/${verificationToken}`;
+
+        // Configura o serviço de email (transporter)
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // Ou outro serviço
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        // Opções do email
+        const mailOptions = {
+            from: '"HubSabia" <no-reply@hubsabia.com>',
+            to: usuario.email,
+            subject: 'Ative sua Conta - HubSabia',
+            html: `
+                <h1>Bem-vindo ao HubSabia!</h1>
+                <p>Obrigado por se registrar. Por favor, clique no botão abaixo para ativar sua conta:</p>
+                <a href="${verificationUrl}" style="background-color: #28a745; color: white; padding: 15px 25px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Ativar Conta</a>
+                <p>Se o botão não funcionar, copie e cole este link no seu navegador:</p>
+                <p>${verificationUrl}</p>
+                <p>Este link expira em 10 minutos.</p>
+            `
+        };
+
+        // Envia o email
+        await transporter.sendMail(mailOptions);
+
+        // ==========================================================
+        // Nova mensagem de sucesso
+        // ==========================================================
+        res.status(201).json({ msg: 'Registro realizado com sucesso! Um email de verificação foi enviado para sua caixa de entrada.' });
 
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Erro no servidor.');
+        console.error("Erro no registro:", err.message);
+        // Uma mensagem de erro genérica para não expor detalhes do sistema
+        res.status(500).send('Ocorreu um erro no servidor durante o registro.');
     }
 });
 
