@@ -3,58 +3,88 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
-
-// ==========================================================
-// MUDANÇA 1: Importamos a biblioteca de limite de requisições
-// ==========================================================
 const rateLimit = require('express-rate-limit');
 
 // ==========================================================
-// MUDANÇA 2: Criamos a nossa regra de limite
+// MUDANÇA 1: Importar os validadores
 // ==========================================================
+const validator = require('validator');
+const passwordValidator = require('password-validator');
+
+// ==========================================================
+// MUDANÇA 2: Criar o esquema da senha forte
+// ==========================================================
+const passwordSchema = new passwordValidator();
+passwordSchema
+    .is().min(8, 'A senha deve ter no mínimo 8 caracteres.')
+    .has().uppercase(1, 'A senha deve ter pelo menos uma letra maiúscula.')
+    .has().lowercase(1, 'A senha deve ter pelo menos uma letra minúscula.')
+    .has().digits(1, 'A senha deve ter pelo menos um número.');
+
+
 const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // Janela de tempo: 15 minutos
-	max: 5, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
+	windowMs: 15 * 60 * 1000,
+	max: 5,
 	message: { msg: 'Tentativas excedidas' },
     skip: (req, res) => req.method === 'OPTIONS',
-	standardHeaders: true, // Padrão recomendado
-	legacyHeaders: false,  // Padrão recomendado
+	standardHeaders: true,
+	legacyHeaders: false,
 });
 
 // ==========================================================
-// ROTA DE REGISTRO
+// ROTA DE REGISTRO - ATUALIZADA
 // ==========================================================
-// MUDANÇA 3: Aplicamos o 'authLimiter' à rota.
-// Agora, esta rota está protegida contra spam.
 router.post('/registrar', authLimiter, async (req, res) => {
     const { nome, email, senha } = req.body;
+    
+    // Checagem inicial dos campos
     if (!nome || !email || !senha) {
         return res.status(400).json({ msg: 'Por favor, inclua todos os campos: nome, email e senha.' });
     }
+
     try {
+        // ==========================================================
+        // MUDANÇA 3: Adicionar a validação de segurança aqui
+        // ==========================================================
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({ msg: 'Formato de email inválido.' });
+        }
+        
+        const errosSenha = passwordSchema.validate(senha, { list: true });
+        if (errosSenha.length > 0) {
+            // Retorna o primeiro erro da lista para ser mais específico
+            return res.status(400).json({ msg: `Senha fraca: ${errosSenha[0]}` });
+        }
+        // ==========================================================
+        
         let usuario = await Usuario.findOne({ email: email.toLowerCase() });
         if (usuario) {
             return res.status(400).json({ msg: 'Um usuário com este e-mail já existe.' });
         }
+
         usuario = new Usuario({
             nome,
             email,
-            senha_hash: senha
+            // CORREÇÃO DE SEGURANÇA: NUNCA salve a senha pura. Sempre o hash.
+            senha_hash: senha // A senha será hasheada na próxima linha
         });
+
+        // CORREÇÃO DE SEGURANÇA: Criptografar a senha ANTES de salvar
+        const salt = await bcrypt.genSalt(10);
+        usuario.senha_hash = await bcrypt.hash(senha, salt);
+
         await usuario.save();
         res.status(201).json({ msg: 'Usuário registrado com sucesso!' });
+
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
 
-// ==========================================================
-// ROTA DE LOGIN
-// ==========================================================
-// MUDANÇA 4: Aplicamos o 'authLimiter' à rota de login também.
-// Isso protege contra ataques de força bruta (tentar adivinhar senhas).
+// Rota de Login (sem alterações, já estava ótima)
 router.post('/login', authLimiter, async (req, res) => {
+    // ... seu código de login continua aqui ...
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ msg: 'Por favor, inclua email e senha.' });
