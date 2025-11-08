@@ -1,5 +1,3 @@
-// Arquivo: backend/server.js
-
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -10,10 +8,19 @@ dotenv.config();
 
 const app = express();
 
-// --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
-// Define qual domínio (seu site na Vercel) tem permissão para acessar esta API.
+const allowedOrigins = ['https://hub-sabia-front-e-back.vercel.app'];
+
 const corsOptions = {
-    origin: 'https://hub-sabia-front-e-back.vercel.app' 
+  origin: (origin, callback) => {
+    // Permite requisições sem 'origin' (ex: Postman, apps mobile)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'A política de CORS para este site não permite acesso da Origem especificada.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
 };
 
 app.use(cors(corsOptions)); 
