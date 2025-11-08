@@ -1,5 +1,3 @@
-// Arquivo: backend/middlewares/admin.js
-
 // Este middleware assume que o middleware de autenticação (auth.js)
 // já foi executado e já anexou as informações do usuário (incluindo o 'role')
 // ao objeto 'req'.
