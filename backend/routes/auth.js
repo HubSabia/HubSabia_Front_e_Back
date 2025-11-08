@@ -1,58 +1,48 @@
-// backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+
+// ==========================================================
+// MUDANÇA 1: Importamos a biblioteca de limite de requisições
+// ==========================================================
 const rateLimit = require('express-rate-limit');
 
 // ==========================================================
-// Importar o middleware de validação
-// ==========================================================
-const { validateRegister } = require('../middlewares/authValidation');
-
-// ==========================================================
-// Configuração do rate limiting
+// MUDANÇA 2: Criamos a nossa regra de limite
 // ==========================================================
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // Janela de tempo: 15 minutos
-	max: 5, // Limite: cada IP pode fazer no máximo 5 requisições nesta janela
+	max: 5, // Limite: cada IP pode fazer no máximo 10 requisições nesta janela
 	message: { msg: 'Tentativas excedidas' },
     skip: (req, res) => req.method === 'OPTIONS',
-	standardHeaders: true,
-	legacyHeaders: false,
+	standardHeaders: true, // Padrão recomendado
+	legacyHeaders: false,  // Padrão recomendado
 });
 
 // ==========================================================
-// ROTA DE REGISTRO - COM VALIDAÇÃO DE SENHA
+// ROTA DE REGISTRO
 // ==========================================================
-router.post('/registrar', authLimiter, validateRegister, async (req, res) => {
+// MUDANÇA 3: Aplicamos o 'authLimiter' à rota.
+// Agora, esta rota está protegida contra spam.
+router.post('/registrar', authLimiter, async (req, res) => {
     const { nome, email, senha } = req.body;
-    
+    if (!nome || !email || !senha) {
+        return res.status(400).json({ msg: 'Por favor, inclua todos os campos: nome, email e senha.' });
+    }
     try {
         let usuario = await Usuario.findOne({ email: email.toLowerCase() });
         if (usuario) {
             return res.status(400).json({ msg: 'Um usuário com este e-mail já existe.' });
         }
-
         usuario = new Usuario({
             nome,
             email,
             senha_hash: senha
         });
-
         await usuario.save();
-        res.status(201).json({ 
-            msg: 'Usuário registrado com sucesso!',
-            requirements: {
-                minLength: 8,
-                requiresUppercase: true,
-                requiresLowercase: true,
-                requiresNumbers: true,
-                noSpaces: true
-            }
-        });
-
+        res.status(201).json({ msg: 'Usuário registrado com sucesso!' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Erro no servidor.');
@@ -60,8 +50,10 @@ router.post('/registrar', authLimiter, validateRegister, async (req, res) => {
 });
 
 // ==========================================================
-// ROTA DE LOGIN (mantida igual)
+// ROTA DE LOGIN
 // ==========================================================
+// MUDANÇA 4: Aplicamos o 'authLimiter' à rota de login também.
+// Isso protege contra ataques de força bruta (tentar adivinhar senhas).
 router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
