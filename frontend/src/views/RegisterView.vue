@@ -11,17 +11,40 @@
           <label for="nome">Nome Completo</label>
           <input type="text" id="nome" v-model="form.nome" required placeholder="Digite seu nome completo">
         </div>
+
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" v-model="form.email" required placeholder="Digite seu melhor email">
+          <!-- Mensagem de erro para o email -->
+          <p v-if="emailError" class="error-text">{{ emailError }}</p>
         </div>
+
         <div class="form-group">
           <label for="password">Senha</label>
           <input type="password" id="password" v-model="form.senha" required placeholder="Crie uma senha forte">
         </div>
+
+        <!-- Campo para confirmar a senha -->
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar Senha</label>
+          <input type="password" id="confirmPassword" v-model="form.confirmarSenha" required placeholder="Confirme sua senha">
+          <p v-if="confirmarSenhaError" class="error-text">{{ confirmarSenhaError }}</p>
+        </div>
+
+        <!-- Guia de requisitos de senha em tempo real -->
+        <div class="password-requirements">
+          <h4>A senha deve conter:</h4>
+          <ul>
+            <li :class="{ 'valid': passwordRequirements.minLength.value }">Pelo menos 8 caracteres</li>
+            <li :class="{ 'valid': passwordRequirements.hasUppercase.value }">Uma letra maiúscula</li>
+            <li :class="{ 'valid': passwordRequirements.hasLowercase.value }">Uma letra minúscula</li>
+            <li :class="{ 'valid': passwordRequirements.hasNumber.value }">Pelo menos um número</li>
+          </ul>
+        </div>
         
         <div class="form-actions">
-           <button type="submit" class="btn btn-primary register-button" :disabled="isLoading">
+           <!-- Botão agora usa 'isFormInvalid' para ser desabilitado -->
+           <button type="submit" class="btn btn-primary register-button" :disabled="isLoading || isFormInvalid">
              {{ isLoading ? 'Criando conta...' : 'Criar Conta' }}
            </button>
         </div>
@@ -43,27 +66,85 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue'; // Import 'computed' e 'watch'
 import { useRouter } from 'vue-router';
-import apiClient from '@/services/api';
+import apiClient from '@/services/api'; // Verifique se este caminho está correto
 
 const form = ref({
   nome: '',
   email: '',
-  senha: ''
+  senha: '',
+  confirmarSenha: '' // Novo campo
 });
 const message = ref('');
 const messageType = ref('');
 const isLoading = ref(false);
 const router = useRouter();
 
+// Estados para os erros de validação
+const emailError = ref('');
+const confirmarSenhaError = ref('');
+
+// --- LÓGICA DE VALIDAÇÃO EM TEMPO REAL ---
+
+// Requisitos da senha reativos
+const passwordRequirements = {
+  minLength: computed(() => form.value.senha.length >= 8),
+  hasUppercase: computed(() => /[A-Z]/.test(form.value.senha)),
+  hasLowercase: computed(() => /[a-z]/.test(form.value.senha)),
+  hasNumber: computed(() => /\d/.test(form.value.senha)),
+};
+
+// Propriedade computada para saber se a senha é válida
+const isPasswordStrong = computed(() => {
+  return Object.values(passwordRequirements).every(req => req.value);
+});
+
+// Propriedade computada para desabilitar o botão
+const isFormInvalid = computed(() => {
+  return !form.value.nome || 
+         !!emailError.value || 
+         !isPasswordStrong.value || 
+         !!confirmarSenhaError.value;
+});
+
+// 'watch' observa mudanças nos campos e valida em tempo real
+watch(() => form.value.email, (newEmail) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (newEmail && !emailRegex.test(newEmail)) {
+    emailError.value = 'Formato de email inválido.';
+  } else {
+    emailError.value = '';
+  }
+});
+
+watch([() => form.value.senha, () => form.value.confirmarSenha], ([newSenha, newConfirmarSenha]) => {
+  if (newConfirmarSenha && newSenha !== newConfirmarSenha) {
+    confirmarSenhaError.value = 'As senhas não coincidem.';
+  } else {
+    confirmarSenhaError.value = '';
+  }
+});
+
+// Função de registro agora valida antes de enviar
 const handleRegister = async () => {
+  if (isFormInvalid.value) {
+    message.value = 'Por favor, corrija os erros no formulário.';
+    messageType.value = 'error';
+    return;
+  }
+
   message.value = '';
   messageType.value = '';
   isLoading.value = true;
 
   try {
-    const response = await apiClient.post('/auth/registrar', form.value);
+    const payload = {
+      nome: form.value.nome,
+      email: form.value.email,
+      senha: form.value.senha
+    };
+    const response = await apiClient.post('/auth/registrar', payload);
     const data = response.data;
     
     message.value = `${data.msg} Redirecionando para o login...`;
