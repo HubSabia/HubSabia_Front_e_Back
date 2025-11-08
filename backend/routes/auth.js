@@ -158,4 +158,49 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 });
 
+// ==========================================================
+// ROTA PARA VERIFICAR O EMAIL (ATIVAR A CONTA)
+// ==========================================================
+router.post('/verificar-email', async (req, res) => {
+    try {
+        // 1. Pega o token que o front-end enviou no corpo da requisição.
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ msg: 'Token de verificação não fornecido.' });
+        }
+
+        // 2. Criptografa o token recebido da mesma forma que fizemos ao salvar.
+        //    Isso é crucial para a comparação segura.
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        // 3. Busca um usuário no banco que tenha este token E que o token não tenha expirado.
+        const usuario = await Usuario.findOne({
+            verificationToken: hashedToken,
+            verificationTokenExpires: { $gt: Date.now() } // $gt (greater than) - Verifica se a data de expiração é maior que a data atual.
+        });
+
+        // 4. Se nenhum usuário for encontrado, o token é inválido ou expirou.
+        if (!usuario) {
+            return res.status(400).json({ msg: 'Token inválido ou expirado. Por favor, tente se registrar novamente.' });
+        }
+
+        // 5. Se o usuário foi encontrado, ativamos a conta.
+        usuario.isVerificado = true;
+        usuario.verificationToken = undefined; // Limpa o token para não ser reutilizado
+        usuario.verificationTokenExpires = undefined; // Limpa a data de expiração
+
+        await usuario.save(); // Salva as alterações no banco de dados
+
+        res.status(200).json({ msg: 'Email verificado com sucesso! Você já pode fazer o login.' });
+
+    } catch (err) {
+        console.error("Erro na verificação de email:", err.message);
+        res.status(500).send('Ocorreu um erro no servidor ao verificar o email.');
+    }
+});
+
 module.exports = router;
