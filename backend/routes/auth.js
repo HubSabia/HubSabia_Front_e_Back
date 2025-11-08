@@ -7,6 +7,12 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
+
+// ==========================================================
+// MUDANÇA CRÍTICA: Verifique se estas duas linhas existem!
+// ==========================================================
+const validator = require('validator');
+const passwordValidator = require('password-validator'); // <-- ESTA É A LINHA QUE PROVAVELMENTE FALTA
 // ==========================================================
 // Senha forte
 // ==========================================================
