@@ -1,8 +1,11 @@
-// Em frontend/src/router/index.js
-{
-  path: '/chat-publico/:id',
-  name: 'ChatPublico',
-  component: () => import('@/views/PublicChatView.vue'),
-  // SEM 'requiresAuth: true' AQUI
-  meta: { title: 'Assistente Virtual' } 
-},
+// backend/routes/index.js (VERSÃO CORRIGIDA)
+
+const express = require('express');
+const router = express.Router();
+
+// Rota de teste para a raiz da API
+router.get('/', (req, res) => {
+    res.send('API do HubSabia está funcionando!');
+});
+
+module.exports = router;
