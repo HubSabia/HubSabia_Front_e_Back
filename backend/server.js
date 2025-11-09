@@ -1,15 +1,26 @@
-// Cole este código no seu server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
 dotenv.config();
+
 const app = express();
 
-// ... (toda a sua configuração de CORS) ...
-const allowedOrigins = ['https://hub-sabia-front-e-back.vercel.app'];
-const corsOptions = { /* ... */ };
+// --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
+const allowedOrigins = [
+    'https://hub-sabia-front-e-back.vercel.app'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Não permitido pela política de CORS'));
+    }
+  }
+};
 app.options('*', cors());
 app.use(cors(corsOptions)); 
 
@@ -21,6 +32,8 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // --- ROTAS DA API ---
+// Todas as rotas estão ativas.
+app.use('/api', require('./routes/index')); // Rota de teste
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/campanhas', require('./routes/campanhas'));
 app.use('/api/chatbots', require('./routes/chatbots'));
