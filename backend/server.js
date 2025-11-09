@@ -22,13 +22,13 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- ROTAS DA API ---
 app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/campanhas', require('./routes/campanhas'));
-// app.use('/api/chatbots', require('./routes/chatbots'));
-// app.use('/api/editais', require('./routes/editais'));
-// app.use('/api/profile', require('./routes/profile'));
-// app.use('/api/public', require('./routes/public'));
-// app.use('/api/dashboard', require('./routes/dashboard'));
-// app.use('/api/usuarios', require('./routes/usuarios'));
+app.use('/api/campanhas', require('./routes/campanhas'));
+app.use('/api/chatbots', require('./routes/chatbots'));
+app.use('/api/editais', require('./routes/editais'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/public', require('./routes/public'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/usuarios', require('./routes/usuarios'));
 
 // --- INICIA O SERVIDOR ---
 const PORT = process.env.PORT || 5000;
