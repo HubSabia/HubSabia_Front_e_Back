@@ -1,12 +1,27 @@
-// backend/routes/auth.js (VERSÃO DE TESTE)
+// backend/routes/auth.js (VERSÃO LIMPA)
+
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const Usuario = require('../models/Usuario');
+const validator = require('validator');
+const passwordValidator = require('password-validator');
+const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
-console.log('Arquivo de rotas de autenticação (auth.js) está sendo lido.');
+console.log('Arquivo auth.js (versão limpa) está sendo carregado...');
 
-// Rota de teste simples para garantir que o arquivo funciona.
-router.get('/test', (req, res) => {
-    res.send('A rota de teste de autenticação está funcionando!');
+// Apenas uma rota de teste para garantir que o router funciona
+router.get('/health-check', (req, res) => {
+    res.send('O router de autenticação está saudável.');
 });
+
+// Deixe as rotas originais aqui, mas vazias por enquanto
+router.post('/registrar', (req, res) => { res.status(501).send('Rota de registro em construção.'); });
+router.post('/login', (req, res) => { res.status(501).send('Rota de login em construção.'); });
+router.post('/verificar-email', (req, res) => { res.status(501).send('Rota de verificação em construção.'); });
+
 
 module.exports = router;
