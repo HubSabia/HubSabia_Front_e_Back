@@ -42,15 +42,17 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // --- ROTAS DA API ---
+// O objetivo é forçar um deploy que sabemos que vai funcionar.
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/campanhas', require('./routes/campanhas'));
-app.use('/api/chatbots', require('./routes/chatbots'));
-app.use('/api/editais', require('./routes/editais'));
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/public', require('./routes/public'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/usuarios', require('./routes/usuarios'));
 
+// Comente temporariamente todas as outras rotas:
+// app.use('/api/campanhas', require('./routes/campanhas'));
+// app.use('/api/chatbots', require('./routes/chatbots'));
+// app.use('/api/editais', require('./routes/editais'));
+// app.use('/api/profile', require('./routes/profile'));
+// app.use('/api/public', require('./routes/public'));
+// app.use('/api/dashboard', require('./routes/dashboard'));
+// app.use('/api/usuarios', require('./routes/usuarios'));
 // --- INICIA O SERVIDOR ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
