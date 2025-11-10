@@ -5,11 +5,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
-
 const Usuario = require('../models/Usuario');
 const validator = require('validator');
 const passwordValidator = require('password-validator');
-
 const passport = require('passport');
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -156,5 +154,52 @@ router.post('/login', authLimiter, async (req, res) => {
         res.status(500).send('Erro no servidor.');
     }
 });
+
+// --- ROTAS DE AUTENTICAÇÃO COM GOOGLE ---
+
+// ROTA #1: Iniciar o processo de autenticação com o Google
+// O seu botão "Entrar com Google" no front-end irá apontar para este endereço: GET /api/auth/google
+router.get(
+    '/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// ROTA #2: Rota de Callback que o Google chama após o login do usuário
+// O Google irá redirecionar o usuário para: GET /api/auth/google/callback
+router.get(
+    '/google/callback',
+    passport.authenticate('google', {
+        // Se o usuário cancelar ou o login falhar, redireciona de volta para a tela de login no front-end
+        failureRedirect: `${process.env.FRONTEND_URL}/login` 
+    }),
+    (req, res) => {
+        // Se a autenticação com o Google foi bem-sucedida, o Passport nos dá
+        // o usuário (do nosso banco de dados) através de 'req.user'.
+        
+        // Agora, nós criamos o nosso próprio token JWT para ele, que é o que o nosso front-end usa.
+        const payload = {
+            usuario: {
+                id: req.user.id,
+                role: req.user.role,
+                nome: req.user.nome
+            }
+        };
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '5h' },
+            (err, token) => {
+                if (err) throw err;
+                
+                // Finalmente, redirecionamos o usuário de volta para uma página especial no nosso front-end,
+                // passando o token JWT como um parâmetro na URL.
+                res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
+            }
+        );
+    }
+);
+// ==========================================================
+
 
 module.exports = router;
