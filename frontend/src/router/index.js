@@ -18,6 +18,11 @@ const routes = [
     redirect: '/login'
   },
   {
+      path: '/login-success',
+      name: 'LoginSuccess',
+      component: () => import('@/views/LoginSuccessView.vue'),
+    },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),

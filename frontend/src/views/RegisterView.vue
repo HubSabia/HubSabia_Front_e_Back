@@ -63,6 +63,15 @@
       </form>
     </div>
   </div>
+
+  <div class="divider">
+  <span>OU</span>
+</div>
+
+<a href="https://hubsabia-backend-vdl8.onrender.com/api/auth/google" class="google-login-button">
+  <!-- Você pode adicionar um ícone do Google aqui se quiser -->
+  Entrar com Google
+</a>
 </template>
 
 <script setup>
@@ -165,6 +174,43 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #888;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+.divider span {
+  padding: 0 10px;
+}
+
+.google-login-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.google-login-button:hover {
+  background-color: #357ae8;
+}
+
 .register-view {
   width: 100%;
   display: flex;
