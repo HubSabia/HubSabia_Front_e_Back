@@ -20,7 +20,7 @@ onMounted(() => {
 
   if (token) {
     // 2. Salva o token no localStorage, para que o usuário continue logado
-    localStorage.setItem('token', token);
+    localStorage.setItem('authToken', token);
     
     // 3. Redireciona o usuário para a página principal do dashboard (ou outra página)
     // O window.location.href força um recarregamento completo da página,
