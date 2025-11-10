@@ -4,11 +4,11 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const passport = require('passport');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 
 dotenv.config();
 const app = express();
 
-const MongoStore = require('connect-mongo');
 
 // --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
 const allowedOrigins = [
@@ -28,24 +28,14 @@ app.use(cors(corsOptions));
 
 app.use(express.json()); 
 
-app.use(session({ secret: '993477983954-ddnt3kct0toof7o0pvq92tmh4d95bmi1.apps.googleusercontent.com', 
-resave: false, 
-saveUninitialized: true }));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-require('./config/passport')(passport);
-
 app.use(
     session({
-        secret: 'sua_string_secreta_super_secreta_aqui', // Lembre-se de colocar em .env com o nome SESSION_SECRET
+        secret: process.env.SESSION_SECRET || 'fallback_secret_string', 
         resave: false,
         saveUninitialized: false,
-        // Diz ao express-session para usar o MongoDB para armazenar as sessões
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URI,
-            collectionName: 'sessions' // Opcional: nome da coleção no DB
+            collectionName: 'sessions'
         })
     })
 );
@@ -53,7 +43,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
-
 
 // --- CONEXÃO COM O BANCO DE DADOS ---
 mongoose.connect(process.env.MONGO_URI)
