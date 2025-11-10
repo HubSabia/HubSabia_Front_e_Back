@@ -9,6 +9,7 @@ const MongoStore = require('connect-mongo');
 dotenv.config();
 const app = express();
 
+app.set('trust proxy', 1);
 
 // --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
 const allowedOrigins = [
