@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const passport = require('passport');
+const session = require('express-session');
 
 dotenv.config();
 
@@ -24,6 +26,13 @@ const corsOptions = {
 app.use(cors(corsOptions)); 
 
 app.use(express.json()); 
+
+app.use(session({ secret: '993477983954-ddnt3kct0toof7o0pvq92tmh4d95bmi1.apps.googleusercontent.com', resave: false, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+require('./config/passport')(passport);
+
 
 // --- CONEXÃO COM O BANCO DE DADOS ---
 mongoose.connect(process.env.MONGO_URI)

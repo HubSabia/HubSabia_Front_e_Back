@@ -1,3 +1,5 @@
+// backend/models/Usuario.js (VERSÃO FINAL E CORRIGIDA)
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -12,45 +14,52 @@ const UsuarioSchema = new mongoose.Schema({
         unique: true,
         lowercase: true
     },
+    // Senha não é obrigatória para permitir login com Google
     senha_hash: {
         type: String,
         required: false 
+    },
+    // ID do Google, para usuários que se cadastram com o Google
+    googleId: {
+        type: String,
+        required: false
     },
     role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
     },
-
-    // ==========================================================
-    // --- NOVOS CAMPOS PARA VERIFICAÇÃO DE EMAIL ---
-    // ==========================================================
+    // Campo para verificação de email (que estamos abandonando, mas podemos manter por enquanto)
     isVerificado: {
         type: Boolean,
-        default: false // O usuário sempre começa como "não verificado".
+        default: false
     },
     verificationToken: {
         type: String,
-        select: false // Garante que este token não seja enviado em respostas da API por padrão.
+        select: false
     },
     verificationTokenExpires: {
         type: Date,
-        select: false // Também não será enviado por padrão.
+        select: false
     },
-    // ==========================================================
-
+    // Chave de API do Gemini
     geminiApiKey: {
         type: String,
         trim: true
     }
 }, { timestamps: true });
 
+// Hook para criptografar a senha, continua igual
 UsuarioSchema.pre('save', async function(next) {
+    // Só executa se a senha foi modificada (ou é nova)
     if (!this.isModified('senha_hash')) {
         return next();
     }
-    const salt = await bcrypt.genSalt(10);
-    this.senha_hash = await bcrypt.hash(this.senha_hash, salt);
+    // E se o campo de senha realmente existe (para não dar erro em usuários do Google)
+    if (this.senha_hash) {
+        const salt = await bcrypt.genSalt(10);
+        this.senha_hash = await bcrypt.hash(this.senha_hash, salt);
+    }
     next();
 });
 

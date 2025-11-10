@@ -10,6 +10,21 @@ const Usuario = require('../models/Usuario');
 const validator = require('validator');
 const passwordValidator = require('password-validator');
 
+const passport = require('passport');
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// Rota de callback que o Google irá chamar
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
+    // Autenticação bem-sucedida. O usuário está em req.user.
+    // Agora, geramos nosso próprio token JWT para ele.
+    const payload = { usuario: { id: req.user.id, role: req.user.role, nome: req.user.nome } };
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
+        if (err) throw err;
+        // Redireciona o usuário de volta para o front-end com o token
+        res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
+    });
+});
+
 // --- CONFIGURAÇÃO DO LIMITADOR DE REQUISIÇÕES ---
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutos
