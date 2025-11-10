@@ -8,6 +8,8 @@ const session = require('express-session');
 dotenv.config();
 const app = express();
 
+const MongoStore = require('connect-mongo');
+
 // --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
 const allowedOrigins = [
     'https://hub-sabia-front-e-back.vercel.app'
@@ -33,6 +35,23 @@ saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+require('./config/passport')(passport);
+
+app.use(
+    session({
+        secret: 'sua_string_secreta_super_secreta_aqui', // Lembre-se de colocar em .env com o nome SESSION_SECRET
+        resave: false,
+        saveUninitialized: false,
+        // Diz ao express-session para usar o MongoDB para armazenar as sessões
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI,
+            collectionName: 'sessions' // Opcional: nome da coleção no DB
+        })
+    })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 require('./config/passport')(passport);
 
 
