@@ -232,4 +232,3 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 
 module.exports = router;
-Como acessar o link do HubSabia no GitHub - Manus
