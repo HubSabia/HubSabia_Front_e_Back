@@ -2,6 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
+    path: '/', 
+    name: 'Vitrine',
+    component: () => import('@/views/VitrineView.vue'),
+    meta: { title: 'Vitrine de Campanhas' }
+  },
+  {
     path: '/login', 
     name: 'Login',
     component: () => import('@/views/LoginView.vue'),
@@ -12,10 +18,6 @@ const routes = [
     name: 'Register',
     component: () => import('@/views/RegisterView.vue'),
     meta: { title: 'Registrar' }
-  },
-  {
-    path: '/',
-    redirect: '/login'
   },
   {
       path: '/login-success',
