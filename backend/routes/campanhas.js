@@ -3,9 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 const Campanha = require('../models/Campanha');
 
-// ==========================================================
-// ROTA PARA LISTAR (GET)
-// ==========================================================
+// ROTA PARA LISTAR (GET) - Sem alterações
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const campanhas = await Campanha.find({ criador: req.usuario.id }).sort({ createdAt: -1 });
@@ -16,24 +14,15 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
-// ROTA POST: Criar (ATUALIZADA)
+// ROTA POST: Criar - Sem alterações
 router.post('/', authMiddleware, async (req, res) => {
-    // MUDANÇA: Extraímos 'descricao' e 'status' do corpo da requisição
     const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais} = req.body;
-
     if (!nome || !periodo_inicio || !periodo_fim) {
         return res.status(400).json({ msg: 'Por favor, inclua nome e período da campanha.' });
     }
-
     try {
         const novaCampanha = new Campanha({
-            nome,
-            descricao,
-            periodo_inicio,
-            periodo_fim,
-            status,
-            publico_alvo,
-            editais,
+            nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais,
             criador: req.usuario.id
         });
         const campanhaSalva = await novaCampanha.save();
@@ -44,16 +33,18 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-// ROTA PARA EXCLUIR (DELETE) - Adicionando de volta para garantir
+// ==========================================================
+// ROTA PARA EXCLUIR (DELETE)
+// ==========================================================
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const campanha = await Campanha.findById(req.params.id);
-
         if (!campanha) {
             return res.status(404).json({ msg: 'Campanha não encontrada.' });
         }
 
-        if (campanha.criador.toString() !== req.usuario.id) {
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (campanha.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') {
             return res.status(401).json({ msg: 'Ação não autorizada.' });
         }
 
@@ -69,23 +60,26 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// ==========================================================
 // ROTA PUT: Editar (ATUALIZADA)
+// ==========================================================
 router.put('/:id', authMiddleware, async (req, res) => {
     const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais } = req.body;
 
-    const camposAtualizados = {};
-    if (nome) camposAtualizados.nome = nome;
-    if (descricao) camposAtualizados.descricao = descricao;
-    if (periodo_inicio) camposAtualizados.periodo_inicio = periodo_inicio;
-    if (periodo_fim) camposAtualizados.periodo_fim = periodo_fim;
-    if (status) camposAtualizados.status = status;
-    if (publico_alvo) camposAtualizados.publico_alvo = publico_alvo;
-    if (editais) camposAtualizados.editais = editais;
+    const camposAtualizados = { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais };
+    // Remove campos undefined para não sobrescrever com null
+    Object.keys(camposAtualizados).forEach(key => camposAtualizados[key] === undefined && delete camposAtualizados[key]);
 
     try {
         let campanha = await Campanha.findById(req.params.id);
-        if (!campanha) { return res.status(404).json({ msg: 'Campanha não encontrada.' }); }
-        if (campanha.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        if (!campanha) { 
+            return res.status(404).json({ msg: 'Campanha não encontrada.' }); 
+        }
+
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (campanha.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
+            return res.status(401).json({ msg: 'Ação não autorizada.' }); 
+        }
         
         campanha = await Campanha.findByIdAndUpdate(
             req.params.id,
