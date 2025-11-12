@@ -33,4 +33,13 @@ apiClient.interceptors.response.use(
     }
 );
 
+export const getUserChatHistory = (chatbotId) => {
+    // Rota para buscar o histórico de conversas do usuário logado com um chatbot específico
+    return apiClient.get(`/chatbots/${chatbotId}/historico-usuario`);
+};
+
+export const getChatbotHistory = (chatbotId) => {
+    return apiClient.get(`/chatbots/${chatbotId}/historico`);
+};
+
 export default apiClient;
