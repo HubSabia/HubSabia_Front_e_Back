@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 const Chatbot = require('../models/Chatbot');
+const HistoricoConversa = require('../models/HistoricoConversa');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const Usuario = require('../models/Usuario');
@@ -115,6 +116,16 @@ ${mensagemUsuario}
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
+
+            // Salvar no histórico de conversas
+            const novoHistorico = new HistoricoConversa({
+                chatbot: chatbot._id,
+                usuario: req.usuario.id,
+                mensagemUsuario: mensagemUsuario,
+                respostaIA: respostaDaIA
+            });
+            await novoHistorico.save();
+
             res.json({ resposta: respostaDaIA });
         } catch (iaError) {
             console.error("Erro da API do Google AI:", iaError);
@@ -123,6 +134,46 @@ ${mensagemUsuario}
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// GET /api/chatbots/:id/historico -> Listar o histórico de conversas
+router.get('/:id/historico', authMiddleware, async (req, res) => {
+    try {
+        const chatbot = await Chatbot.findById(req.params.id);
+        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
+        // Verifica se o usuário logado é o criador do chatbot
+        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+
+        const historico = await HistoricoConversa.find({ chatbot: req.params.id })
+            .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
+            .select('mensagemUsuario respostaIA dataInteracao usuario'); // Seleciona apenas campos relevantes
+
+        res.json(historico);
+    } catch (err) {
+        console.error("Erro ao buscar histórico do chatbot:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// GET /api/chatbots/:id/historico-usuario -> Listar o histórico de conversas do usuário logado com este chatbot
+router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
+    try {
+        const chatbot = await Chatbot.findById(req.params.id);
+        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
+        
+        // O histórico é filtrado pelo chatbot e pelo usuário logado
+        const historico = await HistoricoConversa.find({ 
+            chatbot: req.params.id,
+            usuario: req.usuario.id // Filtra pelo usuário logado
+        })
+            .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
+            .select('mensagemUsuario respostaIA dataInteracao'); // Seleciona apenas campos relevantes
+
+        res.json(historico);
+    } catch (err) {
+        console.error("Erro ao buscar histórico do usuário:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
