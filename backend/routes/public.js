@@ -7,6 +7,29 @@ const Campanha = require('../models/Campanha');
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// ==========================================================
+// --- NOVA ROTA PARA A VITRINE DE CAMPANHAS ---
+// ==========================================================
+// ROTA GET PÚBLICA: Listar campanhas ativas para a vitrine
+router.get('/campanhas', async (req, res) => {
+    try {
+        // 1. Busca no banco de dados apenas os documentos que têm status: 'Ativa'.
+        const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
+            // 2. Ordena os resultados para mostrar os mais recentes primeiro.
+            .sort({ createdAt: -1 })
+            // 3. O .populate() é muito poderoso. Ele usa a referência 'criador' 
+            //    para buscar o documento do usuário correspondente e incluir
+            //    APENAS o campo 'nome' dele no resultado.
+            .populate('criador', 'nome'); 
+        
+        // 4. Envia a lista de campanhas como resposta JSON.
+        res.json(campanhasAtivas);
+    } catch (err) {
+        console.error("Erro ao buscar campanhas públicas:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
 // ROTA GET PÚBLICA: Buscar informações básicas de um chatbot.
 router.get('/chatbots/:id', async (req, res) => {
     try {
