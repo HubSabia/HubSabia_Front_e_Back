@@ -157,10 +157,6 @@ router.get('/:id/historico', authMiddleware, async (req, res) => {
     }
 });
 
-
-
-
-
 // GET /api/chatbots/:id/historico-usuario -> Listar o histórico de conversas do usuário logado com este chatbot
 router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
     try {
@@ -238,5 +234,3 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 
 module.exports = router;
-
-
