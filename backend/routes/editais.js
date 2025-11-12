@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 const Edital = require('../models/Edital');
 
-// ROTA GET: Listar todos os editais
+// ROTA GET: Listar todos os editais do usuário - Sem alterações
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const editais = await Edital.find({ criador: req.usuario.id }).sort({ data_publicacao: -1 });
@@ -11,11 +11,9 @@ router.get('/', authMiddleware, async (req, res) => {
     } catch (err) { res.status(500).send('Erro no servidor.'); }
 });
 
-// ROTA POST: Criar um novo edital
+// ROTA POST: Criar um novo edital - Sem alterações
 router.post('/', authMiddleware, async (req, res) => {
-    // Usando os campos simplificados: titulo, conteudo, data_publicacao
     const { titulo, conteudo, data_publicacao } = req.body;
-    
     if (!titulo || !conteudo) {
         return res.status(400).json({ msg: 'Título e conteúdo são obrigatórios.' });
     }
@@ -40,10 +38,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         if (!edital) {
             return res.status(404).json({ msg: 'Edital não encontrado.' });
         }
-        // Segurança: Apenas o criador pode excluir
-        if (edital.criador.toString() !== req.usuario.id) {
+        
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (edital.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') {
             return res.status(401).json({ msg: 'Ação não autorizada.' });
         }
+        
         await Edital.findByIdAndDelete(req.params.id);
         res.json({ msg: 'Edital removido com sucesso.' });
     } catch (err) {
@@ -63,8 +63,14 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     try {
         let edital = await Edital.findById(req.params.id);
-        if (!edital) { return res.status(404).json({ msg: 'Edital não encontrado.' }); }
-        if (edital.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        if (!edital) { 
+            return res.status(404).json({ msg: 'Edital não encontrado.' }); 
+        }
+
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (edital.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
+            return res.status(401).json({ msg: 'Ação não autorizada.' }); 
+        }
         
         edital = await Edital.findByIdAndUpdate(
             req.params.id,

@@ -6,12 +6,7 @@ const HistoricoConversa = require('../models/HistoricoConversa');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const Usuario = require('../models/Usuario');
-
-// Mantemos a importação da biblioteca
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// Removemos a inicialização global da IA, pois ela agora é feita por requisição
-
 
 // --- ROTAS GERAIS (CRUD Básico) ---
 
@@ -180,27 +175,36 @@ router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id).populate('campanha', 'nome');
-        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
-        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        if (!chatbot) { 
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
+        }
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
+            return res.status(401).json({ msg: 'Ação não autorizada.' }); 
+        }
         res.json(chatbot);
     } catch (err) {
         console.error("Erro ao buscar chatbot:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
-
+// ==========================================================
 // PUT /api/chatbots/:id -> Editar um chatbot
+// ==========================================================
 router.put('/:id', authMiddleware, async (req, res) => {
     const { nome, status, campanha } = req.body;
-    const camposAtualizados = {};
-    if (nome) camposAtualizados.nome = nome;
-    if (status) camposAtualizados.status = status;
-    if (campanha) camposAtualizados.campanha = campanha;
+    const camposAtualizados = { nome, status, campanha };
+    Object.keys(camposAtualizados).forEach(key => camposAtualizados[key] === undefined && delete camposAtualizados[key]);
     
     try {
         let chatbot = await Chatbot.findById(req.params.id);
-        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
-        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        if (!chatbot) { 
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
+        }
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
+            return res.status(401).json({ msg: 'Ação não autorizada.' }); 
+        }
         
         chatbot = await Chatbot.findByIdAndUpdate(
             req.params.id,
@@ -215,20 +219,30 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// ==========================================================
 // DELETE /api/chatbots/:id -> Excluir um chatbot
+// ==========================================================
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
-        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
-        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
+        if (!chatbot) { 
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
+        }
+        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
+        if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
+            return res.status(401).json({ msg: 'Ação não autorizada.' }); 
+        }
         
+        // Adicional: Excluir o histórico de conversas associado
+        await HistoricoConversa.deleteMany({ chatbot: req.params.id });
+
         await Chatbot.findByIdAndDelete(req.params.id);
-        res.json({ msg: 'Chatbot removido com sucesso.' });
+        res.json({ msg: 'Chatbot e seu histórico foram removidos com sucesso.' });
     } catch (err) {
         console.error("Erro ao excluir chatbot:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
 
-
 module.exports = router;
+
