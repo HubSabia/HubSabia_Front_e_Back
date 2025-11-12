@@ -1,5 +1,6 @@
 <template>
-  <div class="chat-view">
+  <div class="chat-view-wrapper">
+    <ChatHistorySidebar :chatbotId="chatbotId" />
     <div class="chat-container">
       <header class="chat-header">
         <!-- Título agora mostra o nome do chatbot que estamos buscando -->
@@ -38,6 +39,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import apiClient from '@/services/api';
+import ChatHistorySidebar from '@/components/ChatHistorySidebar.vue';
 
 const route = useRoute();
 const chatbotId = route.params.id;
@@ -116,12 +118,19 @@ onMounted(() => {
   background-color: var(--content-bg);
 }
 
-.chat-container {
+.chat-view-wrapper {
+  display: flex;
   width: 100%;
   height: 100%;
-  max-width: 900px; /* Aumenta um pouco a largura máxima em desktops */
+  max-height: calc(100vh - 70px); /* Altura total menos o header principal */
+}
+
+.chat-container {
+  flex-grow: 1; /* Ocupa o espaço restante ao lado da sidebar */
+  height: 100%;
+  max-width: none; /* Remove o max-width para ocupar o espaço total */
   background: var(--card-bg);
-  border-radius: 12px;
+  border-radius: 0 12px 12px 0; /* Ajusta o border-radius para a integração com a sidebar */
   box-shadow: 0 8px 30px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
@@ -241,7 +250,7 @@ onMounted(() => {
 
 /* RESPONSIVIDADE */
 @media (max-width: 767px) {
-  .chat-view {
+  .chat-view-wrapper {
     /* Em celulares, o chat ocupa 100% da tela, sem padding externo */
     padding: 0;
     height: 100%;
