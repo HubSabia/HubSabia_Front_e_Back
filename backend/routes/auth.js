@@ -2,126 +2,58 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const passport = require('passport');
 const rateLimit = require('express-rate-limit');
+
+// Modelos e Validadores necessários
 const Usuario = require('../models/Usuario');
 const validator = require('validator');
 const passwordValidator = require('password-validator');
-const passport = require('passport');
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-// Rota de callback que o Google irá chamar
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
-    // Autenticação bem-sucedida. O usuário está em req.user.
-    // Agora, geramos nosso próprio token JWT para ele.
-    const payload = { usuario: { id: req.user.id, role: req.user.role, nome: req.user.nome } };
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
-        if (err) throw err;
-        // Redireciona o usuário de volta para o front-end com o token
-        res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
-    });
-});
-
-// --- CONFIGURAÇÃO DO LIMITADOR DE REQUISIÇÕES ---
+// --- CONFIGURAÇÕES ---
 const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutos
-	max: 10, // Limite de 10 requisições por IP na janela
-	message: { msg: 'Muitas tentativas de autenticação. Tente novamente em 15 minutos.' },
+	windowMs: 15 * 60 * 1000,
+	max: 10,
+	message: { msg: 'Muitas tentativas. Tente novamente em 15 minutos.' },
 	standardHeaders: true,
 	legacyHeaders: false,
 });
 
-// --- CONFIGURAÇÃO DO VALIDADOR DE SENHA ---
 const passwordSchema = new passwordValidator();
-passwordSchema
-    .is().min(8, 'A senha deve ter no mínimo 8 caracteres.')
-    .has().uppercase(1, 'A senha deve ter pelo menos uma letra maiúscula.')
-    .has().lowercase(1, 'A senha deve ter pelo menos uma letra minúscula.')
-    .has().digits(1, 'A senha deve ter pelo menos um número.');
-
+passwordSchema.is().min(8).has().uppercase().has().lowercase().has().digits(1);
 
 // ==========================================================
-// ROTA DE REGISTRO
+// ROTA DE REGISTRO (SIMPLIFICADA)
 // ==========================================================
 router.post('/registrar', authLimiter, async (req, res) => {
     const { nome, email, senha } = req.body;
-    
     if (!nome || !email || !senha) {
         return res.status(400).json({ msg: 'Por favor, inclua todos os campos.' });
     }
-
     try {
-        // Validação de segurança no servidor
         if (!validator.isEmail(email)) {
             return res.status(400).json({ msg: 'Formato de email inválido.' });
         }
-        const errosSenha = passwordSchema.validate(senha, { list: true });
-        if (errosSenha.length > 0) {
-            return res.status(400).json({ msg: `Senha fraca: ${errosSenha[0]}` });
+        if (!passwordSchema.validate(senha)) {
+            return res.status(400).json({ msg: 'A senha é fraca.' });
         }
-
         if (await Usuario.findOne({ email: email.toLowerCase() })) {
-            return res.status(400).json({ msg: 'Um usuário com este e-mail já existe.' });
+            return res.status(400).json({ msg: 'Este e-mail já está cadastrado.' });
         }
 
+        // Cria e salva o usuário. O hash da senha é feito pelo hook 'pre-save' no modelo.
         const usuario = new Usuario({ nome, email, senha_hash: senha });
-
-        const verificationToken = crypto.randomBytes(32).toString('hex');
-        usuario.verificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-        usuario.verificationTokenExpires = Date.now() + 10 * 60 * 1000; // 10 minutos
-
         await usuario.save();
-
-        const verificationUrl = `${process.env.FRONTEND_URL}/verificar-email/${verificationToken}`;
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        });
-
-        await transporter.sendMail({
-            from: '"HubSabia" <no-reply@hubsabia.com>',
-            to: usuario.email,
-            subject: 'Ative sua Conta - HubSabia',
-            html: `<p>Bem-vindo ao HubSabia! Por favor, clique no link a seguir para ativar sua conta: <a href="${verificationUrl}">${verificationUrl}</a></p><p>Este link expira em 10 minutos.</p>`,
-        });
-
-        res.status(201).json({ msg: 'Registro realizado com sucesso! Um email de verificação foi enviado.' });
-
+        
+        res.status(201).json({ msg: 'Usuário registrado com sucesso!' });
     } catch (err) {
         console.error("Erro no registro:", err.message);
-        res.status(500).send('Ocorreu um erro no servidor durante o registro.');
+        res.status(500).send('Ocorreu um erro no servidor.');
     }
 });
 
 // ==========================================================
-// ROTA DE VERIFICAÇÃO DE EMAIL
-// ==========================================================
-router.post('/verificar-email', async (req, res) => {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ msg: 'Token não fornecido.' });
-
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    const usuario = await Usuario.findOne({
-        verificationToken: hashedToken,
-        verificationTokenExpires: { $gt: Date.now() },
-    });
-
-    if (!usuario) {
-        return res.status(400).json({ msg: 'Token inválido ou expirado.' });
-    }
-
-    usuario.isVerificado = true;
-    usuario.verificationToken = undefined;
-    usuario.verificationTokenExpires = undefined;
-    await usuario.save();
-
-    res.json({ msg: 'Email verificado com sucesso! Você já pode fazer o login.' });
-});
-
-
-// ==========================================================
-// ROTA DE LOGIN
+// ROTA DE LOGIN (SIMPLIFICADA)
 // ==========================================================
 router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
@@ -130,13 +62,8 @@ router.post('/login', authLimiter, async (req, res) => {
     }
     try {
         const usuario = await Usuario.findOne({ email: email.toLowerCase() });
-        if (!usuario) {
+        if (!usuario || !usuario.senha_hash) { // Adicionado '!usuario.senha_hash' para não logar usuários do Google com senha
             return res.status(400).json({ msg: 'Credenciais inválidas.' });
-        }
-
-        // CHECAGEM DE VERIFICAÇÃO
-        if (!usuario.isVerificado) {
-            return res.status(401).json({ msg: 'Sua conta ainda não foi verificada. Por favor, cheque seu email.' });
         }
         
         const isMatch = await bcrypt.compare(password, usuario.senha_hash);
@@ -155,51 +82,21 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 });
 
-// --- ROTAS DE AUTENTICAÇÃO COM GOOGLE ---
+// ==========================================================
+// ROTAS DE AUTENTICAÇÃO COM GOOGLE
+// ==========================================================
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// ROTA #1: Iniciar o processo de autenticação com o Google
-// O seu botão "Entrar com Google" no front-end irá apontar para este endereço: GET /api/auth/google
 router.get(
-    '/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-);
-
-// ROTA #2: Rota de Callback que o Google chama após o login do usuário
-// O Google irá redirecionar o usuário para: GET /api/auth/google/callback
-router.get(
-    '/google/callback',
-    passport.authenticate('google', {
-        // Se o usuário cancelar ou o login falhar, redireciona de volta para a tela de login no front-end
-        failureRedirect: `${process.env.FRONTEND_URL}/login` 
-    }),
+    '/google/callback', 
+    passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/login` }),
     (req, res) => {
-        // Se a autenticação com o Google foi bem-sucedida, o Passport nos dá
-        // o usuário (do nosso banco de dados) através de 'req.user'.
-        
-        // Agora, nós criamos o nosso próprio token JWT para ele, que é o que o nosso front-end usa.
-        const payload = {
-            usuario: {
-                id: req.user.id,
-                role: req.user.role,
-                nome: req.user.nome
-            }
-        };
-
-        jwt.sign(
-            payload,
-            process.env.JWT_SECRET,
-            { expiresIn: '5h' },
-            (err, token) => {
-                if (err) throw err;
-                
-                // Finalmente, redirecionamos o usuário de volta para uma página especial no nosso front-end,
-                // passando o token JWT como um parâmetro na URL.
-                res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
-            }
-        );
+        const payload = { usuario: { id: req.user.id, role: req.user.role, nome: req.user.nome } };
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
+            if (err) throw err;
+            res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
+        });
     }
 );
-// ==========================================================
-
 
 module.exports = router;
