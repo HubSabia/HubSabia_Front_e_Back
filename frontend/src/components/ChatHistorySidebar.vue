@@ -16,7 +16,7 @@
           @click="selectConversation(conv)"
         >
           <div class="conversation-title">
-            {{ conv.mensagemUsuario.substring(0, 30) + (conv.mensagemUsuario.length > 30 ? '...' : '') }}
+            {{ conv.pergunta.substring(0, 30) + (conv.pergunta.length > 30 ? '...' : '') }}
           </div>
           <div class="conversation-date">
             {{ formatDate(conv.dataInteracao) }}
