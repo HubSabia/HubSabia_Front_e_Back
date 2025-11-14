@@ -54,6 +54,16 @@
               <span>Home</span>
             </router-link>
           </li>
+
+          <li>
+          <router-link to="/">
+            <span> <li>
+          <router-link to="/">
+            <span>Vitrine de campanhas</span>
+          </router-link>
+        </li></span>
+          </router-link>
+            </li>
           <li v-if="userIsAdmin">
             <router-link to="/usuarios" class="nav-link" active-class="active">
               <i class="icon icon-user-settings"></i>
