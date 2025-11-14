@@ -1,5 +1,3 @@
-// backend/models/Usuario.js (VERSÃO FINAL E CORRIGIDA)
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -28,19 +26,6 @@ const UsuarioSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
-    },
-    // Campo para verificação de email (que estamos abandonando, mas podemos manter por enquanto)
-    isVerificado: {
-        type: Boolean,
-        default: false
-    },
-    verificationToken: {
-        type: String,
-        select: false
-    },
-    verificationTokenExpires: {
-        type: Date,
-        select: false
     },
     // Chave de API do Gemini
     geminiApiKey: {
