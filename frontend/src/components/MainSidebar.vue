@@ -58,7 +58,8 @@
           <li>
           <router-link to="/">
             <span> <li>
-          <router-link to="/">
+          <router-link to="/" class="nav-link" active-class="active">
+            <i class="icon icon-user-settings"></i>
             <span>Vitrine de campanhas</span>
           </router-link>
         </li></span>
