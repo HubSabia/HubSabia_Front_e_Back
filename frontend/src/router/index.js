@@ -5,24 +5,25 @@ const routes = [
     path: '/', 
     name: 'Vitrine',
     component: () => import('@/views/VitrineView.vue'),
-    meta: { title: 'Vitrine de Campanhas' }
+    meta: { title: 'Vitrine', public: true }
   },
   {
     path: '/login', 
     name: 'Login',
     component: () => import('@/views/LoginView.vue'),
-    meta: { title: 'Login' }
+    meta: { title: 'Login', public: true }
   },
   {
     path: '/registrar',
     name: 'Register',
     component: () => import('@/views/RegisterView.vue'),
-    meta: { title: 'Registrar' }
+    meta: { title: 'Registrar', public: true }
   },
   {
       path: '/login-success',
       name: 'LoginSuccess',
       component: () => import('@/views/LoginSuccessView.vue'),
+      meta: { public: true }
     },
   {
     path: '/dashboard',
@@ -76,7 +77,7 @@ const routes = [
     path: '/chat-publico/:id',
     name: 'ChatPublico',
     component: () => import('@/views/PublicChatView.vue'),
-    meta: { title: 'Assistente Virtual' } // Rota pública, sem 'requiresAuth'
+    meta: { title: 'Assistente Virtual', public: true }
   },
 ];
 

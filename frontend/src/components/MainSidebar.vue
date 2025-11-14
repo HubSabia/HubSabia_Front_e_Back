@@ -51,7 +51,7 @@
           <li>
             <router-link to="/dashboard" class="nav-link" active-class="active">
               <i class="icon icon-home"></i>
-              <span>Home</span>
+              <span>Dashboard</span>
             </router-link>
           </li>
 
