@@ -166,7 +166,7 @@ router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
             usuario: req.usuario.id // Filtra pelo usuário logado
         })
             .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
-            .select('mensagemUsuario respostaIA dataInteracao'); // Seleciona apenas campos relevantes
+             .select('pergunta resposta dataInteracao');
 
         res.json(historico);
     } catch (err) {
