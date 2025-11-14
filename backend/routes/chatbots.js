@@ -145,7 +145,7 @@ router.get('/:id/historico', authMiddleware, async (req, res) => {
 
         const historico = await HistoricoConversa.find({ chatbot: req.params.id })
             .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
-            .select('mensagemUsuario respostaIA dataInteracao usuario'); // Seleciona apenas campos relevantes
+            .select('pergunta resposta dataInteracao usuario');
 
         res.json(historico);
     } catch (err) {
