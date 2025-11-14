@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const authMiddleware = require('../middlewares/auth');
 const Chatbot = require('../models/Chatbot');
 const HistoricoConversa = require('../models/HistoricoConversa');
@@ -111,11 +112,14 @@ ${mensagemUsuario}
             const respostaDaIA = response.text();
 
             // Salvar no histórico de conversas
+            const sessaoId = crypto.randomBytes(16).toString('hex');
+
             const novoHistorico = new HistoricoConversa({
                 chatbot: chatbot._id,
                 usuario: req.usuario.id,
-                mensagemUsuario: mensagemUsuario,
-                respostaIA: respostaDaIA
+                sessaoId: sessaoId,               
+                pergunta: mensagemUsuario,      
+                resposta: respostaDaIA
             });
             await novoHistorico.save();
 
