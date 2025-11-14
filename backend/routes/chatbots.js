@@ -125,9 +125,13 @@ ${mensagemUsuario}
 
             res.json({ resposta: respostaDaIA });
         } catch (iaError) {
-            console.error("Erro da API do Google AI:", iaError);
-            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida.' });
-        }
+    console.error("Erro da API do Google AI:", iaError);
+
+    if (iaError.status === 503) {
+        return res.status(503).json({ msg: 'O assistente de IA está sobrecarregado no momento. Por favor, tente novamente em alguns instantes.' });
+    }
+    res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida ou se o serviço está online.' });
+}
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
