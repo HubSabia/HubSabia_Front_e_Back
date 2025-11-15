@@ -7,6 +7,21 @@ const Campanha = require('../models/Campanha');
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+router.get('/chatbots/:id', async (req, res) => {
+    try {
+        console.log(`Buscando chatbot público com ID: ${req.params.id}`); // Adiciona log
+        const chatbot = await Chatbot.findById(req.params.id).select('nome');
+        if (!chatbot) {
+            console.log(`Chatbot com ID ${req.params.id} não encontrado.`);
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
+        }
+        res.json(chatbot);
+    } catch (err) {
+        console.error("Erro ao buscar chatbot público:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
 // ==========================================================
 // --- NOVA ROTA PARA A VITRINE DE CAMPANHAS ---
 // ==========================================================
@@ -26,20 +41,6 @@ router.get('/campanhas', async (req, res) => {
         res.json(campanhasAtivas);
     } catch (err) {
         console.error("Erro ao buscar campanhas públicas:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
-});
-
-// ROTA GET PÚBLICA: Buscar informações básicas de um chatbot.
-router.get('/chatbots/:id', async (req, res) => {
-    try {
-        const chatbot = await Chatbot.findById(req.params.id).select('nome');
-        if (!chatbot) {
-            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
-        }
-        res.json(chatbot);
-    } catch (err) {
-        console.error("Erro ao buscar chatbot público:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
