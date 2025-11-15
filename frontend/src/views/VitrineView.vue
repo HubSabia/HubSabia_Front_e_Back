@@ -22,7 +22,8 @@
         <h2>{{ campanha.nome }}</h2>
         <p class="creator">Criado por: {{ campanha.criador.nome }}</p>
         <p class="description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
-        <router-link :to="`/chat-publico/${campanha._id}`" class="chat-button">
+        <router-link   v-if="campanha.chatbot " 
+          :to="`/chat-publico/${campanha.chatbot}`" class="chat-button">
           Conversar com Assistente
         </router-link>
       </div>
