@@ -88,15 +88,23 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
-  if (requiresAuth && !token) {
-    next('/login');
-  } else if ((to.name === 'Login' || to.name === 'Register') && token) {
-    next('/dashboard');
-  } else {
-    next();
-  }
-});
+  const requiresAuth = to.meta.requiresAuth;
+  const isPublic = to.meta.public;
+  const isAuthPage = to.name === 'Login' || to.name === 'Register';
 
+  // Se a rota requer autenticação e não há token, redireciona para o login.
+  if (requiresAuth && !token) {
+    return next({ name: 'Login' });
+  }
+
+  // Se o usuário está logado e tenta acessar uma página de autenticação (Login/Registro),
+  // redireciona para o dashboard.
+  if (isAuthPage && token) {
+    return next({ name: 'Dashboard' });
+  }
+
+  // Para todas as outras situações (páginas públicas, ou páginas protegidas com token),
+  // permite a navegação.
+  next();
+});
 export default router;
