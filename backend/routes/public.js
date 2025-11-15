@@ -32,10 +32,8 @@ router.get('/campanhas', async (req, res) => {
         const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
             // 2. Ordena os resultados para mostrar os mais recentes primeiro.
             .sort({ createdAt: -1 })
-            // 3. O .populate() é muito poderoso. Ele usa a referência 'criador' 
-            //    para buscar o documento do usuário correspondente e incluir
-            //    APENAS o campo 'nome' dele no resultado.
-            .populate('criador', 'nome'); 
+            .populate('criador', 'nome')
+            .populate('chatbot', '_id');
         
         // 4. Envia a lista de campanhas como resposta JSON.
         res.json(campanhasAtivas);
