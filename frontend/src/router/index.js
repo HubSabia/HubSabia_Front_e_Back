@@ -1,12 +1,7 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 
 const routes = [
-  {
-    path: '/', 
-    name: 'Vitrine',
-    component: () => import('@/views/VitrineView.vue'),
-    meta: { title: 'Vitrine de Campanhas', public: true }
-  },
+  // ROTAS PÚBLICAS PRIMEIRO (ordem importa!)
   {
     path: '/chat-publico/:id',
     name: 'ChatPublico',
@@ -26,11 +21,13 @@ const routes = [
     meta: { title: 'Registrar', public: true }
   },
   {
-      path: '/login-success',
-      name: 'LoginSuccess',
-      component: () => import('@/views/LoginSuccessView.vue'),
-      meta: { public: true }
-    },
+    path: '/login-success',
+    name: 'LoginSuccess',
+    component: () => import('@/views/LoginSuccessView.vue'),
+    meta: { public: true }
+  },
+  
+  // ROTAS PROTEGIDAS
   {
     path: '/dashboard',
     name: 'Dashboard',
@@ -79,10 +76,18 @@ const routes = [
     component: () => import('@/views/ConversaChatbot.vue'),
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
   },
+  
+  // VITRINE POR ÚLTIMO (rota catch-all)
+  {
+    path: '/', 
+    name: 'Vitrine',
+    component: () => import('@/views/VitrineView.vue'),
+    meta: { title: 'Vitrine de Campanhas', public: true }
+  },
 ];
 
 const router = createRouter({
-   history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 });
 
@@ -91,6 +96,8 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth;
   const isPublic = to.meta.public;
   const isAuthPage = to.name === 'Login' || to.name === 'Register';
+
+  console.log('Navegando para:', to.path, 'Params:', to.params); // Debug
 
   // Se a rota requer autenticação e não há token, redireciona para o login.
   if (requiresAuth && !token) {
@@ -107,4 +114,5 @@ router.beforeEach((to, from, next) => {
   // permite a navegação.
   next();
 });
+
 export default router;
