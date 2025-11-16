@@ -23,4 +23,7 @@ const ChatbotSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+ChatbotSchema.index({ campanha: 1 });
+ChatbotSchema.index({ criador: 1, status: 1 });
+
 module.exports = mongoose.model('Chatbot', ChatbotSchema);

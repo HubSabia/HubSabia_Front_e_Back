@@ -23,4 +23,7 @@ const CampanhaSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+CampanhaSchema.index({ criador: 1, status: 1 });
+CampanhaSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Campanha', CampanhaSchema);

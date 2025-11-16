@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 const Edital = require('../models/Edital');
+const { validateObjectId } = require('../utils/validation');
 
 // ROTA GET: Listar todos os editais do usuário - Sem alterações
 router.get('/', authMiddleware, async (req, res) => {
@@ -16,6 +17,17 @@ router.post('/', authMiddleware, async (req, res) => {
     const { titulo, conteudo, data_publicacao } = req.body;
     if (!titulo || !conteudo) {
         return res.status(400).json({ msg: 'Título e conteúdo são obrigatórios.' });
+    }
+    if (titulo.trim().length < 5) {
+        return res.status(400).json({ msg: 'O título deve ter pelo menos 5 caracteres.' });
+    }
+    
+    if (titulo.trim().length > 200) {
+        return res.status(400).json({ msg: 'O título deve ter no máximo 200 caracteres.' });
+    }
+    
+    if (conteudo.trim().length < 20) {
+        return res.status(400).json({ msg: 'O conteúdo deve ter pelo menos 20 caracteres.' });
     }
     try {
         const novoEdital = new Edital({
@@ -32,7 +44,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // ==========================================================
 // ROTA PARA EXCLUIR (DELETE)
 // ==========================================================
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
     try {
         const edital = await Edital.findById(req.params.id);
         if (!edital) {
@@ -55,7 +67,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // ==========================================================
 // ROTA PARA EDITAR (PUT)
 // ==========================================================
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     const { titulo, conteudo } = req.body;
     const camposAtualizados = {};
     if (titulo) camposAtualizados.titulo = titulo;

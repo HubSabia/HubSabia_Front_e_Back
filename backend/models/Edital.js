@@ -20,4 +20,7 @@ const EditalSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+EditalSchema.index({ criador: 1 });
+EditalSchema.index({ data_publicacao: -1 });
+
 module.exports = mongoose.model('Edital', EditalSchema);

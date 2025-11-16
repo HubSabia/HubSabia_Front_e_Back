@@ -27,7 +27,8 @@ module.exports = function(passport) {
                         done(null, usuario);
                     }
                 } catch (err) {
-                    console.error('Erro na estratégia do Google Passport:', err);
+                    console.error('Erro na estratégia do Google Passport:', err.message);
+                    done(err, false);
                 }
             }
         )

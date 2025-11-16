@@ -8,6 +8,16 @@ const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const Usuario = require('../models/Usuario');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { validateObjectId } = require('../utils/validation');
+const rateLimit = require('express-rate-limit');
+
+const chatLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 10, // 10 requisições
+    message: { msg: 'Você está enviando mensagens muito rápido. Aguarde um minuto.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // --- ROTAS GERAIS (CRUD Básico) ---
 
@@ -30,6 +40,13 @@ router.post('/', authMiddleware, async (req, res) => {
     if (!nome || !campanha) {
         return res.status(400).json({ msg: 'Nome e campanha associada são obrigatórios.' });
     }
+    if (nome.trim().length < 3) {
+        return res.status(400).json({ msg: 'O nome do chatbot deve ter pelo menos 3 caracteres.' });
+    }
+    
+    if (nome.trim().length > 50) {
+        return res.status(400).json({ msg: 'O nome do chatbot deve ter no máximo 50 caracteres.' });
+    }
     try {
         const campanhaExiste = await Campanha.findOne({ _id: campanha, criador: req.usuario.id });
         if (!campanhaExiste) {
@@ -49,7 +66,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
 // POST /api/chatbots/:id/interagir (ATUALIZADO PARA USAR A CHAVE DO USUÁRIO)
-router.post('/:id/interagir', authMiddleware, async (req, res) => {
+router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, async (req, res) => {
     const { mensagemUsuario } = req.body;
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
@@ -199,7 +216,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // ==========================================================
 // PUT /api/chatbots/:id -> Editar um chatbot
 // ==========================================================
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     const { nome, status, campanha } = req.body;
     const camposAtualizados = { nome, status, campanha };
     Object.keys(camposAtualizados).forEach(key => camposAtualizados[key] === undefined && delete camposAtualizados[key]);
@@ -230,7 +247,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // ==========================================================
 // DELETE /api/chatbots/:id -> Excluir um chatbot
 // ==========================================================
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
         if (!chatbot) { 

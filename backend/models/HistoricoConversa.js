@@ -26,4 +26,7 @@ const HistoricoConversaSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+HistoricoConversaSchema.index({ chatbot: 1, sessaoId: 1 });
+HistoricoConversaSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('HistoricoConversa', HistoricoConversaSchema);

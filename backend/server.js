@@ -13,18 +13,30 @@ app.set('trust proxy', 1);
 
 // --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
 const allowedOrigins = [
-    'https://hub-sabia-front-e-back.vercel.app'
+    'https://hub-sabia-front-e-back.vercel.app',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173'
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Permite requisições sem origin (como Postman, apps mobile)
+    // APENAS em ambiente de desenvolvimento
+    if (process.env.NODE_ENV === 'development' && !origin) {
+      return callback(null, true);
+    }
+    
+    // Verifica se a origem está na lista de permitidas
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('Origem bloqueada pelo CORS:', origin);
       callback(new Error('Não permitido pela política de CORS'));
     }
-  }
+  },
+  credentials: true // Permite cookies e credenciais
 };
+
 app.use(cors(corsOptions)); 
 
 app.use(express.json()); 
