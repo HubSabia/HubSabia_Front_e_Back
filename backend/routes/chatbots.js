@@ -54,6 +54,8 @@ router.post('/', authMiddleware, async (req, res) => {
         }
         const novoChatbot = new Chatbot({ nome, status, campanha, criador: req.usuario.id });
         const chatbotSalvo = await novoChatbot.save();
+        campanhaExiste.chatbot = chatbotSalvo._id;
+        await campanhaExiste.save();
         const chatbotPopulado = await Chatbot.findById(chatbotSalvo._id).populate('campanha', 'nome');
         res.status(201).json(chatbotPopulado);
     } catch (err) {
