@@ -9,15 +9,18 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 router.get('/chatbots/:id', async (req, res) => {
     try {
-        console.log(`Buscando chatbot público com ID: ${req.params.id}`); // Adiciona log
-        const chatbot = await Chatbot.findById(req.params.id).select('nome');
+        console.log(`[PUBLIC] Buscando chatbot público com ID: ${req.params.id}`); // Log no backend
+        const chatbot = await Chatbot.findById(req.params.id).select('nome status');
+        
         if (!chatbot) {
-            console.log(`Chatbot com ID ${req.params.id} não encontrado.`);
+            console.log(`[PUBLIC] Chatbot com ID ${req.params.id} não encontrado.`);
             return res.status(404).json({ msg: 'Chatbot não encontrado.' });
         }
+        
+        console.log(`[PUBLIC] Chatbot encontrado: ${chatbot.nome}, Status: ${chatbot.status}`);
         res.json(chatbot);
     } catch (err) {
-        console.error("Erro ao buscar chatbot público:", err.message);
+        console.error("[PUBLIC] Erro ao buscar chatbot público:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });

@@ -44,11 +44,17 @@ const publicApiBaseUrl = 'https://hubsabia-backend-vdl8.onrender.com/api/public'
 // Busca informações do chatbot usando a rota pública
 const buscarInfoChatbot = async () => {
     try {
+        console.log('Buscando chatbot com ID:', chatbotId); // Debug
         const response = await axios.get(`${publicApiBaseUrl}/chatbots/${chatbotId}`);
+        console.log('Chatbot encontrado:', response.data); // Debug
         chatbotInfo.value = response.data;
     } catch (error) {
         console.error("Erro ao buscar chatbot público:", error);
-        mensagens.value.push({ autor: 'bot', texto: 'Este assistente não está disponível no momento.' });
+        console.error("URL tentada:", `${publicApiBaseUrl}/chatbots/${chatbotId}`); // Debug
+        mensagens.value.push({ 
+            autor: 'bot', 
+            texto: 'Este assistente não está disponível no momento. Por favor, verifique se o link está correto ou se o chatbot está ativo.' 
+        });
     }
 }
 

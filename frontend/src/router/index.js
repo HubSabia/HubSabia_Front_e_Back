@@ -5,7 +5,13 @@ const routes = [
     path: '/', 
     name: 'Vitrine',
     component: () => import('@/views/VitrineView.vue'),
-    meta: { title: 'Vitrine', public: true }
+    meta: { title: 'Vitrine de Campanhas', public: true }
+  },
+  {
+    path: '/chat-publico/:id',
+    name: 'ChatPublico',
+    component: () => import('@/views/PublicChatView.vue'),
+    meta: { title: 'Assistente Virtual', public: true }
   },
   {
     path: '/login', 
@@ -72,12 +78,6 @@ const routes = [
     name: 'ChatBot',
     component: () => import('@/views/ConversaChatbot.vue'),
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
-  },
-  {
-    path: '/chat-publico/:id',
-    name: 'ChatPublico',
-    component: () => import('@/views/PublicChatView.vue'),
-    meta: { title: 'Assistente Virtual', public: true }
   },
 ];
 

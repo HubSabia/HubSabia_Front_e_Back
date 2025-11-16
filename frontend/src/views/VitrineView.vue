@@ -22,10 +22,20 @@
         <h2>{{ campanha.nome }}</h2>
         <p class="creator">Criado por: {{ campanha.criador.nome }}</p>
         <p class="description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
-        <router-link   v-if="campanha.chatbot " 
-          :to="`/chat-publico/${campanha.chatbot}`" class="chat-button">
+        
+        <!-- Verifica se existe chatbot ANTES de mostrar o botão -->
+        <router-link 
+          v-if="campanha.chatbot" 
+          :to="`/chat-publico/${campanha.chatbot}`" 
+          class="chat-button"
+        >
           Conversar com Assistente
         </router-link>
+        
+        <!-- Mensagem caso não haja chatbot -->
+        <p v-else class="no-chatbot">
+          Assistente em breve
+        </p>
       </div>
     </div>
   </div>
@@ -117,5 +127,21 @@ onMounted(async () => {
 }
 .chat-button:hover {
   background-color: #218838;
+}
+
+.chat-button:hover {
+  background-color: #218838;
+}
+
+.no-chatbot {
+  display: block;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #6c757d;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  font-weight: 500;
+  font-style: italic;
 }
 </style>
