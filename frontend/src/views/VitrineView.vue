@@ -8,7 +8,6 @@
     <!-- Mensagem de Loading -->
     <div v-if="loading" class="loading-message">
       <p>Carregando campanhas...</p>
-      <!-- Você pode adicionar um spinner aqui -->
     </div>
 
     <!-- Mensagem se não houver campanhas -->
@@ -23,9 +22,14 @@
         <p class="creator">Criado por: {{ campanha.criador.nome }}</p>
         <p class="description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
         
-        <!-- Verifica se existe chatbot ANTES de mostrar o botão -->
+        <!-- DEBUG: Mostra o ID do chatbot -->
+        <p class="debug-info" v-if="showDebug">
+          Chatbot ID: {{ campanha.chatbot || 'Nenhum' }}
+        </p>
+        
+        <!-- Verifica se existe chatbot E se é uma string válida -->
         <router-link 
-          v-if="campanha.chatbot" 
+          v-if="campanha.chatbot && campanha.chatbot.length > 0" 
           :to="`/chat-publico/${campanha.chatbot}`" 
           class="chat-button"
         >
@@ -33,9 +37,9 @@
         </router-link>
         
         <!-- Mensagem caso não haja chatbot -->
-        <p v-else class="no-chatbot">
+        <div v-else class="no-chatbot">
           Assistente em breve
-        </p>
+        </div>
       </div>
     </div>
   </div>
@@ -43,19 +47,34 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import apiClient from '@/services/api'; // Verifique se este é o seu cliente Axios
+import apiClient from '@/services/api';
 
 const campanhas = ref([]);
 const loading = ref(true);
+const showDebug = ref(false); // Mude para true se quiser ver os IDs
 
 onMounted(async () => {
   try {
-    // Faz a chamada para a nossa nova API pública
+    console.log('=== VITRINE VIEW ===');
+    console.log('Buscando campanhas públicas...');
+    
     const response = await apiClient.get('/public/campanhas');
+    console.log('Campanhas recebidas:', response.data);
+    
+    // Log detalhado de cada campanha
+    response.data.forEach((camp, index) => {
+      console.log(`Campanha ${index + 1}:`, {
+        nome: camp.nome,
+        chatbot: camp.chatbot,
+        chatbotType: typeof camp.chatbot,
+        temChatbot: !!camp.chatbot
+      });
+    });
+    
     campanhas.value = response.data;
   } catch (error) {
     console.error('Erro ao buscar as campanhas:', error);
-    // Tratar o erro, talvez mostrando uma mensagem para o usuário
+    console.error('Detalhes:', error.response?.data);
   } finally {
     loading.value = false;
   }
@@ -65,24 +84,33 @@ onMounted(async () => {
 <style scoped>
 .vitrine-container {
   padding: 2rem;
+  min-height: 100vh;
+  background-color: #f5f5f5;
 }
+
 .header-text {
   text-align: center;
   margin-bottom: 3rem;
 }
+
 .header-text h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
+  color: #333;
 }
+
 .header-text p {
   font-size: 1.1rem;
   color: #666;
 }
+
 .loading-message, .empty-message {
   text-align: center;
   color: #888;
   padding: 2rem;
+  font-size: 1.1rem;
 }
+
 .campaigns-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -90,6 +118,7 @@ onMounted(async () => {
   max-width: 1200px;
   margin: 0 auto;
 }
+
 .campaign-card {
   background-color: #fff;
   border: 1px solid #e2e8f0;
@@ -98,21 +127,44 @@ onMounted(async () => {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
+
+.campaign-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -1px rgba(0,0,0,0.15);
+}
+
 .campaign-card h2 {
   margin-top: 0;
   font-size: 1.4rem;
+  color: #2d3748;
 }
+
 .creator {
   font-size: 0.9rem;
   color: #718096;
   margin-top: -10px;
   margin-bottom: 1rem;
 }
+
 .description {
   flex-grow: 1;
   color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 1rem;
 }
+
+.debug-info {
+  font-size: 0.8rem;
+  color: #e53e3e;
+  background-color: #fff5f5;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  font-family: monospace;
+}
+
 .chat-button {
   display: block;
   margin-top: 1rem;
@@ -124,9 +176,6 @@ onMounted(async () => {
   border-radius: 6px;
   font-weight: 600;
   transition: background-color 0.2s;
-}
-.chat-button:hover {
-  background-color: #218838;
 }
 
 .chat-button:hover {
@@ -143,5 +192,19 @@ onMounted(async () => {
   border-radius: 6px;
   font-weight: 500;
   font-style: italic;
+}
+
+@media (max-width: 767px) {
+  .vitrine-container {
+    padding: 1rem;
+  }
+  
+  .header-text h1 {
+    font-size: 2rem;
+  }
+  
+  .campaigns-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

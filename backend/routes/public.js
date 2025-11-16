@@ -25,23 +25,40 @@ router.get('/chatbots/:id', async (req, res) => {
     }
 });
 
-// ==========================================================
-// --- NOVA ROTA PARA A VITRINE DE CAMPANHAS ---
-// ==========================================================
 // ROTA GET PÚBLICA: Listar campanhas ativas para a vitrine
 router.get('/campanhas', async (req, res) => {
     try {
+        console.log('[PUBLIC] Buscando campanhas ativas...');
+        
         // 1. Busca no banco de dados apenas os documentos que têm status: 'Ativa'.
         const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
             // 2. Ordena os resultados para mostrar os mais recentes primeiro.
             .sort({ createdAt: -1 })
             .populate('criador', 'nome')
-            .populate('chatbot', '_id');
+            .populate('chatbot', '_id nome status'); // Popula os dados do chatbot
+        
+        console.log(`[PUBLIC] ${campanhasAtivas.length} campanhas ativas encontradas`);
+        
+        // 3. Transforma os dados para garantir que o chatbot seja enviado como string (ID)
+        const campanhasFormatadas = campanhasAtivas.map(campanha => {
+            const campanhaObj = campanha.toObject();
+            
+            // Se existe chatbot e ele está ativo, envia apenas o ID
+            if (campanhaObj.chatbot && campanhaObj.chatbot.status === 'Ativo') {
+                campanhaObj.chatbot = campanhaObj.chatbot._id.toString();
+                console.log(`[PUBLIC] Campanha "${campanhaObj.nome}" tem chatbot ativo: ${campanhaObj.chatbot}`);
+            } else {
+                campanhaObj.chatbot = null;
+                console.log(`[PUBLIC] Campanha "${campanhaObj.nome}" não tem chatbot ativo`);
+            }
+            
+            return campanhaObj;
+        });
         
         // 4. Envia a lista de campanhas como resposta JSON.
-        res.json(campanhasAtivas);
+        res.json(campanhasFormatadas);
     } catch (err) {
-        console.error("Erro ao buscar campanhas públicas:", err.message);
+        console.error("[PUBLIC] Erro ao buscar campanhas públicas:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
