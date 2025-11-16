@@ -132,17 +132,17 @@ const iniciarConversa = (chatbotId) => { router.push(`/chatbot/${chatbotId}`); }
 
 const copiarLink = (chatbotId) => {
   const publicUrl = `${window.location.origin}/#/chat-publico/${chatbotId}`;
-
-  nnavigator.clipboard.writeText(publicUrl).then(() => {
+  
+  navigator.clipboard.writeText(publicUrl).then(() => {
     toast.success('Link público copiado! Compartilhe com seus usuários.', {
       timeout: 5000
     });
-    console.log('Link copiado:', publicUrl); // Para debug
+    console.log('Link copiado:', publicUrl);
   }).catch(err => {
     console.error('Erro ao copiar o link:', err);
     toast.error('Não foi possível copiar o link.');
-    // Fallback: mostra o link em um prompt
-    prompt('Copie este link manualmente:', publicUrl);
+    // Fallback: mostra o link em um alert para o usuário copiar manualmente
+    window.alert(`Copie este link manualmente:\n\n${publicUrl}`);
   });
 };
   
