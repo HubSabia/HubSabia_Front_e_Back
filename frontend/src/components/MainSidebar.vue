@@ -169,6 +169,27 @@ const layoutStore = useLayoutStore();
   z-index: 1000;
 }
 
+.navigation-menu a {
+  display: block;
+  padding: 1rem;
+  color: #aeb1b7; /* Cor padrão do texto do link */
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+  border-left: 3px solid transparent; /* Adiciona uma borda invisível */
+}
+
+.navigation-menu a:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff; /* Texto fica branco ao passar o mouse */
+}
+
+.router-link-exact-active {
+  background-color: rgba(255, 255, 255, 0.1); /* Fundo um pouco mais claro */
+  color: #ffffff; /* Texto branco */
+  font-weight: 600; /* Texto em negrito */
+  border-left-color: var(--primary-color); /* Usa sua cor primária para a borda */
+}
+
 @media (min-width: 768px) {
   .sidebar-overlay {
     display: none;
