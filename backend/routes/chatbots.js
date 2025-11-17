@@ -92,7 +92,7 @@ router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, asy
             });
 
         
-        const prompt =  const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
 2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
 3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
