@@ -37,7 +37,7 @@ defineEmits(['newChat', 'select']);
   display: flex;
   flex-direction: column;
   padding: 10px;
-  height: 100%;
+  height: 80%;
 }
 
 .new-chat-button {
