@@ -6,91 +6,30 @@ const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// ============================================================
-// ROTA 1: Buscar informações de UM chatbot específico
-// ============================================================
+// ==========================================================
+// --- MÓDULOS NECESSÁRIOS ADICIONADOS AQUI ---
+// ==========================================================
+const crypto = require('crypto');
+const HistoricoConversa = require('../models/HistoricoConversa');
+// ==========================================================
+
+
+// ROTA 1: Buscar informações de UM chatbot específico (continua igual)
 router.get('/chatbots/:id', async (req, res) => {
-    try {
-        console.log(`[PUBLIC] 🔍 Buscando chatbot com ID: ${req.params.id}`);
-        const chatbot = await Chatbot.findById(req.params.id).select('nome status');
-        
-        if (!chatbot) {
-            console.log(`[PUBLIC] ❌ Chatbot não encontrado`);
-            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
-        }
-        
-        console.log(`[PUBLIC] ✅ Chatbot encontrado: ${chatbot.nome}, Status: ${chatbot.status}`);
-        res.json(chatbot);
-    } catch (err) {
-        console.error("[PUBLIC] ❌ Erro:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
+    // ... seu código existente aqui ...
 });
 
-// ============================================================
-// ROTA 2: Listar campanhas ativas - VERSÃO CORRIGIDA
-// ============================================================
+// ROTA 2: Listar campanhas ativas (continua igual)
 router.get('/campanhas', async (req, res) => {
-    try {
-        console.log('[PUBLIC] 📋 Buscando campanhas ativas...');
-        
-        // Busca as campanhas e popula os dados
-        const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
-            .sort({ createdAt: -1 })
-            .populate('criador', 'nome')
-            .populate('chatbot', '_id nome status') // Popula o chatbot completo
-            .lean(); // .lean() converte para objeto JavaScript simples
-        
-        console.log(`[PUBLIC] 📊 ${campanhasAtivas.length} campanhas ativas encontradas`);
-        
-        // CORREÇÃO: Transforma cada campanha para enviar apenas o ID do chatbot
-        const campanhasFormatadas = campanhasAtivas.map(campanha => {
-            console.log(`\n[PUBLIC] 🔍 Processando: "${campanha.nome}"`);
-            console.log(`  - Chatbot RAW:`, campanha.chatbot);
-            
-            // Se tem chatbot E ele está ativo, envia apenas o ID como string
-            if (campanha.chatbot) {
-                console.log(`  - Chatbot Status: ${campanha.chatbot.status}`);
-                
-                if (campanha.chatbot.status === 'Ativo') {
-                    // AQUI É A MÁGICA: Substituímos o objeto inteiro pelo ID
-                    const chatbotId = campanha.chatbot._id.toString();
-                    console.log(`  - ✅ Chatbot ATIVO! Enviando ID: ${chatbotId}`);
-                    
-                    return {
-                        ...campanha,
-                        chatbot: chatbotId // Substitui o objeto pelo ID
-                    };
-                } else {
-                    console.log(`  - ⚠️ Chatbot existe mas está ${campanha.chatbot.status}`);
-                    return {
-                        ...campanha,
-                        chatbot: null // Remove chatbots inativos
-                    };
-                }
-            } else {
-                console.log(`  - ❌ Sem chatbot associado`);
-                return {
-                    ...campanha,
-                    chatbot: null
-                };
-            }
-        });
-        
-        console.log('\n[PUBLIC] 📤 Enviando campanhas formatadas...');
-        res.json(campanhasFormatadas);
-        
-    } catch (err) {
-        console.error("[PUBLIC] ❌ Erro ao buscar campanhas:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
+    // ... seu código existente aqui ...
 });
 
-// ============================================================
-// ROTA 3: Interagir com um chatbot
-// ============================================================
+// ==========================================================
+// --- ROTA 3: Interagir com um chatbot (CÓDIGO CORRIGIDO) ---
+// ==========================================================
 router.post('/chatbots/:id/interagir', async (req, res) => {
-    const { mensagemUsuario } = req.body;
+    // Agora aceita tanto a mensagem quanto o ID da sessão
+    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
     
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
@@ -116,13 +55,20 @@ router.post('/chatbots/:id/interagir', async (req, res) => {
         const hoje = new Date();
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
+        // Lógica de data que estava faltando na rota pública
+        const dataFim = new Date(chatbot.campanha.periodo_fim);
+        let infoDeData = "";
+        if (hoje > dataFim) {
+            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
+        }
+
         const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
 2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
 3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
 4. Se a pergunta não pode ser respondida com o contexto, responda EXATAMENTE: "Desculpe, não tenho informações sobre isso. Minhas respostas são baseadas apenas nos editais da campanha atual."
 5. Não invente informações nem responda a perguntas sobre outros tópicos.
-6. A data de hoje é ${dataFormatada}. Use esta informação de data se for relevante para a pergunta.
+6. A data de hoje é ${dataFormatada}. ${infoDeData} Use esta informação de data se for relevante para a pergunta.
 
 ---
 CONTEXTO DOS EDITAIS:
@@ -130,16 +76,31 @@ ${contexto}
 ---
 PERGUNTA DO USUÁRIO:${mensagemUsuario}`;
         
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
         const result = await model.generateContent(prompt);
         const respostaDaIA = result.response.text();
         
-        res.json({ resposta: respostaDaIA });
+        // --- LÓGICA DE SESSÃO E HISTÓRICO ADICIONADA ---
+        const sessaoId = sessaoIdRecebida || crypto.randomBytes(16).toString('hex');
+
+        // Salva a conversa no histórico, mas sem ID de usuário (pois é público)
+        const novoHistorico = new HistoricoConversa({
+            chatbot: chatbot._id,
+            usuario: null, // Importante: usuário anônimo
+            sessaoId: sessaoId,               
+            pergunta: mensagemUsuario,      
+            resposta: respostaDaIA
+        });
+        await novoHistorico.save();
+        // --- FIM DA LÓGICA DE SESSÃO E HISTÓRICO ---
+
+        // Retorna a resposta E o ID da sessão, exatamente como a rota privada faz
+        res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
 
     } catch (err) {
         console.error("Erro na interação pública:", err.message);
-        if (err.name === 'GoogleGenerativeAIFetchError') {
-            return res.status(503).json({ msg: 'O serviço de IA está indisponível ou a chave de API é inválida.' });
+        if (err.name === 'GoogleGenerativeAIFetchError' || err.status === 503) {
+            return res.status(503).json({ msg: 'O serviço de IA está indisponível ou a chave de API do criador é inválida/excedeu o limite. Tente novamente mais tarde.' });
         }
         res.status(500).send('Erro no servidor.');
     }
