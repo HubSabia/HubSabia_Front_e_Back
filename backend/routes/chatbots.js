@@ -68,31 +68,42 @@ router.post('/', authMiddleware, async (req, res) => {
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
 router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, async (req, res) => {
-    // ==========================================================
-    // --- MUDANÇA CRÍTICA AQUI ---
-    // ==========================================================
-    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body; // Pega o sessaoId do body
-    // ==========================================================
+    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
 
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
     }
     try {
-
         const usuario = await Usuario.findById(req.usuario.id);
         if (!usuario || !usuario.geminiApiKey) {
             return res.status(400).json({ msg: 'Nenhuma chave de API do Google AI foi configurada. Por favor, adicione sua chave na sua página de perfil.' });
         }
         
-
         const genAI = new GoogleGenerativeAI(usuario.geminiApiKey);
         const chatbot = await Chatbot.findById(req.params.id).populate({
-                 path: 'campanha',
-                 populate: { path: 'editais', model: 'Edital' }
-            });
-
+            path: 'campanha',
+            populate: { path: 'editais', model: 'Edital' }
+        });
         
-const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+        if (!chatbot || !chatbot.campanha) {
+            return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
+        }
+
+        // ==========================================================
+        // --- CORREÇÃO 2: Variáveis definidas ANTES de serem usadas ---
+        // ==========================================================
+        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
+        const hoje = new Date();
+        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        
+        const dataFim = new Date(chatbot.campanha.periodo_fim);
+        let infoDeData = "";
+        if (hoje > dataFim) {
+            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
+        }
+        // ==========================================================
+        
+        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
 2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
 3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
@@ -107,21 +118,14 @@ ${contexto}
 PERGUNTA DO USUÁRIO:
 ${mensagemUsuario}
 `;
-        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
-        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"}); // Modelo atualizado
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
 
-            // ==========================================================
-            // --- LÓGICA DE SESSÃO CORRIGIDA ---
-            // ==========================================================
-            // Se o frontend enviou um ID de sessão, use-o. Senão, crie um novo.
             const sessaoId = sessaoIdRecebida || crypto.randomBytes(16).toString('hex');
-            // ==========================================================
 
             const novoHistorico = new HistoricoConversa({
                 chatbot: chatbot._id,
@@ -132,38 +136,22 @@ ${mensagemUsuario}
             });
             await novoHistorico.save();
 
-            // Retorna a resposta E o ID da sessão para o frontend
             res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
 
-        catch (iaError) {
-    console.error("Erro da API do Google AI:", iaError);
+        // ==========================================================
+        // --- CORREÇÃO 1: Adicionada a chave de fechamento do 'try' ---
+        // ==========================================================
+        } catch (iaError) {
+            console.error("Erro da API do Google AI:", iaError);
 
-    if (iaError.status === 503) {
-        return res.status(503).json({ msg: 'O assistente de IA está sobrecarregado no momento. Por favor, tente novamente em alguns instantes.' });
-    }
-    res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida ou se o serviço está online.' });
-}
+            if (iaError.status === 503) {
+                return res.status(503).json({ msg: 'O assistente de IA está sobrecarregado no momento. Por favor, tente novamente em alguns instantes.' });
+            }
+            res.status(500).json({ msg: 'Ocorreu um erro ao se comunicar com o serviço de IA. Verifique se sua chave de API é válida ou se o serviço está online.' });
+        }
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
-});
-// GET /api/chatbots/:id/historico -> Listar o histórico de conversas
-router.get('/:id/historico', authMiddleware, async (req, res) => {
-    try {
-        const chatbot = await Chatbot.findById(req.params.id);
-        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
-        // Verifica se o usuário logado é o criador do chatbot
-        if (chatbot.criador.toString() !== req.usuario.id) { return res.status(401).json({ msg: 'Ação não autorizada.' }); }
-
-        const historico = await HistoricoConversa.find({ chatbot: req.params.id })
-            .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
-            .select('pergunta resposta dataInteracao usuario');
-
-        res.json(historico);
-    } catch (err) {
-        console.error("Erro ao buscar histórico do chatbot:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
@@ -174,13 +162,12 @@ router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
         const chatbot = await Chatbot.findById(req.params.id);
         if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
         
-        // O histórico é filtrado pelo chatbot e pelo usuário logado
         const historico = await HistoricoConversa.find({ 
             chatbot: req.params.id,
-            usuario: req.usuario.id // Filtra pelo usuário logado
+            usuario: req.usuario.id
         })
-            .sort({ dataInteracao: 1 }) // Ordena da mais antiga para a mais recente
-             .select('pergunta resposta dataInteracao');
+        .sort({ createdAt: 'asc' }) // Ordena do mais antigo para o mais recente
+        .select('pergunta resposta sessaoId createdAt'); // Seleciona os campos necessários
 
         res.json(historico);
     } catch (err) {
@@ -196,7 +183,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
         if (!chatbot) { 
             return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
         }
-        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
         if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
             return res.status(401).json({ msg: 'Ação não autorizada.' }); 
         }
@@ -206,9 +192,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
         res.status(500).send('Erro no servidor.');
     }
 });
-// ==========================================================
+
 // PUT /api/chatbots/:id -> Editar um chatbot
-// ==========================================================
 router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     const { nome, status, campanha } = req.body;
     const camposAtualizados = { nome, status, campanha };
@@ -219,7 +204,6 @@ router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
         if (!chatbot) { 
             return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
         }
-        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
         if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
             return res.status(401).json({ msg: 'Ação não autorizada.' }); 
         }
@@ -237,23 +221,18 @@ router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     }
 });
 
-// ==========================================================
 // DELETE /api/chatbots/:id -> Excluir um chatbot
-// ==========================================================
 router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
         if (!chatbot) { 
             return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
         }
-        // Se o usuário NÃO for o criador E também NÃO for um admin, bloqueie.
         if (chatbot.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
             return res.status(401).json({ msg: 'Ação não autorizada.' }); 
         }
         
-        // Adicional: Excluir o histórico de conversas associado
         await HistoricoConversa.deleteMany({ chatbot: req.params.id });
-
         await Chatbot.findByIdAndDelete(req.params.id);
         res.json({ msg: 'Chatbot e seu histórico foram removidos com sucesso.' });
     } catch (err) {
@@ -263,4 +242,3 @@ router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
 });
 
 module.exports = router;
-
