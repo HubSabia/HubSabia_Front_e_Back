@@ -1,29 +1,45 @@
 <template>
-  <div class="public-chat-view">
+  <div class="chat-view-wrapper">
+    <!-- 1. BARRA LATERAL: Usa a lógica de conversas agrupadas -->
+    <ChatHistorySidebar
+      :conversations="groupedConversations"
+      :active-conversation-id="activeConversationId"
+      @newChat="startNewConversation"
+      @select="selectConversation"
+    />
+
     <div class="chat-container">
       <header class="chat-header">
-        <img src="/ifpr_logo_placeholder.svg" alt="Logo IFPR" class="header-logo">
-        <h2>{{ chatbotInfo.nome || 'Assistente Virtual do IFPR' }}</h2>
-        <p v-if="errorLoading" class="error-text">{{ errorLoading }}</p>
+        <h2>{{ chatbotInfo.nome ? `Conversa com: ${chatbotInfo.nome}` : 'Carregando...' }}</h2>
+        <p v-if="chatbotInfo.campanha" class="campaign-context">
+          Contexto: Campanha "{{ chatbotInfo.campanha.nome }}"
+        </p>
       </header>
-      <div class="messages-area" ref="messagesAreaRef">
-        <div v-for="(msg, index) in mensagens" :key="index" :class="['message-bubble', msg.autor]">
-          <p v-html="msg.texto.replace(/\n/g, '<br>')"></p>
+
+      <!-- 2. ÁREA DE MENSAGENS: Agora itera sobre as mensagens da conversa ativa -->
+      <div class="messages-area" ref="messagesContainerRef">
+        <div v-if="!activeConversationMessages.length" class="welcome-message">
+            <p>Faça sua primeira pergunta para começar a conversa.</p>
         </div>
-        <div v-if="isLoading" class="message-bubble bot typing-indicator">
+        <div v-for="(msg, index) in activeConversationMessages" :key="index" :class="['message-bubble', msg.role === 'assistant' ? 'bot' : 'user']">
+          <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
+        </div>
+        <div v-if="isReplying" class="message-bubble bot typing-indicator">
           <span></span><span></span><span></span>
         </div>
       </div>
+
       <footer class="chat-footer">
-        <form @submit.prevent="enviarMensagem" class="message-form">
-          <input 
-            type="text" 
-            v-model="novaMensagem" 
-            placeholder="Digite sua pergunta..." 
-            :disabled="isLoading || !!errorLoading" 
+        <!-- 3. INPUT: Conectado à lógica de envio de mensagem com sessão -->
+        <form @submit.prevent="sendMessage" class="message-form">
+          <input
+            type="text"
+            v-model="userInput"
+            placeholder="Digite sua pergunta..."
+            :disabled="isReplying"
             autocomplete="off"
           />
-          <button type="submit" :disabled="isLoading || !!errorLoading">Enviar</button>
+          <button type="submit" :disabled="!userInput.trim() || isReplying">Enviar</button>
         </form>
       </footer>
     </div>
@@ -31,124 +47,157 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
+import { marked } from 'marked';
+import { useToast } from 'vue-toastification';
+import apiClient from '@/services/api';
+import ChatHistorySidebar from '@/components/ChatHistorySidebar.vue';
 
 const route = useRoute();
+const toast = useToast();
 const chatbotId = route.params.id;
+
+// --- LÓGICA AVANÇADA DE ESTADO ---
 const chatbotInfo = ref({});
-const mensagens = ref([]);
-const novaMensagem = ref('');
-const isLoading = ref(false);
-const errorLoading = ref('');
-const messagesAreaRef = ref(null);
+const allHistory = ref([]); // Lista plana com TODO o histórico
+const activeConversationId = ref(null); // ID da sessão/conversa ativa
+const activeConversationMessages = ref([]); // Mensagens que aparecem na tela
+const isReplying = ref(false);
+const userInput = ref('');
+const messagesContainerRef = ref(null);
 
-const publicApiBaseUrl = 'https://hubsabia-backend-vdl8.onrender.com/api/public';
-
-console.log('=== PUBLIC CHAT VIEW INICIADO ===');
-console.log('Chatbot ID da URL:', chatbotId);
-console.log('Route completa:', route);
-
-const buscarInfoChatbot = async () => {
-    try {
-        console.log('Iniciando busca do chatbot...');
-        console.log('URL:', `${publicApiBaseUrl}/chatbots/${chatbotId}`);
-        
-        const response = await axios.get(`${publicApiBaseUrl}/chatbots/${chatbotId}`);
-        console.log('Chatbot encontrado:', response.data);
-        
-        chatbotInfo.value = response.data;
-        
-        // Verifica se o chatbot está ativo
-        if (response.data.status !== 'Ativo') {
-            errorLoading.value = 'Este assistente está inativo no momento.';
-            mensagens.value.push({ 
-                autor: 'bot', 
-                texto: 'Desculpe, este assistente está temporariamente inativo. Entre em contato com o administrador.' 
-            });
-        }
-    } catch (error) {
-        console.error("Erro ao buscar chatbot público:", error);
-        console.error("Detalhes do erro:", error.response?.data);
-        
-        errorLoading.value = 'Erro ao carregar o assistente';
-        mensagens.value.push({ 
-            autor: 'bot', 
-            texto: 'Desculpe, não foi possível carregar este assistente. Verifique se o link está correto ou se o chatbot está ativo.' 
-        });
+// --- COMPUTED: Transforma o histórico plano em conversas agrupadas para a sidebar ---
+const groupedConversations = computed(() => {
+  if (!allHistory.value.length) return [];
+  const groups = allHistory.value.reduce((acc, msg) => {
+    if (!acc[msg.sessaoId]) {
+      acc[msg.sessaoId] = {
+        id: msg.sessaoId,
+        title: msg.pergunta.substring(0, 30) + (msg.pergunta.length > 30 ? '...' : ''),
+        createdAt: new Date(msg.createdAt),
+      };
     }
-}
+    return acc;
+  }, {});
+  return Object.values(groups).sort((a, b) => b.createdAt - a.createdAt);
+});
 
-const enviarMensagem = async () => {
-  if (!novaMensagem.value.trim() || isLoading.value || errorLoading.value) return;
+// --- FUNÇÕES ---
 
-  const textoUsuario = novaMensagem.value;
-  mensagens.value.push({ autor: 'user', texto: textoUsuario });
-  novaMensagem.value = '';
-  isLoading.value = true;
-  await nextTick(() => { 
-    if (messagesAreaRef.value) {
-      messagesAreaRef.value.scrollTop = messagesAreaRef.value.scrollHeight; 
-    }
-  });
-
+// Busca os dados iniciais (info do bot e todo o histórico)
+const fetchInitialData = async () => {
   try {
-    console.log('Enviando mensagem para:', `${publicApiBaseUrl}/chatbots/${chatbotId}/interagir`);
-    
-    const response = await axios.post(`${publicApiBaseUrl}/chatbots/${chatbotId}/interagir`, {
-      mensagemUsuario: textoUsuario
-    });
-    
-    console.log('Resposta recebida:', response.data);
-    mensagens.value.push({ autor: 'bot', texto: response.data.resposta });
-
+    const [infoRes, historyRes] = await Promise.all([
+      apiClient.get(`/chatbots/${chatbotId}`),
+      apiClient.get(`/chatbots/${chatbotId}/historico-usuario`)
+    ]);
+    chatbotInfo.value = infoRes.data;
+    allHistory.value = historyRes.data;
+    startNewConversation(); // Inicia com uma tela de chat vazia
   } catch (error) {
-    console.error("Erro ao interagir com o bot público:", error);
-    console.error("Detalhes:", error.response?.data);
-    
-    const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro ao processar sua pergunta.';
-    mensagens.value.push({ autor: 'bot', texto: errorMessage });
-  } finally {
-    isLoading.value = false;
-    await nextTick(() => { 
-      if (messagesAreaRef.value) {
-        messagesAreaRef.value.scrollTop = messagesAreaRef.value.scrollHeight; 
-      }
-    });
+    toast.error('Erro ao carregar dados do chatbot.');
   }
 };
 
-onMounted(async () => {
-  console.log('Component montado!');
-  await buscarInfoChatbot();
-  
-  if (!errorLoading.value) {
-    mensagens.value.push({ 
-      autor: 'bot', 
-      texto: 'Olá! Bem-vindo ao assistente do IFPR. Como posso ajudar?' 
-    });
+// Chamada quando o usuário clica em uma conversa na sidebar
+const selectConversation = (sessionId) => {
+  activeConversationId.value = sessionId;
+  activeConversationMessages.value = allHistory.value
+    .filter(msg => msg.sessaoId === sessionId)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // Garante a ordem cronológica
+    .flatMap(msg => [
+      { role: 'user', text: msg.pergunta },
+      { role: 'assistant', text: msg.resposta }
+    ]);
+  scrollToBottom();
+};
+
+// Limpa a tela para uma nova conversa
+const startNewConversation = () => {
+  activeConversationId.value = null;
+  activeConversationMessages.value = [];
+};
+
+// Envia a mensagem para o backend, controlando a sessão
+const sendMessage = async () => {
+  if (!userInput.value.trim() || isReplying.value) return;
+
+  const currentMessage = userInput.value;
+  activeConversationMessages.value.push({ role: 'user', text: currentMessage });
+  userInput.value = '';
+  isReplying.value = true;
+  await scrollToBottom();
+
+  try {
+    const payload = {
+      mensagemUsuario: currentMessage,
+      ...(activeConversationId.value && { sessaoId: activeConversationId.value })
+    };
+    
+    const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, payload);
+    const { resposta, sessaoId } = response.data;
+    
+    activeConversationMessages.value.push({ role: 'assistant', text: resposta });
+    
+    const newHistoryEntry = {
+        sessaoId,
+        pergunta: currentMessage,
+        resposta,
+        createdAt: new Date().toISOString()
+    };
+    allHistory.value.push(newHistoryEntry);
+
+    if (!activeConversationId.value) {
+      activeConversationId.value = sessaoId;
+    }
+
+  } catch (error) {
+    const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro.';
+    activeConversationMessages.value.push({ role: 'assistant', text: errorMessage });
+    toast.error(errorMessage);
+  } finally {
+    isReplying.value = false;
+    await scrollToBottom();
   }
-});
+};
+
+// --- FUNÇÕES UTILITÁRIAS ---
+const renderMarkdown = (text) => marked(text || '');
+const scrollToBottom = async () => {
+  await nextTick();
+  if (messagesContainerRef.value) {
+    messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight;
+  }
+};
+
+onMounted(fetchInitialData);
 </script>
 
 <style scoped>
-.public-chat-view {
-  background-color: #f5f5f5;
+/* ESTILOS ORIGINAIS MANTIDOS CONFORME SOLICITADO */
+.chat-view {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  padding: 1rem;
+  width: 100%;
+  height: 100%;
+  background-color: var(--content-bg);
+}
+
+.chat-view-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 70px);
 }
 
 .chat-container {
-  width: 100%;
-  max-width: 800px;
-  height: 90vh;
-  max-height: 800px;
-  background: #ffffff;
-  border-radius: 12px;
+  flex-grow: 1;
+  height: 100%;
+  max-width: none;
+  background: var(--card-bg);
+  border-radius: 0 12px 12px 0;
   box-shadow: 0 8px 30px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
@@ -157,30 +206,20 @@ onMounted(async () => {
 
 .chat-header {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  background-color: var(--card-bg);
   flex-shrink: 0;
-}
-
-.header-logo {
-  height: 40px;
 }
 
 .chat-header h2 {
   font-size: 1.25rem;
-  color: #212529;
-  margin: 0;
+  color: var(--text-color-dark);
 }
 
-.error-text {
-  color: #dc3545;
-  font-size: 0.9rem;
-  margin: 0;
+.campaign-context {
+  font-size: 0.85rem;
+  color: var(--text-color-muted);
 }
 
 .messages-area {
@@ -190,7 +229,12 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: #f8f9fa;
+}
+
+.welcome-message {
+    text-align: center;
+    color: var(--text-color-muted);
+    margin: auto;
 }
 
 .message-bubble {
@@ -200,29 +244,28 @@ onMounted(async () => {
   line-height: 1.5;
   word-wrap: break-word;
 }
-
-.message-bubble p {
-  margin: 0;
+.message-content :deep(p) {
+    margin: 0;
 }
 
 .message-bubble.user {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
   align-self: flex-end;
   border-bottom-right-radius: 5px;
 }
 
 .message-bubble.bot {
   background-color: #e9ecef;
-  color: #212529;
+  color: var(--text-color-dark);
   align-self: flex-start;
   border-bottom-left-radius: 5px;
 }
 
 .chat-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e9ecef;
-  background-color: #ffffff;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--card-bg);
   flex-shrink: 0;
 }
 
@@ -234,75 +277,66 @@ onMounted(async () => {
 .message-form input {
   flex-grow: 1;
   padding: 0.75rem 1.25rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-color);
   border-radius: 22px;
   font-size: 1rem;
 }
 
 .message-form input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.message-form input:disabled {
-  background-color: #e9ecef;
-  cursor: not-allowed;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
 .message-form button {
   padding: 0.75rem 1.5rem;
   border: none;
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
   border-radius: 22px;
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
 }
-
-.message-form button:hover:not(:disabled) { 
-  background-color: #0056b3; 
+.message-form button:hover {
+  background-color: #0b5ed7;
+}
+.message-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.message-form button:disabled { 
-  opacity: 0.6; 
-  cursor: not-allowed; 
+.typing-indicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-color-muted);
+  margin: 0 2px;
+  animation: bounce 1.4s infinite ease-in-out both;
 }
-
-.typing-indicator span { 
-  display: inline-block; 
-  width: 8px; 
-  height: 8px; 
-  border-radius: 50%; 
-  background-color: #6c757d; 
-  margin: 0 2px; 
-  animation: bounce 1.4s infinite ease-in-out both; 
-}
-
 .typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
 .typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
-
-@keyframes bounce { 
-  0%, 80%, 100% { transform: scale(0); } 
-  40% { transform: scale(1.0); } 
-}
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
 @media (max-width: 767px) {
-  .public-chat-view {
+  .chat-view-wrapper {
     padding: 0;
+    height: 100%;
   }
+
   .chat-container {
     border-radius: 0;
     box-shadow: none;
-    height: 100vh;
-    max-height: none;
+    height: 100%;
   }
-  .messages-area { 
-    padding: 1rem; 
+  
+  /* Esconde a sidebar em telas pequenas. Uma solução mais avançada seria um menu "hambúrguer". */
+  .chat-view-wrapper :deep(.history-sidebar) {
+    display: none;
   }
-  .chat-footer { 
-    padding: 0.75rem 1rem; 
-  }
+
+  .messages-area { padding: 1rem; }
+  .chat-footer { padding: 0.75rem 1rem; }
 }
 </style>
