@@ -1,34 +1,45 @@
 <template>
   <div class="chat-view-wrapper">
-    <ChatHistorySidebar :chatbotId="chatbotId" />
+    <!-- 1. BARRA LATERAL: Usa a lógica de conversas agrupadas -->
+    <ChatHistorySidebar
+      :conversations="groupedConversations"
+      :active-conversation-id="activeConversationId"
+      @newChat="startNewConversation"
+      @select="selectConversation"
+    />
+
     <div class="chat-container">
       <header class="chat-header">
-        <!-- Título agora mostra o nome do chatbot que estamos buscando -->
-        <h2>{{ chatbotInfo.nome ? `Conversa com: ${chatbotInfo.nome}` : 'Carregando Chatbot...' }}</h2>
+        <h2>{{ chatbotInfo.nome ? `Conversa com: ${chatbotInfo.nome}` : 'Carregando...' }}</h2>
         <p v-if="chatbotInfo.campanha" class="campaign-context">
           Contexto: Campanha "{{ chatbotInfo.campanha.nome }}"
         </p>
       </header>
-      <div class="messages-area" ref="messagesAreaRef">
-        <!-- Loop para exibir as mensagens -->
-        <div v-for="(msg, index) in mensagens" :key="index" :class="['message-bubble', msg.autor]">
-          <p v-html="msg.texto"></p> <!-- Usamos v-html para poder renderizar quebras de linha -->
+
+      <!-- 2. ÁREA DE MENSAGENS: Agora itera sobre as mensagens da conversa ativa -->
+      <div class="messages-area" ref="messagesContainerRef">
+        <div v-if="!activeConversationMessages.length" class="welcome-message">
+            <p>Faça sua primeira pergunta para começar a conversa.</p>
         </div>
-        <!-- Indicador de "digitando" -->
-        <div v-if="isLoading" class="message-bubble bot typing-indicator">
+        <div v-for="(msg, index) in activeConversationMessages" :key="index" :class="['message-bubble', msg.role === 'assistant' ? 'bot' : 'user']">
+          <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
+        </div>
+        <div v-if="isReplying" class="message-bubble bot typing-indicator">
           <span></span><span></span><span></span>
         </div>
       </div>
+
       <footer class="chat-footer">
-        <form @submit.prevent="enviarMensagem" class="message-form">
+        <!-- 3. INPUT: Conectado à lógica de envio de mensagem com sessão -->
+        <form @submit.prevent="sendMessage" class="message-form">
           <input
             type="text"
-            v-model="novaMensagem"
+            v-model="userInput"
             placeholder="Digite sua pergunta..."
-            :disabled="isLoading"
+            :disabled="isReplying"
             autocomplete="off"
           />
-          <button type="submit" :disabled="isLoading">Enviar</button>
+          <button type="submit" :disabled="!userInput.trim() || isReplying">Enviar</button>
         </form>
       </footer>
     </div>
@@ -36,83 +47,139 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
+import { marked } from 'marked';
+import { useToast } from 'vue-toastification';
 import apiClient from '@/services/api';
 import ChatHistorySidebar from '@/components/ChatHistorySidebar.vue';
 
 const route = useRoute();
+const toast = useToast();
 const chatbotId = route.params.id;
 
-const chatbotInfo = ref({}); // Para guardar o nome do chatbot e da campanha
-const mensagens = ref([]);
-const novaMensagem = ref('');
-const isLoading = ref(false);
-const messagesAreaRef = ref(null);
+// --- LÓGICA AVANÇADA DE ESTADO ---
+const chatbotInfo = ref({});
+const allHistory = ref([]); // Lista plana com TODO o histórico
+const activeConversationId = ref(null); // ID da sessão/conversa ativa
+const activeConversationMessages = ref([]); // Mensagens que aparecem na tela
+const isReplying = ref(false);
+const userInput = ref('');
+const messagesContainerRef = ref(null);
 
-// Função para rolar a área de mensagens para o final
-const scrollToBottom = async () => {
-  await nextTick();
-  const area = messagesAreaRef.value;
-  if (area) {
-    area.scrollTop = area.scrollHeight;
+// --- COMPUTED: Transforma o histórico plano em conversas agrupadas para a sidebar ---
+const groupedConversations = computed(() => {
+  if (!allHistory.value.length) return [];
+  const groups = allHistory.value.reduce((acc, msg) => {
+    if (!acc[msg.sessaoId]) {
+      acc[msg.sessaoId] = {
+        id: msg.sessaoId,
+        title: msg.pergunta.substring(0, 30) + (msg.pergunta.length > 30 ? '...' : ''),
+        createdAt: new Date(msg.createdAt),
+      };
+    }
+    return acc;
+  }, {});
+  return Object.values(groups).sort((a, b) => b.createdAt - a.createdAt);
+});
+
+// --- FUNÇÕES ---
+
+// Busca os dados iniciais (info do bot e todo o histórico)
+const fetchInitialData = async () => {
+  try {
+    const [infoRes, historyRes] = await Promise.all([
+      apiClient.get(`/chatbots/${chatbotId}`),
+      apiClient.get(`/chatbots/${chatbotId}/historico-usuario`)
+    ]);
+    chatbotInfo.value = infoRes.data;
+    allHistory.value = historyRes.data;
+    startNewConversation(); // Inicia com uma tela de chat vazia
+  } catch (error) {
+    toast.error('Erro ao carregar dados do chatbot.');
   }
 };
 
-// Busca informações do chatbot para exibir no header
-const buscarInfoChatbot = async () => {
-    try {
-        // Vamos criar uma nova rota para buscar um chatbot específico
-        const response = await apiClient.get(`/chatbots/${chatbotId}`);
-        chatbotInfo.value = response.data;
-    } catch (error) {
-        console.error("Erro ao buscar informações do chatbot:", error);
-        chatbotInfo.value = { nome: "Chatbot não encontrado" };
-    }
-}
+// Chamada quando o usuário clica em uma conversa na sidebar
+const selectConversation = (sessionId) => {
+  activeConversationId.value = sessionId;
+  activeConversationMessages.value = allHistory.value
+    .filter(msg => msg.sessaoId === sessionId)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // Garante a ordem cronológica
+    .flatMap(msg => [
+      { role: 'user', text: msg.pergunta },
+      { role: 'assistant', text: msg.resposta }
+    ]);
+  scrollToBottom();
+};
 
-// Função principal que envia a mensagem para o backend
-const enviarMensagem = async () => {
-  if (!novaMensagem.value.trim() || isLoading.value) return;
+// Limpa a tela para uma nova conversa
+const startNewConversation = () => {
+  activeConversationId.value = null;
+  activeConversationMessages.value = [];
+};
 
-  const textoUsuario = novaMensagem.value;
-  mensagens.value.push({ autor: 'user', texto: textoUsuario });
-  novaMensagem.value = '';
-  isLoading.value = true;
+// Envia a mensagem para o backend, controlando a sessão
+const sendMessage = async () => {
+  if (!userInput.value.trim() || isReplying.value) return;
+
+  const currentMessage = userInput.value;
+  activeConversationMessages.value.push({ role: 'user', text: currentMessage });
+  userInput.value = '';
+  isReplying.value = true;
   await scrollToBottom();
 
   try {
-    const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, {
-      mensagemUsuario: textoUsuario
-    });
+    const payload = {
+      mensagemUsuario: currentMessage,
+      ...(activeConversationId.value && { sessaoId: activeConversationId.value })
+    };
     
-    // Substitui quebras de linha \n por <br> para renderização no HTML
-    const textoFormatado = response.data.resposta.replace(/\n/g, '<br>');
-    mensagens.value.push({ autor: 'bot', texto: textoFormatado });
+    const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, payload);
+    const { resposta, sessaoId } = response.data;
+    
+    activeConversationMessages.value.push({ role: 'assistant', text: resposta });
+    
+    const newHistoryEntry = {
+        sessaoId,
+        pergunta: currentMessage,
+        resposta,
+        createdAt: new Date().toISOString()
+    };
+    allHistory.value.push(newHistoryEntry);
+
+    if (!activeConversationId.value) {
+      activeConversationId.value = sessaoId;
+    }
 
   } catch (error) {
-    console.error("Erro ao enviar mensagem:", error);
-    const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro ao processar sua pergunta.';
-    mensagens.value.push({ autor: 'bot', texto: errorMessage });
+    const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro.';
+    activeConversationMessages.value.push({ role: 'assistant', text: errorMessage });
+    toast.error(errorMessage);
   } finally {
-    isLoading.value = false;
+    isReplying.value = false;
     await scrollToBottom();
   }
 };
 
-// Roda as funções quando o componente é carregado
-onMounted(() => {
-  buscarInfoChatbot();
-  mensagens.value.push({ autor: 'bot', texto: 'Olá! Faça sua pergunta sobre a campanha e seus editais.' });
-});
+// --- FUNÇÕES UTILITÁRIAS ---
+const renderMarkdown = (text) => marked(text || '');
+const scrollToBottom = async () => {
+  await nextTick();
+  if (messagesContainerRef.value) {
+    messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight;
+  }
+};
+
+onMounted(fetchInitialData);
 </script>
 
 <style scoped>
+/* ESTILOS ORIGINAIS MANTIDOS CONFORME SOLICITADO */
 .chat-view {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* MUDANÇA: Ocupa 100% do espaço do .main-content */
   width: 100%;
   height: 100%;
   background-color: var(--content-bg);
@@ -122,19 +189,19 @@ onMounted(() => {
   display: flex;
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - 70px); /* Altura total menos o header principal */
+  max-height: calc(100vh - 70px);
 }
 
 .chat-container {
-  flex-grow: 1; /* Ocupa o espaço restante ao lado da sidebar */
+  flex-grow: 1;
   height: 100%;
-  max-width: none; /* Remove o max-width para ocupar o espaço total */
+  max-width: none;
   background: var(--card-bg);
-  border-radius: 0 12px 12px 0; /* Ajusta o border-radius para a integração com a sidebar */
+  border-radius: 0 12px 12px 0;
   box-shadow: 0 8px 30px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Garante que o conteúdo não vaze */
+  overflow: hidden;
 }
 
 .chat-header {
@@ -142,7 +209,7 @@ onMounted(() => {
   border-bottom: 1px solid var(--border-color);
   text-align: center;
   background-color: var(--card-bg);
-  flex-shrink: 0; /* Impede que o header encolha */
+  flex-shrink: 0;
 }
 
 .chat-header h2 {
@@ -164,16 +231,21 @@ onMounted(() => {
   gap: 1rem;
 }
 
+.welcome-message {
+    text-align: center;
+    color: var(--text-color-muted);
+    margin: auto;
+}
+
 .message-bubble {
   max-width: 80%;
   padding: 0.75rem 1.25rem;
   border-radius: 20px;
   line-height: 1.5;
-  word-wrap: break-word; /* Garante a quebra de palavras longas */
+  word-wrap: break-word;
 }
-
-.message-bubble p {
-  margin: 0; /* Remove margens padrão do parágrafo */
+.message-content :deep(p) {
+    margin: 0;
 }
 
 .message-bubble.user {
@@ -206,7 +278,7 @@ onMounted(() => {
   flex-grow: 1;
   padding: 0.75rem 1.25rem;
   border: 1px solid var(--border-color);
-  border-radius: 22px; /* Deixa o input totalmente arredondado */
+  border-radius: 22px;
   font-size: 1rem;
 }
 
@@ -221,7 +293,7 @@ onMounted(() => {
   border: none;
   background-color: var(--primary-color);
   color: white;
-  border-radius: 22px; /* Deixa o botão totalmente arredondado */
+  border-radius: 22px;
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
@@ -247,28 +319,24 @@ onMounted(() => {
 .typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
-
-/* RESPONSIVIDADE */
 @media (max-width: 767px) {
   .chat-view-wrapper {
-    /* Em celulares, o chat ocupa 100% da tela, sem padding externo */
     padding: 0;
     height: 100%;
   }
 
   .chat-container {
-    /* Remove a borda e a sombra, fazendo o chat se sentir mais "nativo" */
     border-radius: 0;
     box-shadow: none;
     height: 100%;
   }
-
-  .messages-area {
-    padding: 1rem;
+  
+  /* Esconde a sidebar em telas pequenas. Uma solução mais avançada seria um menu "hambúrguer". */
+  .chat-view-wrapper :deep(.history-sidebar) {
+    display: none;
   }
 
-  .chat-footer {
-    padding: 0.75rem 1rem;
-  }
+  .messages-area { padding: 1rem; }
+  .chat-footer { padding: 0.75rem 1rem; }
 }
 </style>
