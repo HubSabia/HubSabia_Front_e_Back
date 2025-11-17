@@ -67,48 +67,32 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // --- ROTAS ESPECÍFICAS (por ID) ---
 
-// POST /api/chatbots/:id/interagir (ATUALIZADO PARA USAR A CHAVE DO USUÁRIO)
 router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, async (req, res) => {
-    const { mensagemUsuario } = req.body;
+    // ==========================================================
+    // --- MUDANÇA CRÍTICA AQUI ---
+    // ==========================================================
+    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body; // Pega o sessaoId do body
+    // ==========================================================
+
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
     }
     try {
-        // 1. Busca o usuário logado para obter sua chave de API
+
         const usuario = await Usuario.findById(req.usuario.id);
         if (!usuario || !usuario.geminiApiKey) {
             return res.status(400).json({ msg: 'Nenhuma chave de API do Google AI foi configurada. Por favor, adicione sua chave na sua página de perfil.' });
         }
         
-        // 2. Inicializa a IA com a CHAVE DO USUÁRIO
+
         const genAI = new GoogleGenerativeAI(usuario.geminiApiKey);
-        
         const chatbot = await Chatbot.findById(req.params.id).populate({
                  path: 'campanha',
                  populate: { path: 'editais', model: 'Edital' }
             });
 
-        if (!chatbot || !chatbot.campanha) {
-            return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
-        }
         
-        const hoje = new Date();
-        const dataFim = new Date(chatbot.campanha.periodo_fim);
-        let infoDeData = "";
-        if (hoje > dataFim) {
-            infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
-        } else {
-            const diffTime = Math.abs(dataFim - hoje);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays <= 7) {
-                infoDeData = `Atenção: Faltam apenas ${diffDays} dia(s) para o encerramento das inscrições!`;
-            }
-        }
-
-        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
-        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        
-        const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
+        const prompt =  const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
 2. Sua ÚNICA fonte de conhecimento é o "Contexto dos Editais" fornecido abaixo.
 3. Responda à "Pergunta do Usuário" usando APENAS informações do contexto.
@@ -123,15 +107,21 @@ ${contexto}
 PERGUNTA DO USUÁRIO:
 ${mensagemUsuario}
 `;
+        const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
+        const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"}); // Modelo atualizado
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
 
-            // Salvar no histórico de conversas
-            const sessaoId = crypto.randomBytes(16).toString('hex');
+            // ==========================================================
+            // --- LÓGICA DE SESSÃO CORRIGIDA ---
+            // ==========================================================
+            // Se o frontend enviou um ID de sessão, use-o. Senão, crie um novo.
+            const sessaoId = sessaoIdRecebida || crypto.randomBytes(16).toString('hex');
+            // ==========================================================
 
             const novoHistorico = new HistoricoConversa({
                 chatbot: chatbot._id,
@@ -142,8 +132,10 @@ ${mensagemUsuario}
             });
             await novoHistorico.save();
 
-            res.json({ resposta: respostaDaIA });
-        } catch (iaError) {
+            // Retorna a resposta E o ID da sessão para o frontend
+            res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
+
+        catch (iaError) {
     console.error("Erro da API do Google AI:", iaError);
 
     if (iaError.status === 503) {
@@ -157,7 +149,6 @@ ${mensagemUsuario}
         res.status(500).send('Erro no servidor.');
     }
 });
-
 // GET /api/chatbots/:id/historico -> Listar o histórico de conversas
 router.get('/:id/historico', authMiddleware, async (req, res) => {
     try {
