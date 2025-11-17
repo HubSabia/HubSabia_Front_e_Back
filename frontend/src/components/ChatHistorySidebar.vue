@@ -32,7 +32,7 @@ defineEmits(['newChat', 'select']);
 <style scoped>
 .history-sidebar {
   width: 260px;
-  background-color: #202123;
+  background-color: var(--sidebar-bg);
   color: #fff;
   display: flex;
   flex-direction: column;
