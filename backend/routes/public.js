@@ -16,17 +16,79 @@ const HistoricoConversa = require('../models/HistoricoConversa');
 
 // ROTA 1: Buscar informações de UM chatbot específico (continua igual)
 router.get('/chatbots/:id', async (req, res) => {
-    // ... seu código existente aqui ...
+try {
+        console.log(`[PUBLIC] 🔍 Buscando chatbot com ID: ${req.params.id}`);
+        const chatbot = await Chatbot.findById(req.params.id).select('nome status');
+        
+        if (!chatbot) {
+            console.log(`[PUBLIC] ❌ Chatbot não encontrado`);
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' });
+        }
+        
+        console.log(`[PUBLIC] ✅ Chatbot encontrado: ${chatbot.nome}, Status: ${chatbot.status}`);
+        res.json(chatbot);
+    } catch (err) {
+        console.error("[PUBLIC] ❌ Erro:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
 });
 
 // ROTA 2: Listar campanhas ativas (continua igual)
 router.get('/campanhas', async (req, res) => {
-    // ... seu código existente aqui ...
+   try {
+        console.log('[PUBLIC] 📋 Buscando campanhas ativas...');
+        
+        // Busca as campanhas e popula os dados
+        const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
+            .sort({ createdAt: -1 })
+            .populate('criador', 'nome')
+            .populate('chatbot', '_id nome status') // Popula o chatbot completo
+            .lean(); // .lean() converte para objeto JavaScript simples
+        
+        console.log(`[PUBLIC] 📊 ${campanhasAtivas.length} campanhas ativas encontradas`);
+        
+        // CORREÇÃO: Transforma cada campanha para enviar apenas o ID do chatbot
+        const campanhasFormatadas = campanhasAtivas.map(campanha => {
+            console.log(`\n[PUBLIC] 🔍 Processando: "${campanha.nome}"`);
+            console.log(`  - Chatbot RAW:`, campanha.chatbot);
+            
+            // Se tem chatbot E ele está ativo, envia apenas o ID como string
+            if (campanha.chatbot) {
+                console.log(`  - Chatbot Status: ${campanha.chatbot.status}`);
+                
+                if (campanha.chatbot.status === 'Ativo') {
+                    // AQUI É A MÁGICA: Substituímos o objeto inteiro pelo ID
+                    const chatbotId = campanha.chatbot._id.toString();
+                    console.log(`  - ✅ Chatbot ATIVO! Enviando ID: ${chatbotId}`);
+                    
+                    return {
+                        ...campanha,
+                        chatbot: chatbotId // Substitui o objeto pelo ID
+                    };
+                } else {
+                    console.log(`  - ⚠️ Chatbot existe mas está ${campanha.chatbot.status}`);
+                    return {
+                        ...campanha,
+                        chatbot: null // Remove chatbots inativos
+                    };
+                }
+            } else {
+                console.log(`  - ❌ Sem chatbot associado`);
+                return {
+                    ...campanha,
+                    chatbot: null
+                };
+            }
+        });
+        
+        console.log('\n[PUBLIC] 📤 Enviando campanhas formatadas...');
+        res.json(campanhasFormatadas);
+        
+    } catch (err) {
+        console.error("[PUBLIC] ❌ Erro ao buscar campanhas:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
 });
-
-// ==========================================================
-// --- ROTA 3: Interagir com um chatbot (CÓDIGO CORRIGIDO) ---
-// ==========================================================
 router.post('/chatbots/:id/interagir', async (req, res) => {
     // Agora aceita tanto a mensagem quanto o ID da sessão
     const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
