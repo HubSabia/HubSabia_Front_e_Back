@@ -12,14 +12,12 @@ const { validateObjectId } = require('../utils/validation');
 const rateLimit = require('express-rate-limit');
 
 const chatLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 10, // 10 requisições
+    windowMs: 1 * 60 * 1000,
+    max: 10,
     message: { msg: 'Você está enviando mensagens muito rápido. Aguarde um minuto.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
-
-// --- ROTAS GERAIS (CRUD Básico) ---
 
 // GET /api/chatbots -> Listar todos os chatbots do usuário
 router.get('/', authMiddleware, async (req, res) => {
@@ -43,7 +41,6 @@ router.post('/', authMiddleware, async (req, res) => {
     if (nome.trim().length < 3) {
         return res.status(400).json({ msg: 'O nome do chatbot deve ter pelo menos 3 caracteres.' });
     }
-    
     if (nome.trim().length > 50) {
         return res.status(400).json({ msg: 'O nome do chatbot deve ter no máximo 50 caracteres.' });
     }
@@ -64,15 +61,14 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-
-// --- ROTAS ESPECÍFICAS (por ID) ---
-
+// POST /api/chatbots/:id/interagir -> Interagir com o chatbot (ROTA PRIVADA)
 router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, async (req, res) => {
     const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
 
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
     }
+    
     try {
         const usuario = await Usuario.findById(req.usuario.id);
         if (!usuario || !usuario.geminiApiKey) {
@@ -89,9 +85,6 @@ router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, asy
             return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
         }
 
-        // ==========================================================
-        // --- CORREÇÃO 2: Variáveis definidas ANTES de serem usadas ---
-        // ==========================================================
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         const hoje = new Date();
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -101,7 +94,6 @@ router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, asy
         if (hoje > dataFim) {
             infoDeData = `Atenção: As inscrições para esta campanha já foram encerradas em ${dataFim.toLocaleDateString('pt-BR')}.`;
         }
-        // ==========================================================
         
         const prompt = `INSTRUÇÕES PARA O ASSISTENTE:
 1. Você é um assistente virtual do IFPR.
@@ -120,7 +112,7 @@ ${mensagemUsuario}
 `;
         
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const respostaDaIA = response.text();
@@ -138,9 +130,6 @@ ${mensagemUsuario}
 
             res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
 
-        // ==========================================================
-        // --- CORREÇÃO 1: Adicionada a chave de fechamento do 'try' ---
-        // ==========================================================
         } catch (iaError) {
             console.error("Erro da API do Google AI:", iaError);
 
@@ -156,18 +145,20 @@ ${mensagemUsuario}
     }
 });
 
-// GET /api/chatbots/:id/historico-usuario -> Listar o histórico de conversas do usuário logado com este chatbot
+// GET /api/chatbots/:id/historico-usuario -> Listar o histórico de conversas do usuário logado
 router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id);
-        if (!chatbot) { return res.status(404).json({ msg: 'Chatbot não encontrado.' }); }
+        if (!chatbot) { 
+            return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
+        }
         
         const historico = await HistoricoConversa.find({ 
             chatbot: req.params.id,
             usuario: req.usuario.id
         })
-        .sort({ createdAt: 'asc' }) // Ordena do mais antigo para o mais recente
-        .select('pergunta resposta sessaoId createdAt'); // Seleciona os campos necessários
+        .sort({ createdAt: 'asc' })
+        .select('pergunta resposta sessaoId createdAt');
 
         res.json(historico);
     } catch (err) {
@@ -177,7 +168,7 @@ router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
 });
 
 // GET /api/chatbots/:id -> Buscar um chatbot específico
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', authMiddleware, validateObjectId, async (req, res) => {
     try {
         const chatbot = await Chatbot.findById(req.params.id).populate('campanha', 'nome');
         if (!chatbot) { 
