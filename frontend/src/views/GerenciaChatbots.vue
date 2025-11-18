@@ -6,6 +6,12 @@
     </header>
 
     <div class="bots-list-container">
+
+      <LoadingSpinner 
+    v-if="isLoading" 
+    message="Carregando chatbots..." 
+  />
+
       <div class="list-header">
         <span class="col-nome">Nome</span>
         <span class="col-campanha">Campanha Associada</span>
@@ -17,9 +23,9 @@
       <div class="bots-list">
         <div v-if="isLoading" class="loading-message">Carregando chatbots...</div>
         
-        <div v-if="!isLoading && chatbots.length === 0" class="no-data-message">
-          Nenhum chatbot encontrado. Clique em "Adicionar" para criar o seu primeiro.
-        </div>
+        <div v-if="chatbots.length === 0" class="no-data-message">
+        Nenhum chatbot encontrado. Clique em "Adicionar" para criar o seu primeiro.
+      </div>
 
         <div v-for="chatbot in chatbots" :key="chatbot._id" class="bot-item">
           <div class="col-nome">{{ chatbot.nome }}</div>
@@ -36,10 +42,19 @@
           
           <!-- Bloco das Ações -->
           <div class="col-acoes actions-buttons">
-            <button class="btn-edit" @click="handleEditar(chatbot)">Editar</button>
-            <button class="btn-delete" @click="handleExcluir(chatbot._id)">Excluir</button>
-            <button class="btn-chat" @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
-          </div>
+        <button 
+          v-if="canEdit(chatbot)" 
+          class="btn-edit" 
+          @click="handleEditar(chatbot)">Editar</button>
+        <button 
+          v-if="canDelete(chatbot)" 
+          class="btn-delete" 
+          @click="handleExcluir(chatbot._id)">Excluir</button>
+        <!-- Botão de conversar SEMPRE aparece (todos podem usar) -->
+        <button 
+          class="btn-chat" 
+          @click="iniciarConversa(chatbot._id)">Conversar com o Bot</button>
+      </div>
         </div> <!-- Fim da div do v-for -->
       </div> <!-- Fim de .bots-list -->
     </div> <!-- Fim de .bots-list-container -->
@@ -69,6 +84,8 @@ import apiClient from '@/services/api';
 import ChatbotModal from '@/components/ChatbotModal.vue';
 import { useToast } from "vue-toastification";
 import ConfirmModal from '@/components/ConfirmModal.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const chatbots = ref([]);
 const isModalVisible = ref(false);
@@ -78,6 +95,7 @@ const isLoading = ref(true);
 const toast = useToast();
 const isConfirmModalVisible = ref(false);
 const itemToDeleteId = ref(null);
+const { canEdit, canDelete } = usePermissions();
 
 const buscarChatbots = async () => {
   isLoading.value = true;

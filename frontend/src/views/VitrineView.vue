@@ -5,13 +5,14 @@
       <p>Explore as campanhas ativas abaixo e interaja com nossos assistentes virtuais.</p>
     </div>
 
-    <!-- Mensagem de Loading -->
-    <div v-if="loading" class="loading-message">
-      <p>Carregando campanhas...</p>
-    </div>
+    <!-- Loading state -->
+    <LoadingSpinner 
+      v-if="loading" 
+      message="Carregando campanhas ativas..." 
+    />
 
     <!-- Mensagem se não houver campanhas -->
-    <div v-else-if="!campanhas.length" class="empty-message">
+    <div v-else-if="campanhas.length === 0" class="empty-message">
       <p>Nenhuma campanha ativa encontrada no momento. Volte mais tarde!</p>
     </div>
 
@@ -21,25 +22,13 @@
         <h2>{{ campanha.nome }}</h2>
         <p class="creator">Criado por: {{ campanha.criador.nome }}</p>
         <p class="description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
-        
-        <!-- DEBUG: Mostra o ID do chatbot -->
-        <p class="debug-info" v-if="showDebug">
-          Chatbot ID: {{ campanha.chatbot || 'Nenhum' }}
-        </p>
-        
-        <!-- Verifica se existe chatbot E se é uma string válida -->
         <router-link 
-          v-if="campanha.chatbot && campanha.chatbot.length > 0" 
+          v-if="campanha.chatbot" 
           :to="`/chat-publico/${campanha.chatbot}`" 
           class="chat-button"
         >
           Conversar com Assistente
         </router-link>
-        
-        <!-- Mensagem caso não haja chatbot -->
-        <div v-else class="no-chatbot">
-          Assistente em breve
-        </div>
       </div>
     </div>
   </div>
@@ -48,6 +37,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const campanhas = ref([]);
 const loading = ref(true);

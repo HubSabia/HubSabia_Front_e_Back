@@ -6,6 +6,10 @@
     </header>
 
     <div class="list-card">
+      <LoadingSpinner 
+      v-if="isLoading" 
+      message="Carregando campanhas..."  />
+
       <table class="data-table">
         <thead>
           <tr>
@@ -23,6 +27,11 @@
   <tr v-if="!isLoading && campanhas.length === 0">
     <td colspan="5" class="message">Nenhuma campanha encontrada.</td>
   </tr>
+  <tr v-if="campanhas.length === 0">
+        <td colspan="5" class="message">
+          Nenhuma campanha encontrada. Clique em "Adicionar" para criar a primeira.
+        </td>
+      </tr>
   
   <!-- MUDANÇA: Adicionados os atributos 'data-label' a cada <td> -->
   <tr v-for="campanha in campanhas" :key="campanha._id">
@@ -31,9 +40,28 @@
     <td data-label="Público">{{ campanha.publico_alvo }}</td>
     <td data-label="Status">{{ campanha.status }}</td>
     <td data-label="Ações" class="actions-buttons">
-      <button class="btn-edit" @click="handleEditar(campanha)">Editar</button>
-      <button class="btn-delete" @click="confirmarExclusao(campanha._id)">Excluir</button>
-    </td>
+  <button 
+    v-if="canEdit(campanha)" 
+    class="btn-edit" 
+    @click="handleEditar(campanha)"
+  >
+    Editar
+  </button>
+  <button 
+    v-if="canDelete(campanha)" 
+    class="btn-delete" 
+    @click="confirmarExclusao(campanha._id)"
+  >
+    Excluir
+  </button>
+  <!-- Mensagem se não tiver permissão -->
+  <span 
+    v-if="!canEdit(campanha) && !canDelete(campanha)" 
+    class="no-permission-text"
+  >
+    Sem permissão
+  </span>
+</td>
   </tr>
 </tbody>
       </table>
@@ -62,6 +90,8 @@ import apiClient from '@/services/api';
 import CampaignModal from '@/components/CampaignModal.vue';
 import { useToast } from "vue-toastification";
 import ConfirmModal from '@/components/ConfirmModal.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const campanhas = ref([]);
 const isModalVisible = ref(false);
@@ -70,6 +100,7 @@ const isLoading = ref(true);
 const isConfirmModalVisible = ref(false);
 const itemToDeleteId = ref(null);
 const toast = useToast();
+const { canEdit, canDelete } = usePermissions();
 
 // --- Funções CRUD (Lógica Central) ---
 
@@ -253,6 +284,12 @@ onMounted(buscarCampanhas);
   padding: 2rem;
   text-align: center;
   color: #6c757d;
+  font-style: italic;
+}
+
+.no-permission-text {
+  color: #6c757d;
+  font-size: 0.85rem;
   font-style: italic;
 }
 

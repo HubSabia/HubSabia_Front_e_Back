@@ -6,6 +6,11 @@
     </header>
 
     <div class="list-card">
+      <LoadingSpinner 
+    v-if="isLoading" 
+    message="Carregando usuários..." 
+  />
+
       <table class="users-table">
         <thead>
           <tr>
@@ -17,6 +22,10 @@
           </tr>
         </thead>
         <tbody>
+          <tr v-if="usuarios.length === 0">
+        <td colspan="5" class="no-data">Nenhum usuário encontrado.</td>
+      </tr>
+      
           <tr v-for="usuario in usuarios" :key="usuario._id">
     <td data-label="Nome">{{ usuario.nome }}</td>
     <td data-label="Email">{{ usuario.email }}</td>
@@ -52,10 +61,11 @@
 </template>
 
 <script setup>
-// O SCRIPT SETUP QUE JÁ TINHAMOS ESTÁ PERFEITO
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
 import { isAdmin, getUserPayload } from '@/utils/auth';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
+
 
 const usuarios = ref([]);
 const isLoading = ref(true);

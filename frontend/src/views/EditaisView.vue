@@ -6,11 +6,17 @@
     </header>
 
     <div class="list-container">
-      <div class="list-header">
-        <span>Informações do Edital</span>
-        <span>Ações</span>
-      </div>
-      <div class="item-list">
+
+      <LoadingSpinner 
+    v-if="isLoading" 
+    message="Carregando editais..." 
+  />
+
+    <div class="list-header">
+      <span>Informações do Edital</span>
+      <span>Ações</span>
+    </div>
+    <div class="item-list">
         <div v-if="isLoading" class="message">Carregando editais...</div>
         <div v-if="!isLoading && editais.length === 0" class="message">
           Nenhum edital encontrado. Clique em "Adicionar" para criar o primeiro.
@@ -21,8 +27,19 @@
             <span class="item-description">{{ edital.conteudo }}</span>
           </div>
           <div class="item-actions">
-            <button class="btn-edit" @click="handleEditar(edital)">Editar</button>
-            <button class="btn-delete" @click="confirmarExclusao(edital._id)">Excluir</button>
+            <button 
+              v-if="canEdit(edital)" 
+              class="btn-edit" 
+              @click="handleEditar(edital)">Editar</button>
+            <button 
+              v-if="canDelete(edital)" 
+              class="btn-delete" 
+              @click="confirmarExclusao(edital._id)">Excluir</button>
+            <span 
+              v-if="!canEdit(edital) && !canDelete(edital)" 
+              class="no-permission-text">
+              Sem permissão
+            </span>
           </div>
         </div>
       </div>
@@ -53,11 +70,14 @@ import EditalModal from '@/components/EditalModal.vue';
 // MUDANÇA: Importa o toast e o modal de confirmação
 import { useToast } from "vue-toastification";
 import ConfirmModal from '@/components/ConfirmModal.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const editais = ref([]);
 const isModalVisible = ref(false);
 const editalParaEditar = ref(null);
 const isLoading = ref(true);
+const { canEdit, canDelete } = usePermissions();
 
 // MUDANÇA: Variáveis para o modal de confirmação
 const isConfirmModalVisible = ref(false);
@@ -252,6 +272,12 @@ onMounted(buscarEditais);
   padding: 2rem;
   text-align: center;
   color: #6c757d;
+  font-style: italic;
+}
+
+.no-permission-text {
+  color: #6c757d;
+  font-size: 0.85rem;
   font-style: italic;
 }
 
