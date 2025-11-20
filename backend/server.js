@@ -20,16 +20,16 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Permite requisições sem 'origin' (ex: apps mobile, Postman, server-to-server)
-    // E também permite requisições cuja 'origin' está na nossa lista.
+    // A condição '!origin' permite requisições de ferramentas como Postman.
+    // A condição 'allowedOrigins.indexOf(origin) !== -1' verifica se a URL do front-end está na lista.
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      // Se a origem for permitida, chama o callback sem erro.
       callback(null, true);
     } else {
-      console.log('Origem bloqueada pelo CORS:', origin);
+      // Se a origem NÃO for permitida, chama o callback COM um erro.
       callback(new Error('Não permitido pela política de CORS'));
     }
-  },
-  credentials: true // Permite cookies e credenciais
+  }
 };
 
 app.use(cors(corsOptions)); 
