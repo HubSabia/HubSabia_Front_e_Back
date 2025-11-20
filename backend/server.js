@@ -1,3 +1,5 @@
+// backend/server.js - CORREÇÃO DO CORS
+
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -11,28 +13,40 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// --- CONFIGURAÇÃO DE SEGURANÇA DO CORS ---
+// --- CONFIGURAÇÃO CORRIGIDA DO CORS ---
 const allowedOrigins = [
     'https://hub-sabia-front-e-back.vercel.app',
     'http://localhost:5174',
+    'http://localhost:5173', // ✅ Adicionado 5173
     'http://127.0.0.1:5173'
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // A condição '!origin' permite requisições de ferramentas como Postman.
-    // A condição 'allowedOrigins.indexOf(origin) !== -1' verifica se a URL do front-end está na lista.
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      // Se a origem for permitida, chama o callback sem erro.
-      callback(null, true);
-    } else {
-      // Se a origem NÃO for permitida, chama o callback COM um erro.
-      callback(new Error('Não permitido pela política de CORS'));
+    if (!origin) {
+      return callback(null, true);
     }
-  }
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
 };
 
-app.use(cors(corsOptions)); 
+app.use(cors(corsOptions));
+
+// ✅ Middleware de erro para CORS (opcional, mas recomendado)
+app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      msg: 'Acesso negado pela política de CORS',
+      origin: req.headers.origin
+    });
+  }
+  next(err);
+});
 
 app.use(express.json()); 
 
@@ -44,7 +58,12 @@ app.use(
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URI,
             collectionName: 'sessions'
-        })
+        }),
+        cookie: {
+            secure: process.env.NODE_ENV === 'production', // ✅ HTTPS em produção
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24 // 24 horas
+        }
     })
 );
 
@@ -58,8 +77,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // --- ROTAS DA API ---
-// Todas as rotas estão ativas.
-app.use('/api', require('./routes/index')); // Rota de teste
+app.use('/api', require('./routes/index'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/campanhas', require('./routes/campanhas'));
 app.use('/api/chatbots', require('./routes/chatbots'));
@@ -68,6 +86,15 @@ app.use('/api/profile', require('./routes/profile'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/usuarios', require('./routes/usuarios'));
+
+// ✅ Tratamento de erro global
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err);
+  res.status(err.status || 500).json({
+    msg: err.message || 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
 
 // --- INICIA O SERVIDOR ---
 const PORT = process.env.PORT || 5000;

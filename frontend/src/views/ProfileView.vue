@@ -33,28 +33,30 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
+import { useToast } from 'vue-toastification';
 
 const apiKey = ref('');
 const isLoading = ref(false);
 const successMessage = ref('');
+const toast = useToast();
 
-// Busca a chave de API existente quando a página carrega
 const buscarApiKey = async () => {
   try {
     const response = await apiClient.get('/profile/apikey');
     apiKey.value = response.data.apiKey;
   } catch (error) {
     console.error("Erro ao buscar a chave de API:", error);
+    toast.error("Não foi possível carregar a chave de API.");
   }
 };
 
-// Salva a nova chave de API
 const salvarApiKey = async () => {
   isLoading.value = true;
   successMessage.value = '';
   try {
     const response = await apiClient.put('/profile/apikey', { apiKey: apiKey.value });
     successMessage.value = response.data.msg;
+    toast.success(response.data.msg);
   } catch (error) {
     console.error("Erro ao salvar a chave de API:", error);
     toast.error("Não foi possível salvar a chave. Tente novamente.");

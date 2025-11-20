@@ -1,13 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 const routes = [
-  // ROTAS PÚBLICAS PRIMEIRO (ordem importa!)
-  {
-    path: '/chat-publico/:id',
-    name: 'ChatPublico',
-    component: () => import('@/views/PublicChatView.vue'),
-    meta: { title: 'Assistente Virtual', public: true }
-  },
   {
     path: '/login', 
     name: 'Login',
@@ -26,8 +19,13 @@ const routes = [
     component: () => import('@/views/LoginSuccessView.vue'),
     meta: { public: true }
   },
+  {
+    path: '/chat-publico/:id',
+    name: 'ChatPublico',
+    component: () => import('@/views/PublicChatView.vue'),
+    meta: { title: 'Assistente Virtual', public: true }
+  },
   
-  // ROTAS PROTEGIDAS
   {
     path: '/dashboard',
     name: 'Dashboard',
@@ -50,7 +48,7 @@ const routes = [
     path: '/sobre',
     name: 'Sobre',
     component: () => import('@/views/SobreView.vue'),
-    meta: { title: 'Sobre', requiresAuth: true}
+    meta: { title: 'Sobre', requiresAuth: true }
   },
   {
     path: '/usuarios',
@@ -77,13 +75,17 @@ const routes = [
     meta: { title: 'Conversa com o ChatBot', requiresAuth: true }
   },
   
-  // VITRINE POR ÚLTIMO (rota catch-all)
   {
     path: '/', 
     name: 'Vitrine',
     component: () => import('@/views/VitrineView.vue'),
     meta: { title: 'Vitrine de Campanhas', public: true }
   },
+  
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
+  }
 ];
 
 const router = createRouter({
@@ -91,27 +93,23 @@ const router = createRouter({
   routes,
 });
 
+// ✅ Guard melhorado
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
   const requiresAuth = to.meta.requiresAuth;
   const isPublic = to.meta.public;
-  const isAuthPage = to.name === 'Login' || to.name === 'Register';
 
-  console.log('Navegando para:', to.path, 'Params:', to.params); // Debug
-
-  // Se a rota requer autenticação e não há token, redireciona para o login.
+  // Se a rota requer autenticação e não há token
   if (requiresAuth && !token) {
     return next({ name: 'Login' });
   }
 
-  // Se o usuário está logado e tenta acessar uma página de autenticação (Login/Registro),
-  // redireciona para o dashboard.
-  if (isAuthPage && token) {
+  // Se o usuário está logado e tenta acessar Login/Registro
+  if (token && (to.name === 'Login' || to.name === 'Register')) {
     return next({ name: 'Dashboard' });
   }
 
-  // Para todas as outras situações (páginas públicas, ou páginas protegidas com token),
-  // permite a navegação.
+  // Permite navegação
   next();
 });
 
