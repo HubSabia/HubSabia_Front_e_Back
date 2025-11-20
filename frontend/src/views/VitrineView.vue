@@ -1,34 +1,42 @@
 <template>
   <div class="vitrine-container">
-    <div class="header-text">
+    <header class="page-header">
       <h1>Bem-vindo ao Hub-Sabiá!</h1>
       <p>Explore as campanhas ativas abaixo e interaja com nossos assistentes virtuais.</p>
+    </header>
+
+    <div v-if="loading" class="status-message">
+      <p>Carregando campanhas...</p>
     </div>
 
-    <!-- Loading state -->
-    <LoadingSpinner 
-      v-if="loading" 
-      message="Carregando campanhas ativas..." 
-    />
-
-    <!-- Mensagem se não houver campanhas -->
-    <div v-else-if="campanhas.length === 0" class="empty-message">
+    <div v-else-if="!campanhas.length" class="status-message">
       <p>Nenhuma campanha ativa encontrada no momento. Volte mais tarde!</p>
     </div>
 
-    <!-- Lista de Campanhas -->
     <div v-else class="campaigns-grid">
+      <!-- Card da Campanha -->
       <div v-for="campanha in campanhas" :key="campanha._id" class="campaign-card">
-        <h2>{{ campanha.nome }}</h2>
-        <p class="creator">Criado por: {{ campanha.criador.nome }}</p>
-        <p class="description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
-        <router-link 
-          v-if="campanha.chatbot" 
-          :to="`/chat-publico/${campanha.chatbot}`" 
-          class="chat-button"
-        >
-          Conversar com Assistente
-        </router-link>
+        
+        <!-- Imagem do Card -->
+        <div class="card-image">
+          <!-- Usamos uma imagem de placeholder por enquanto. No futuro, aqui entrará a campanha.imagemUrl -->
+          <img src="https://via.placeholder.com/400x220/E2E8F0/4A5568?text=Campanha" alt="Imagem da campanha">
+        </div>
+        
+        <!-- Conteúdo de Texto do Card -->
+        <div class="card-content">
+          <h2 class="card-title">{{ campanha.nome }}</h2>
+          <p class="card-creator">Criado por: {{ campanha.criador.nome }}</p>
+          <p class="card-dates">
+            Período: {{ formatarData(campanha.periodo_inicio) }} a {{ formatarData(campanha.periodo_fim) }}
+          </p>
+          <p class="card-description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
+          
+          <!-- Botão só aparece se houver um chatbot associado -->
+          <router-link v-if="campanha.chatbot" :to="`/chat-publico/${campanha.chatbot._id}`" class="chat-button">
+            Conversar com Assistente
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -37,164 +45,169 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const campanhas = ref([]);
 const loading = ref(true);
-const showDebug = ref(false); // Mude para true se quiser ver os IDs
 
+// Função para buscar os dados da API
 onMounted(async () => {
   try {
-    console.log('=== VITRINE VIEW ===');
-    console.log('Buscando campanhas públicas...');
-    
     const response = await apiClient.get('/public/campanhas');
-    console.log('Campanhas recebidas:', response.data);
-    
-    // Log detalhado de cada campanha
-    response.data.forEach((camp, index) => {
-      console.log(`Campanha ${index + 1}:`, {
-        nome: camp.nome,
-        chatbot: camp.chatbot,
-        chatbotType: typeof camp.chatbot,
-        temChatbot: !!camp.chatbot
-      });
-    });
-    
     campanhas.value = response.data;
   } catch (error) {
     console.error('Erro ao buscar as campanhas:', error);
-    console.error('Detalhes:', error.response?.data);
   } finally {
     loading.value = false;
   }
 });
+
+// Função para formatar as datas de forma legível
+function formatarData(dataString) {
+  if (!dataString) return '';
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dataString).toLocaleDateString('pt-BR', options);
+}
 </script>
 
 <style scoped>
 .vitrine-container {
-  padding: 2rem;
-  min-height: 100vh;
-  background-color: #f5f5f5;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem; /* Padding menor para telas pequenas */
 }
 
-.header-text {
+.page-header {
   text-align: center;
   margin-bottom: 3rem;
 }
-
-.header-text h1 {
-  font-size: 2.5rem;
+.page-header h1 {
+  font-size: 2.25rem; /* Menor em telas pequenas */
+  font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #333;
 }
-
-.header-text p {
+.page-header p {
   font-size: 1.1rem;
-  color: #666;
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.loading-message, .empty-message {
+.status-message {
   text-align: center;
-  color: #888;
-  padding: 2rem;
+  color: #64748b;
+  padding: 3rem;
   font-size: 1.1rem;
 }
 
 .campaigns-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: 1fr; /* Começa com uma coluna para mobile */
   gap: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .campaign-card {
-  background-color: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .campaign-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px -1px rgba(0,0,0,0.15);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
-.campaign-card h2 {
-  margin-top: 0;
-  font-size: 1.4rem;
-  color: #2d3748;
+.card-image img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover; /* Garante que a imagem cubra o espaço sem distorcer */
 }
 
-.creator {
-  font-size: 0.9rem;
-  color: #718096;
-  margin-top: -10px;
+.card-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Faz esta área crescer para ocupar o espaço disponível */
+}
+
+.card-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.card-creator {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1rem 0;
+}
+
+.card-dates {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
   margin-bottom: 1rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--primary-color, #28a745);
 }
 
-.description {
-  flex-grow: 1;
-  color: #4a5568;
+.card-description {
+  flex-grow: 1; /* Empurra o botão para o final do card */
+  color: #475569;
+  margin-bottom: 1.5rem;
   line-height: 1.6;
-  margin-bottom: 1rem;
-}
-
-.debug-info {
-  font-size: 0.8rem;
-  color: #e53e3e;
-  background-color: #fff5f5;
-  padding: 0.5rem;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  font-family: monospace;
+  /* Limita o texto a 3 linhas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .chat-button {
   display: block;
-  margin-top: 1rem;
   padding: 0.75rem;
-  background-color: #28a745;
+  background-color: var(--primary-color, #28a745);
   color: white;
   text-align: center;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
   transition: background-color 0.2s;
 }
-
 .chat-button:hover {
-  background-color: #218838;
+  background-color: var(--primary-color-hover, #218838);
 }
 
-.no-chatbot {
-  display: block;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #6c757d;
-  color: white;
-  text-align: center;
-  border-radius: 6px;
-  font-weight: 500;
-  font-style: italic;
-}
+/* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
 
-@media (max-width: 767px) {
+/* Telas médias (tablets) */
+@media (min-width: 640px) {
   .vitrine-container {
-    padding: 1rem;
+    padding: 2rem;
   }
-  
-  .header-text h1 {
-    font-size: 2rem;
-  }
-  
   .campaigns-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr); /* Duas colunas */
+  }
+}
+
+/* Telas grandes (desktops) */
+@media (min-width: 1024px) {
+  .page-header h1 {
+    font-size: 2.5rem;
+  }
+  .campaigns-grid {
+    grid-template-columns: repeat(3, 1fr); /* Três colunas */
+  }
+}
+
+/* Telas extra grandes */
+@media (min-width: 1280px) {
+  .campaigns-grid {
+    grid-template-columns: repeat(4, 1fr); /* Quatro colunas */
   }
 }
 </style>
