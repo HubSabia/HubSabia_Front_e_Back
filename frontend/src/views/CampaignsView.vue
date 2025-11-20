@@ -1,85 +1,55 @@
 <template>
-  <div class="view-container">
+  <div class="campaigns-view">
     <header class="view-header">
-      <h2>Criar Campanhas</h2>
-      <button class="btn-primary" @click="handleCriar">Adicionar</button>
+      <h1>Gestão de Campanhas</h1>
+      <button @click="abrirModalParaCriar" class="btn-add">Adicionar Campanha</button>
     </header>
 
-    <div class="list-card">
-      <LoadingSpinner 
-      v-if="isLoading" 
-      message="Carregando campanhas..."  />
-
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Período</th>
-            <th>Público</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-      <tbody>
-  <tr v-if="isLoading">
-    <td colspan="5" class="message">Carregando campanhas...</td>
-  </tr>
-  <tr v-if="!isLoading && campanhas.length === 0">
-    <td colspan="5" class="message">Nenhuma campanha encontrada.</td>
-  </tr>
-  <tr v-if="campanhas.length === 0">
-        <td colspan="5" class="message">
-          Nenhuma campanha encontrada. Clique em "Adicionar" para criar a primeira.
-        </td>
-      </tr>
-  
-  <!-- MUDANÇA: Adicionados os atributos 'data-label' a cada <td> -->
-  <tr v-for="campanha in campanhas" :key="campanha._id">
-    <td data-label="Nome">{{ campanha.nome }}</td>
-    <td data-label="Período">{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
-    <td data-label="Público">{{ campanha.publico_alvo }}</td>
-    <td data-label="Status">{{ campanha.status }}</td>
-    <td data-label="Ações" class="actions-buttons">
-  <button 
-    v-if="canEdit(campanha)" 
-    class="btn-edit" 
-    @click="handleEditar(campanha)"
-  >
-    Editar
-  </button>
-  <button 
-    v-if="canDelete(campanha)" 
-    class="btn-delete" 
-    @click="confirmarExclusao(campanha._id)"
-  >
-    Excluir
-  </button>
-  <!-- Mensagem se não tiver permissão -->
-  <span 
-    v-if="!canEdit(campanha) && !canDelete(campanha)" 
-    class="no-permission-text"
-  >
-    Sem permissão
-  </span>
-</td>
-  </tr>
-</tbody>
-      </table>
+    <div v-if="loading" class="status-message">Carregando campanhas...</div>
+    <div v-else-if="!campanhas.length" class="status-message">
+      <p>Nenhuma campanha encontrada. Clique em "Adicionar Campanha" para começar.</p>
     </div>
 
-    <CampaignModal
-      v-model="isModalVisible"
-      :campaign-to-edit="campanhaParaEditar"
-      @campaign-created="adicionarNovaCampanhaNaLista"
+    <!-- Tabela de Campanhas -->
+    <table v-else class="campaigns-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Período</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="campanha in campanhas" :key="campanha._id">
+          <td>{{ campanha.nome }}</td>
+          <td>{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
+          <td><span :class="['status-badge', campanha.status.toLowerCase()]">{{ campanha.status }}</span></td>
+          <td class="actions-cell">
+            <button @click="abrirModalParaEditar(campanha)" class="btn-edit">Editar</button>
+            <button @click="pedirConfirmacaoExclusao(campanha)" class="btn-delete">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- O Modal (só é renderizado quando 'showModal' é true) -->
+    <CampaignModal 
+      v-if="showModal"
+      v-model="showModal"
+      :campaign-to-edit="campanhaSelecionada"
+      @campaign-created="adicionarCampanhaNaLista"
       @campaign-updated="atualizarCampanhaNaLista"
     />
 
-    <ConfirmModal
-      :isVisible="isConfirmModalVisible"
+    <!-- Modal de Confirmação para Exclusão -->
+    <ConfirmModal 
+      v-if="showConfirmModal"
+      :show="showConfirmModal"
       title="Confirmar Exclusão"
       message="Você tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita."
-      @confirm="executeDelete"
-      @cancel="closeConfirmModal"
+      @confirm="confirmarExclusao"
+      @cancel="showConfirmModal = false"
     />
   </div>
 </template>
@@ -87,39 +57,53 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/api';
+import { useToast } from 'vue-toastification';
+
+// Importa os componentes de modal
 import CampaignModal from '@/components/CampaignModal.vue';
-import { useToast } from "vue-toastification";
 import ConfirmModal from '@/components/ConfirmModal.vue';
-import { usePermissions } from '@/composables/usePermissions';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const campanhas = ref([]);
-const isModalVisible = ref(false);
-const campanhaParaEditar = ref(null);
-const isLoading = ref(true);
-const isConfirmModalVisible = ref(false);
-const itemToDeleteId = ref(null);
+const loading = ref(true);
 const toast = useToast();
-const { canEdit, canDelete } = usePermissions();
 
-// --- Funções CRUD (Lógica Central) ---
+// --- ESTADO PARA CONTROLE DOS MODAIS ---
+const showModal = ref(false);
+const campanhaSelecionada = ref(null);
+const showConfirmModal = ref(false);
+const campanhaParaExcluir = ref(null);
 
+
+// --- FUNÇÕES DE API ---
 const buscarCampanhas = async () => {
-  isLoading.value = true;
+  loading.value = true;
   try {
     const response = await apiClient.get('/campanhas');
     campanhas.value = response.data;
   } catch (error) {
-    console.error("Erro ao buscar campanhas:", error);
-    toast.error("Não foi possível carregar as campanhas.");
+    toast.error('Erro ao buscar campanhas.');
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 
-const adicionarNovaCampanhaNaLista = (novaCampanha) => {
+onMounted(buscarCampanhas);
+
+// --- FUNÇÕES DE CONTROLE DO MODAL DE CAMPANHA ---
+const abrirModalParaCriar = () => {
+  campanhaSelecionada.value = null;
+  showModal.value = true;
+};
+
+const abrirModalParaEditar = (campanha) => {
+  campanhaSelecionada.value = campanha;
+  showModal.value = true;
+};
+
+// --- FUNÇÕES DE CALLBACK DO MODAL ---
+const adicionarCampanhaNaLista = (novaCampanha) => {
   campanhas.value.unshift(novaCampanha);
-  toast.success(`Campanha "${novaCampanha.nome}" criada com sucesso!`);
+  toast.success('Campanha criada com sucesso!');
 };
 
 const atualizarCampanhaNaLista = (campanhaAtualizada) => {
@@ -127,211 +111,71 @@ const atualizarCampanhaNaLista = (campanhaAtualizada) => {
   if (index !== -1) {
     campanhas.value[index] = campanhaAtualizada;
   }
-  toast.success(`Campanha "${campanhaAtualizada.nome}" atualizada com sucesso!`);
+  toast.success('Campanha atualizada com sucesso!');
 };
 
-const confirmarExclusao = async (campanhaId) => {
-  itemToDeleteId.value = campanhaId;
-  isConfirmModalVisible.value = true;
+
+// --- FUNÇÕES DE EXCLUSÃO ---
+const pedirConfirmacaoExclusao = (campanha) => {
+  campanhaParaExcluir.value = campanha;
+  showConfirmModal.value = true;
 };
 
-const executeDelete = async () => {
+const confirmarExclusao = async () => {
   try {
-    if (!itemToDeleteId.value) {
-      toast.error("Nenhum item selecionado para exclusão.");
-      closeConfirmModal();
-      return;
-    }
-    await apiClient.delete(`/campanhas/${itemToDeleteId.value}`);
-    
-    // CORREÇÃO: Usando a variável 'campanhas'
-    campanhas.value = campanhas.value.filter(c => c._id !== itemToDeleteId.value);
-    
-    toast.success("Campanha excluída com sucesso!");
+    await apiClient.delete(`/campanhas/${campanhaParaExcluir.value._id}`);
+    campanhas.value = campanhas.value.filter(c => c._id !== campanhaParaExcluir.value._id);
+    toast.success('Campanha excluída com sucesso!');
   } catch (error) {
-    console.error("Erro ao excluir campanha:", error);
-    toast.error(error.response?.data?.msg || 'Não foi possível excluir a campanha.');
+    toast.error('Erro ao excluir campanha.');
   } finally {
-    closeConfirmModal();
+    showConfirmModal.value = false;
   }
 };
 
-const closeConfirmModal = () => {
-  isConfirmModalVisible.value = false;
-  itemToDeleteId.value = null;
+// --- FUNÇÕES UTILITÁRIAS ---
+const formatarData = (dataString) => {
+  const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+  return new Date(dataString).toLocaleDateString('pt-BR', options);
 };
-
-const handleCriar = () => {
-  campanhaParaEditar.value = null;
-  isModalVisible.value = true;
-};
-
-const handleEditar = (campanha) => {
-  campanhaParaEditar.value = campanha;
-  isModalVisible.value = true;
-};
-
-const formatarData = (data) => {
-  if (!data) return '';
-  // Formata a data para o padrão dd/mm/aaaa
-  return new Date(data).toLocaleDateString('pt-BR');
-};
-
-
-// --- Lifecycle Hook ---
-onMounted(buscarCampanhas);
 </script>
 
 <style scoped>
-/* ESTILOS PADRONIZADOS PARA A VIEW */
-.view-container {
-  padding: 2rem;
-  background-color: #F9F9F9;
-  min-height: calc(100vh - 70px);
-}
-
 .view-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
-
-.view-header h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #333;
-}
-
-.btn-primary {
-  background-color: #28a745; /* Verde Adicionar */
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-.btn-primary:hover {
-  background-color: #218838;
-}
-
-/* ESTILOS DO CONTAINER DA LISTA/TABELA */
-.list-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  overflow: hidden; /* Garante que as bordas da tabela fiquem contidas */
-}
-
-/* ESTILOS DA TABELA */
-.data-table {
+.campaigns-table {
   width: 100%;
-  border-collapse: collapse; /* Remove espaçamento entre células */
+  border-collapse: collapse;
 }
-
-.data-table th, .data-table td {
-  padding: 1rem 1.5rem;
+.campaigns-table th, .campaigns-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
-  vertical-align: middle;
 }
-
-.data-table thead {
-  background-color: #f8f9fa; /* Fundo cinza bem claro para o cabeçalho */
-}
-
-.data-table th {
-  font-weight: 600;
-  color: #6c757d;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none; /* Remove a borda da última linha */
-}
-
-.data-table tbody tr:hover {
-  background-color: #f8f9fa; /* Efeito suave ao passar o mouse */
-}
-
-.actions-buttons {
+.actions-cell {
   display: flex;
   gap: 0.5rem;
 }
-
-.actions-buttons button {
+.btn-edit, .btn-delete, .btn-add {
+  /* Estilos para seus botões */
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: none;
-  color: white;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.85rem;
-  transition: opacity 0.2s;
 }
-
-.actions-buttons button:hover {
-  opacity: 0.85;
+.btn-add { background-color: #28a745; color: white; }
+.btn-edit { background-color: #007bff; color: white; }
+.btn-delete { background-color: #dc3545; color: white; }
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
-
-.btn-edit { background-color: #0d6efd; } /* Azul */
-.btn-delete { background-color: #dc3545; } /* Vermelho */
-
-.message {
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
-  font-style: italic;
-}
-
-.no-permission-text {
-  color: #6c757d;
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-@media (max-width: 767px) {
-  /* 1. Esconde o cabeçalho da tabela, pois não o usaremos no layout de card */
-  .data-table thead {
-    display: none;
-  }
-
-  /* 2. Transforma a tabela, o corpo, as linhas e as células em blocos empilhados */
-  .data-table, .data-table tbody, .data-table tr, .data-table td {
-    display: block;
-    width: 100%;
-  }
-
-  /* 3. Cada linha agora se parece com um "card" */
-  .data-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-
-  /* 4. Cada célula se torna uma linha dentro do card */
-  .data-table td {
-    display: flex;
-    justify-content: space-between; /* Alinha o rótulo à esquerda e o valor à direita */
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f1f1f1;
-  }
-
-  .data-table tr:last-child td:last-child {
-    border-bottom: none; /* Remove a borda da última célula do último card */
-  }
-
-  /* 5. A mágica: Adiciona o rótulo (que pegamos do 'data-label') antes do conteúdo da célula */
-  .data-table td[data-label]::before {
-    content: attr(data-label);
-    font-weight: 600;
-    margin-right: 1rem;
-    color: #333;
-  }
-}
+.status-badge.ativa { background-color: #d4edda; color: #155724; }
+.status-badge.planejada { background-color: #cce5ff; color: #004085; }
 </style>

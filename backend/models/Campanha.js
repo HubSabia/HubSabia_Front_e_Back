@@ -20,6 +20,10 @@ const CampanhaSchema = new mongoose.Schema({
     chatbot: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Chatbot'
+    },
+     imagemUrl: {
+        type: String,
+        default: ''
     }
 }, { timestamps: true });
 

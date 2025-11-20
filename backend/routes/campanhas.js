@@ -22,7 +22,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // ROTA POST: Criar
 router.post('/', authMiddleware, async (req, res) => {
-    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais} = req.body;
+    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl} = req.body;
+    
     
     // Validação de campos obrigatórios
     if (!nome || !periodo_inicio || !periodo_fim) {
@@ -63,7 +64,7 @@ router.post('/', authMiddleware, async (req, res) => {
     
     try {
         const novaCampanha = new Campanha({
-            nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais,
+            nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl,
             criador: req.usuario.id
         });
         const campanhaSalva = await novaCampanha.save();
@@ -100,7 +101,9 @@ router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
 
 // ROTA PUT: Editar
 router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
-    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais } = req.body;
+    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl } = req.body;
+
+    if (imagemUrl) camposAtualizados.imagemUrl = imagemUrl;
 
     // Validação de comprimento (se nome foi enviado)
     if (nome && nome.trim().length < 3) {

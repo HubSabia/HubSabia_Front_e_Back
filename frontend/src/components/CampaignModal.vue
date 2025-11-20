@@ -41,6 +41,14 @@
           </div>
         </div>
         
+        <div class="form-group full-width">
+          <label for="imagem">Imagem da Campanha</label>
+          <input type="file" @change="handleFileUpload" accept="image/png, image/jpeg, image/webp">
+          <p v-if="isUploadingImage" class="upload-status">Enviando imagem...</p>
+          <!-- Preview da imagem -->
+          <img v-if="imagePreview" :src="imagePreview" class="image-preview" alt="Preview da imagem">
+        </div>
+
         <!-- SEÇÃO PARA ASSOCIAR EDITAIS -->
         <div class="form-group">
           <label>Associar Editais</label>
@@ -68,60 +76,94 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
+import axios from 'axios';
 import { useToast } from "vue-toastification";
 
-// --- DEFINIÇÕES COMPLETAS ---
-const props = defineProps({
-  modelValue: Boolean,
-  campaignToEdit: {
-    type: Object,
-    default: null
-  }
-});
-
+// --- DEFINIÇÕES DE PROPS E EMITS ---
+const props = defineProps({ modelValue: Boolean, campaignToEdit: Object });
 const emit = defineEmits(['update:modelValue', 'campaign-created', 'campaign-updated']);
 
+// --- ESTADO REATIVO ---
 const formData = ref({});
 const isEditMode = computed(() => !!props.campaignToEdit);
 const listaDeEditais = ref([]);
 const isLoadingEditais = ref(false);
 const isLoadingSubmit = ref(false);
+const toast = useToast();
+
+// --- ESTADO PARA UPLOAD DE IMAGEM ---
+const imageFile = ref(null);
+const imagePreview = ref('');
+const isUploadingImage = ref(false);
+
+// --- CREDENCIAIS DO CLOUDINARY (do arquivo .env) ---
+const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const cloudinaryUploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 // --- FUNÇÕES ---
 
-const toast = useToast();
-
-const buscarEditaisDisponiveis = async () => {
-  isLoadingEditais.value = true;
-  try {
-    const response = await apiClient.get('/editais');
-    listaDeEditais.value = response.data;
-  } catch (error) {
-    console.error("Não foi possível carregar a lista de editais:", error);
-    toast.error("Não foi possível carregar os editais.");
-  } finally {
-    isLoadingEditais.value = false;
+// Função chamada quando um arquivo é selecionado
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) {
+    imageFile.value = null;
+    imagePreview.value = isEditMode.value ? props.campaignToEdit.imagemUrl : '';
+    return;
   }
-};
+  imageFile.value = file;
+  imagePreview.value = URL.createObjectURL(file); // Cria um preview local
+}
 
-const closeModal = () => {
-  emit('update:modelValue', false);
-};
+// Função para fazer o upload da imagem para o Cloudinary
+async function uploadImage() {
+  if (!imageFile.value) return null; // Retorna nulo se não houver novo arquivo
+
+  isUploadingImage.value = true;
+  const formData = new FormData();
+  formData.append('file', imageFile.value);
+  formData.append('upload_preset', cloudinaryUploadPreset);
+
+  try {
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`;
+    const response = await axios.post(cloudinaryUrl, formData);
+    isUploadingImage.value = false;
+    return response.data.secure_url; // Retorna a URL da imagem salva
+  } catch (error) {
+    console.error('Erro no upload para o Cloudinary:', error);
+    toast.error('Não foi possível enviar a imagem.');
+    isUploadingImage.value = false;
+    throw error; // Lança o erro para parar o handleSubmit
+  }
+}
 
 const handleSubmit = async () => {
   isLoadingSubmit.value = true;
   try {
+    let finalImageUrl = isEditMode.value ? formData.value.imagemUrl : '';
+
+    // Se uma nova imagem foi selecionada, faz o upload
+    if (imageFile.value) {
+      finalImageUrl = await uploadImage();
+    }
+    
+    // Prepara o payload para enviar ao nosso backend
+    const payload = { ...formData.value, imagemUrl: finalImageUrl };
+
     if (isEditMode.value) {
-      const response = await apiClient.put(`/campanhas/${props.campaignToEdit._id}`, formData.value);
+      const response = await apiClient.put(`/campanhas/${props.campaignToEdit._id}`, payload);
       emit('campaign-updated', response.data);
+      toast.success("Campanha atualizada com sucesso!");
     } else {
-      const response = await apiClient.post('/campanhas', formData.value);
+      const response = await apiClient.post('/campanhas', payload);
       emit('campaign-created', response.data);
+      toast.success("Campanha criada com sucesso!");
     }
     closeModal();
   } catch (error) {
     console.error("Erro ao salvar campanha:", error);
-    toast.error(error.response?.data?.msg || 'Não foi possível salvar a campanha.');
+    if (!isUploadingImage.value) { // Só mostra erro se não for do upload
+        toast.error(error.response?.data?.msg || 'Não foi possível salvar a campanha.');
+    }
   } finally {
     isLoadingSubmit.value = false;
   }
@@ -169,7 +211,18 @@ watch(() => props.modelValue, (isOpening) => {
 </script>
 
 <style scoped>
-/* Adicionando todos os estilos necessários */
+.image-preview {
+  max-width: 200px;
+  height: auto;
+  margin-top: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+.upload-status {
+  font-size: 0.9rem;
+  color: #007bff;
+  margin-top: 0.5rem;
+}
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .modal-content { background-color: white; padding: 1.5rem 2rem; border-radius: 8px; width: 100%; max-width: 600px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
