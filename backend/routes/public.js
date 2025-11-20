@@ -125,7 +125,7 @@ ${contexto}
 ---
 PERGUNTA DO USUÁRIO:${mensagemUsuario}`;
         
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
         const result = await model.generateContent(prompt);
         const respostaDaIA = result.response.text();
         
