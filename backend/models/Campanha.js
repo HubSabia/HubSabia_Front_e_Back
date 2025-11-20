@@ -20,7 +20,7 @@ const CampanhaSchema = new mongoose.Schema({
     chatbot: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Chatbot'
-    },
+    }
 }, { timestamps: true });
 
 CampanhaSchema.index({ criador: 1, status: 1 });
