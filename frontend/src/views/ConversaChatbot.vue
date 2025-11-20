@@ -1,13 +1,5 @@
 <template>
   <div class="chat-view-wrapper">
-    <!-- 1. BARRA LATERAL: Usa a lógica de conversas agrupadas -->
-    <ChatHistorySidebar
-      :conversations="groupedConversations"
-      :active-conversation-id="activeConversationId"
-      @newChat="startNewConversation"
-      @select="selectConversation"
-    />
-
     <div class="chat-container">
       <header class="chat-header">
         <h2>{{ chatbotInfo.nome ? `Conversa com: ${chatbotInfo.nome}` : 'Carregando...' }}</h2>
@@ -16,12 +8,11 @@
         </p>
       </header>
 
-      <!-- 2. ÁREA DE MENSAGENS: Agora itera sobre as mensagens da conversa ativa -->
       <div class="messages-area" ref="messagesContainerRef">
-        <div v-if="!activeConversationMessages.length" class="welcome-message">
+        <div v-if="!messages.length" class="welcome-message">
             <p>Faça sua primeira pergunta para começar a conversa.</p>
         </div>
-        <div v-for="(msg, index) in activeConversationMessages" :key="index" :class="['message-bubble', msg.role === 'assistant' ? 'bot' : 'user']">
+        <div v-for="(msg, index) in messages" :key="index" :class="['message-bubble', msg.role === 'assistant' ? 'bot' : 'user']">
           <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
         </div>
         <div v-if="isReplying" class="message-bubble bot typing-indicator">
@@ -30,7 +21,6 @@
       </div>
 
       <footer class="chat-footer">
-        <!-- 3. INPUT: Conectado à lógica de envio de mensagem com sessão -->
         <form @submit.prevent="sendMessage" class="message-form">
           <input
             type="text"
@@ -47,114 +37,53 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import { useToast } from 'vue-toastification';
 import apiClient from '@/services/api';
-import ChatHistorySidebar from '@/components/ChatHistorySidebar.vue';
 
 const route = useRoute();
 const toast = useToast();
 const chatbotId = route.params.id;
 
-// --- LÓGICA AVANÇADA DE ESTADO ---
 const chatbotInfo = ref({});
-const allHistory = ref([]); // Lista plana com TODO o histórico
-const activeConversationId = ref(null); // ID da sessão/conversa ativa
-const activeConversationMessages = ref([]); // Mensagens que aparecem na tela
+const messages = ref([]);
 const isReplying = ref(false);
 const userInput = ref('');
 const messagesContainerRef = ref(null);
 
-// --- COMPUTED: Transforma o histórico plano em conversas agrupadas para a sidebar ---
-const groupedConversations = computed(() => {
-  if (!allHistory.value.length) return [];
-  const groups = allHistory.value.reduce((acc, msg) => {
-    if (!acc[msg.sessaoId]) {
-      acc[msg.sessaoId] = {
-        id: msg.sessaoId,
-        title: msg.pergunta.substring(0, 30) + (msg.pergunta.length > 30 ? '...' : ''),
-        createdAt: new Date(msg.createdAt),
-      };
-    }
-    return acc;
-  }, {});
-  return Object.values(groups).sort((a, b) => b.createdAt - a.createdAt);
-});
-
-// --- FUNÇÕES ---
-
-// Busca os dados iniciais (info do bot e todo o histórico)
-const fetchInitialData = async () => {
+const fetchChatbotInfo = async () => {
   try {
-    const [infoRes, historyRes] = await Promise.all([
-      apiClient.get(`/chatbots/${chatbotId}`),
-      apiClient.get(`/chatbots/${chatbotId}/historico-usuario`)
-    ]);
-    chatbotInfo.value = infoRes.data;
-    allHistory.value = historyRes.data;
-    startNewConversation(); // Inicia com uma tela de chat vazia
+    const response = await apiClient.get(`/chatbots/${chatbotId}`);
+    chatbotInfo.value = response.data;
   } catch (error) {
     toast.error('Erro ao carregar dados do chatbot.');
   }
 };
 
-// Chamada quando o usuário clica em uma conversa na sidebar
-const selectConversation = (sessionId) => {
-  activeConversationId.value = sessionId;
-  activeConversationMessages.value = allHistory.value
-    .filter(msg => msg.sessaoId === sessionId)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // Garante a ordem cronológica
-    .flatMap(msg => [
-      { role: 'user', text: msg.pergunta },
-      { role: 'assistant', text: msg.resposta }
-    ]);
-  scrollToBottom();
-};
-
-// Limpa a tela para uma nova conversa
-const startNewConversation = () => {
-  activeConversationId.value = null;
-  activeConversationMessages.value = [];
-};
-
-// Envia a mensagem para o backend, controlando a sessão
 const sendMessage = async () => {
   if (!userInput.value.trim() || isReplying.value) return;
 
   const currentMessage = userInput.value;
-  activeConversationMessages.value.push({ role: 'user', text: currentMessage });
+  messages.value.push({ role: 'user', text: currentMessage });
   userInput.value = '';
   isReplying.value = true;
   await scrollToBottom();
 
   try {
     const payload = {
-      mensagemUsuario: currentMessage,
-      ...(activeConversationId.value && { sessaoId: activeConversationId.value })
+      mensagemUsuario: currentMessage
     };
     
     const response = await apiClient.post(`/chatbots/${chatbotId}/interagir`, payload);
-    const { resposta, sessaoId } = response.data;
+    const { resposta } = response.data;
     
-    activeConversationMessages.value.push({ role: 'assistant', text: resposta });
-    
-    const newHistoryEntry = {
-        sessaoId,
-        pergunta: currentMessage,
-        resposta,
-        createdAt: new Date().toISOString()
-    };
-    allHistory.value.push(newHistoryEntry);
-
-    if (!activeConversationId.value) {
-      activeConversationId.value = sessaoId;
-    }
+    messages.value.push({ role: 'assistant', text: resposta });
 
   } catch (error) {
     const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro.';
-    activeConversationMessages.value.push({ role: 'assistant', text: errorMessage });
+    messages.value.push({ role: 'assistant', text: errorMessage });
     toast.error(errorMessage);
   } finally {
     isReplying.value = false;
@@ -162,7 +91,6 @@ const sendMessage = async () => {
   }
 };
 
-// --- FUNÇÕES UTILITÁRIAS ---
 const renderMarkdown = (text) => marked(text || '');
 const scrollToBottom = async () => {
   await nextTick();
@@ -171,20 +99,10 @@ const scrollToBottom = async () => {
   }
 };
 
-onMounted(fetchInitialData);
+onMounted(fetchChatbotInfo);
 </script>
 
 <style scoped>
-/* ESTILOS ORIGINAIS MANTIDOS CONFORME SOLICITADO */
-.chat-view {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  background-color: var(--content-bg);
-}
-
 .chat-view-wrapper {
   display: flex;
   width: 100%;
@@ -329,11 +247,6 @@ onMounted(fetchInitialData);
     border-radius: 0;
     box-shadow: none;
     height: 100%;
-  }
-  
-  /* Esconde a sidebar em telas pequenas. Uma solução mais avançada seria um menu "hambúrguer". */
-  .chat-view-wrapper :deep(.history-sidebar) {
-    display: none;
   }
 
   .messages-area { padding: 1rem; }

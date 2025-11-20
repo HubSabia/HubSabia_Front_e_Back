@@ -67,12 +67,4 @@ apiClient.interceptors.response.use(
     }
 );
 
-export const getUserChatHistory = (chatbotId) => {
-    return apiClient.get(`/chatbots/${chatbotId}/historico-usuario`);
-};
-
-export const getChatbotHistory = (chatbotId) => {
-    return apiClient.get(`/chatbots/${chatbotId}/historico`);
-};
-
 export default apiClient;

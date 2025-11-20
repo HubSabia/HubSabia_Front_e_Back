@@ -2,21 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Chatbot = require('../models/Chatbot');
 const Usuario = require('../models/Usuario');
-const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// ==========================================================
-// --- MÓDULOS NECESSÁRIOS ADICIONADOS AQUI ---
-// ==========================================================
-const crypto = require('crypto');
-const HistoricoConversa = require('../models/HistoricoConversa');
-// ==========================================================
-
-
-// ROTA 1: Buscar informações de UM chatbot específico (continua igual)
+// ROTA 1: Buscar informações de UM chatbot específico
 router.get('/chatbots/:id', async (req, res) => {
-try {
+    try {
         console.log(`[PUBLIC] 🔍 Buscando chatbot com ID: ${req.params.id}`);
         const chatbot = await Chatbot.findById(req.params.id).select('nome status');
         
@@ -33,43 +24,39 @@ try {
     }
 });
 
-// ROTA 2: Listar campanhas ativas (continua igual)
+// ROTA 2: Listar campanhas ativas
 router.get('/campanhas', async (req, res) => {
-   try {
+    try {
         console.log('[PUBLIC] 📋 Buscando campanhas ativas...');
         
-        // Busca as campanhas e popula os dados
         const campanhasAtivas = await Campanha.find({ status: 'Ativa' })
             .sort({ createdAt: -1 })
             .populate('criador', 'nome')
-            .populate('chatbot', '_id nome status') // Popula o chatbot completo
-            .lean(); // .lean() converte para objeto JavaScript simples
+            .populate('chatbot', '_id nome status')
+            .lean();
         
         console.log(`[PUBLIC] 📊 ${campanhasAtivas.length} campanhas ativas encontradas`);
         
-        // CORREÇÃO: Transforma cada campanha para enviar apenas o ID do chatbot
         const campanhasFormatadas = campanhasAtivas.map(campanha => {
             console.log(`\n[PUBLIC] 🔍 Processando: "${campanha.nome}"`);
             console.log(`  - Chatbot RAW:`, campanha.chatbot);
             
-            // Se tem chatbot E ele está ativo, envia apenas o ID como string
             if (campanha.chatbot) {
                 console.log(`  - Chatbot Status: ${campanha.chatbot.status}`);
                 
                 if (campanha.chatbot.status === 'Ativo') {
-                    // AQUI É A MÁGICA: Substituímos o objeto inteiro pelo ID
                     const chatbotId = campanha.chatbot._id.toString();
                     console.log(`  - ✅ Chatbot ATIVO! Enviando ID: ${chatbotId}`);
                     
                     return {
                         ...campanha,
-                        chatbot: chatbotId // Substitui o objeto pelo ID
+                        chatbot: chatbotId
                     };
                 } else {
                     console.log(`  - ⚠️ Chatbot existe mas está ${campanha.chatbot.status}`);
                     return {
                         ...campanha,
-                        chatbot: null // Remove chatbots inativos
+                        chatbot: null
                     };
                 }
             } else {
@@ -89,9 +76,10 @@ router.get('/campanhas', async (req, res) => {
         res.status(500).send('Erro no servidor.');
     }
 });
+
+// ROTA 3: Interagir com chatbot público (SEM HISTÓRICO)
 router.post('/chatbots/:id/interagir', async (req, res) => {
-    // Agora aceita tanto a mensagem quanto o ID da sessão
-    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
+    const { mensagemUsuario } = req.body;
     
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
@@ -117,7 +105,6 @@ router.post('/chatbots/:id/interagir', async (req, res) => {
         const hoje = new Date();
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         
-        // Lógica de data que estava faltando na rota pública
         const dataFim = new Date(chatbot.campanha.periodo_fim);
         let infoDeData = "";
         if (hoje > dataFim) {
@@ -142,22 +129,7 @@ PERGUNTA DO USUÁRIO:${mensagemUsuario}`;
         const result = await model.generateContent(prompt);
         const respostaDaIA = result.response.text();
         
-        // --- LÓGICA DE SESSÃO E HISTÓRICO ADICIONADA ---
-        const sessaoId = sessaoIdRecebida || crypto.randomBytes(16).toString('hex');
-
-        // Salva a conversa no histórico, mas sem ID de usuário (pois é público)
-        const novoHistorico = new HistoricoConversa({
-            chatbot: chatbot._id,
-            usuario: null, // Importante: usuário anônimo
-            sessaoId: sessaoId,               
-            pergunta: mensagemUsuario,      
-            resposta: respostaDaIA
-        });
-        await novoHistorico.save();
-        // --- FIM DA LÓGICA DE SESSÃO E HISTÓRICO ---
-
-        // Retorna a resposta E o ID da sessão, exatamente como a rota privada faz
-        res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
+        res.json({ resposta: respostaDaIA });
 
     } catch (err) {
         console.error("Erro na interação pública:", err.message);

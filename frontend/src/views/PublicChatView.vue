@@ -1,13 +1,5 @@
 <template>
   <div class="public-chat-wrapper">
-    <!-- BARRA LATERAL ADICIONADA AQUI -->
-    <ChatHistorySidebar
-      :conversations="groupedConversations"
-      :active-conversation-id="activeConversationId"
-      @newChat="startNewConversation"
-      @select="selectConversation"
-    />
-
     <div class="chat-container">
       <header class="chat-header">
         <h2>{{ chatbotInfo.nome || 'Assistente Virtual' }}</h2>
@@ -15,12 +7,10 @@
       </header>
       
       <div class="messages-area" ref="messagesAreaRef">
-        <!-- Mensagem de boas-vindas se não houver mensagens -->
-        <div v-if="!activeConversationMessages.length" class="welcome-message">
+        <div v-if="!messages.length" class="welcome-message">
             <p>Faça sua primeira pergunta para começar a conversa.</p>
         </div>
-        <!-- Mensagens da conversa ativa -->
-        <div v-for="(msg, index) in activeConversationMessages" :key="index" :class="['message-bubble', msg.role]">
+        <div v-for="(msg, index) in messages" :key="index" :class="['message-bubble', msg.role]">
           <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
         </div>
         <div v-if="isReplying" class="message-bubble assistant typing-indicator">
@@ -45,44 +35,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import { useToast } from 'vue-toastification';
 import apiClient from '@/services/api';
-// IMPORTAMOS O COMPONENTE DA BARRA LATERAL
-import ChatHistorySidebar from '@/components/ChatHistorySidebar.vue';
 
 const route = useRoute();
 const toast = useToast();
 const chatbotId = route.params.id;
 
-// LÓGICA DE ESTADO REINTRODUZIDA PARA A BARRA LATERAL
 const chatbotInfo = ref({});
-const allHistory = ref([]); // Histórico temporário, apenas para esta sessão
-const activeConversationId = ref(null);
-const activeConversationMessages = ref([]);
+const messages = ref([]);
 const userInput = ref('');
 const isReplying = ref(false);
 const messagesAreaRef = ref(null);
 
-// COMPUTED PARA ALIMENTAR A BARRA LATERAL
-const groupedConversations = computed(() => {
-  if (!allHistory.value.length) return [];
-  const groups = allHistory.value.reduce((acc, msg) => {
-    if (!acc[msg.sessaoId]) {
-      acc[msg.sessaoId] = {
-        id: msg.sessaoId,
-        title: msg.pergunta.substring(0, 30) + (msg.pergunta.length > 30 ? '...' : ''),
-        createdAt: new Date(msg.createdAt),
-      };
-    }
-    return acc;
-  }, {});
-  return Object.values(groups).sort((a, b) => b.createdAt - a.createdAt);
-});
-
-// FUNÇÕES DE AÇÃO
 const fetchChatbotInfo = async () => {
   try {
     const response = await apiClient.get(`/public/chatbots/${chatbotId}`);
@@ -96,62 +64,28 @@ const fetchChatbotInfo = async () => {
 const sendMessage = async () => {
   if (!userInput.value.trim() || isReplying.value) return;
   const currentMessage = userInput.value;
-  activeConversationMessages.value.push({ role: 'user', text: currentMessage });
+  messages.value.push({ role: 'user', text: currentMessage });
   userInput.value = '';
   isReplying.value = true;
   await scrollToBottom();
   try {
     const payload = {
-      mensagemUsuario: currentMessage,
-      ...(activeConversationId.value && { sessaoId: activeConversationId.value }),
+      mensagemUsuario: currentMessage
     };
     const response = await apiClient.post(`/public/chatbots/${chatbotId}/interagir`, payload);
-    const { resposta, sessaoId } = response.data;
+    const { resposta } = response.data;
 
-    activeConversationMessages.value.push({ role: 'assistant', text: resposta });
-
-    // Adiciona a nova mensagem ao histórico LOCAL para atualizar a sidebar
-    allHistory.value.push({
-        sessaoId,
-        pergunta: currentMessage,
-        resposta,
-        createdAt: new Date().toISOString()
-    });
-
-    if (!activeConversationId.value) {
-      activeConversationId.value = sessaoId;
-    }
+    messages.value.push({ role: 'assistant', text: resposta });
 
   } catch (error) {
     const errorMessage = error.response?.data?.msg || 'Desculpe, ocorreu um erro.';
-    activeConversationMessages.value.push({ role: 'assistant', text: errorMessage });
+    messages.value.push({ role: 'assistant', text: errorMessage });
     toast.error(errorMessage);
   } finally {
     isReplying.value = false;
     await scrollToBottom();
   }
 };
-
-// Funções para controlar a barra lateral
-const selectConversation = (sessionId) => {
-  // Como só haverá uma conversa, esta função não terá muito efeito prático,
-  // mas é necessária para a estrutura.
-  activeConversationId.value = sessionId;
-  activeConversationMessages.value = allHistory.value
-    .filter(msg => msg.sessaoId === sessionId)
-    .flatMap(msg => [
-      { role: 'user', text: msg.pergunta },
-      { role: 'assistant', text: msg.resposta }
-    ]);
-  scrollToBottom();
-}
-
-const startNewConversation = () => {
-    // No contexto público, "nova conversa" reinicia a sessão
-    allHistory.value = [];
-    activeConversationId.value = null;
-    activeConversationMessages.value = [];
-}
 
 const renderMarkdown = (text) => marked(text || '');
 const scrollToBottom = async () => {
@@ -163,31 +97,26 @@ const scrollToBottom = async () => {
 
 onMounted(() => {
   fetchChatbotInfo();
-  // Não adicionamos a mensagem de boas-vindas aqui,
-  // para deixar a tela inicial mais limpa.
 });
 </script>
 
 <style scoped>
-/* ESTILO AJUSTADO PARA O LAYOUT DE 2 COLUNAS */
 .public-chat-wrapper {
-  display: flex; /* MUDANÇA PRINCIPAL AQUI */
+  display: flex;
   width: 100vw;
   height: 100vh;
-  background-color: #f8f9fa; /* --content-bg */
+  background-color: #f8f9fa;
 }
 
 .chat-container {
-  flex-grow: 1; /* Ocupa o espaço restante ao lado da sidebar */
+  flex-grow: 1;
   height: 100%;
-  background: #ffffff; /* --card-bg */
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Removemos o max-width, max-height, border-radius e shadow para um visual integrado */
 }
 
-/* O resto dos estilos (header, messages-area, bubble, etc.) permanece o mesmo */
 .chat-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #dee2e6;
@@ -208,7 +137,7 @@ onMounted(() => {
 
 .welcome-message {
     text-align: center;
-    color: #6c757d; /* --text-color-muted */
+    color: #6c757d;
     margin: auto;
 }
 

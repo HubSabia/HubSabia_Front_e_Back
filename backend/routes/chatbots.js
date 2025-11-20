@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
 const authMiddleware = require('../middlewares/auth');
 const Chatbot = require('../models/Chatbot');
-const HistoricoConversa = require('../models/HistoricoConversa');
 const Edital = require('../models/Edital');
 const Campanha = require('../models/Campanha');
 const Usuario = require('../models/Usuario');
@@ -59,9 +57,9 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-// POST /api/chatbots/:id/interagir -> Interagir com o chatbot (ROTA PRIVADA)
+// POST /api/chatbots/:id/interagir -> Interagir com o chatbot (ROTA PRIVADA - SEM HISTÓRICO)
 router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, async (req, res) => {
-    const { mensagemUsuario, sessaoId: sessaoIdRecebida } = req.body;
+    const { mensagemUsuario } = req.body;
 
     if (!mensagemUsuario) {
         return res.status(400).json({ msg: 'A mensagem do usuário é obrigatória.' });
@@ -115,18 +113,7 @@ ${mensagemUsuario}
             const response = await result.response;
             const respostaDaIA = response.text();
 
-            const sessaoId = sessaoIdRecebida || crypto.randomBytes(16).toString('hex');
-
-            const novoHistorico = new HistoricoConversa({
-                chatbot: chatbot._id,
-                usuario: req.usuario.id,
-                sessaoId: sessaoId,               
-                pergunta: mensagemUsuario,      
-                resposta: respostaDaIA
-            });
-            await novoHistorico.save();
-
-            res.json({ resposta: respostaDaIA, sessaoId: sessaoId });
+            res.json({ resposta: respostaDaIA });
 
         } catch (iaError) {
             console.error("Erro da API do Google AI:", iaError);
@@ -139,28 +126,6 @@ ${mensagemUsuario}
 
     } catch (err) {
         console.error("Erro na interação com o chatbot:", err.message);
-        res.status(500).send('Erro no servidor.');
-    }
-});
-
-// GET /api/chatbots/:id/historico-usuario -> Listar o histórico de conversas do usuário logado
-router.get('/:id/historico-usuario', authMiddleware, async (req, res) => {
-    try {
-        const chatbot = await Chatbot.findById(req.params.id);
-        if (!chatbot) { 
-            return res.status(404).json({ msg: 'Chatbot não encontrado.' }); 
-        }
-        
-        const historico = await HistoricoConversa.find({ 
-            chatbot: req.params.id,
-            usuario: req.usuario.id
-        })
-        .sort({ createdAt: 'asc' })
-        .select('pergunta resposta sessaoId createdAt');
-
-        res.json(historico);
-    } catch (err) {
-        console.error("Erro ao buscar histórico do usuário:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
@@ -221,9 +186,8 @@ router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
             return res.status(401).json({ msg: 'Ação não autorizada.' }); 
         }
         
-        await HistoricoConversa.deleteMany({ chatbot: req.params.id });
         await Chatbot.findByIdAndDelete(req.params.id);
-        res.json({ msg: 'Chatbot e seu histórico foram removidos com sucesso.' });
+        res.json({ msg: 'Chatbot removido com sucesso.' });
     } catch (err) {
         console.error("Erro ao excluir chatbot:", err.message);
         res.status(500).send('Erro no servidor.');
