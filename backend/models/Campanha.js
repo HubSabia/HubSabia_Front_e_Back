@@ -15,16 +15,20 @@ const CampanhaSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Edital' 
     }],
-    criador: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
-
+    criador: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Usuario', 
+        required: true 
+    },
     chatbot: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Chatbot'
     },
-     imagemUrl: {
+    imagemUrl: {
         type: String,
-        default: ''
-    }
+        default: '' 
+    },
+    
 }, { timestamps: true });
 
 CampanhaSchema.index({ criador: 1, status: 1 });

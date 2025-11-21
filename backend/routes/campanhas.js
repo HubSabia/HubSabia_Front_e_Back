@@ -22,8 +22,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // ROTA POST: Criar
 router.post('/', authMiddleware, async (req, res) => {
-    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl} = req.body;
-    
+    const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl } = req.body;
     
     // Validação de campos obrigatórios
     if (!nome || !periodo_inicio || !periodo_fim) {
@@ -75,7 +74,7 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-// ROTA PARA EXCLUIR (DELETE)
+// ROTA PARA EXCLUIR
 router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
     try {
         const campanha = await Campanha.findById(req.params.id);
@@ -102,8 +101,6 @@ router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
 // ROTA PUT: Editar
 router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     const { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais, imagemUrl } = req.body;
-
-    if (imagemUrl) camposAtualizados.imagemUrl = imagemUrl;
 
     // Validação de comprimento (se nome foi enviado)
     if (nome && nome.trim().length < 3) {
@@ -134,6 +131,11 @@ router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
     }
 
     const camposAtualizados = { nome, descricao, periodo_inicio, periodo_fim, status, publico_alvo, editais };
+    
+    if (imagemUrl !== undefined) {
+        camposAtualizados.imagemUrl = imagemUrl;
+    }
+    
     Object.keys(camposAtualizados).forEach(key => camposAtualizados[key] === undefined && delete camposAtualizados[key]);
 
     try {

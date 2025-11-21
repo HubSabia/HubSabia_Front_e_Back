@@ -81,7 +81,7 @@ const routes = [
     component: () => import('@/views/VitrineView.vue'),
     meta: { title: 'Vitrine de Campanhas', public: true }
   },
-  
+
   {
     path: '/:pathMatch(.*)*',
     redirect: '/'
@@ -93,7 +93,7 @@ const router = createRouter({
   routes,
 });
 
-// ✅ Guard melhorado
+//
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
   const requiresAuth = to.meta.requiresAuth;
