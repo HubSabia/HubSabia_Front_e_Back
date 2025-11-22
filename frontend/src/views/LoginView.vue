@@ -21,9 +21,6 @@
              {{ isLoading ? 'Entrando...' : 'Entrar' }}
            </button>
         </div>
-         <div class="create-account-link">
-            Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
-        </div>
 
         <div v-if="isLoading" class="loading-container">
           <div class="spinner"></div>
@@ -34,17 +31,21 @@
           {{ errorMessage }}
         </div>
       </form>
+
+      <!-- Divisor e botão Google DENTRO do card -->
+      <div class="divider">
+        <span>OU</span>
+      </div>
+
+      <a href="https://hubsabia-backend-vdl8.onrender.com/api/auth/google" class="google-login-button">
+        Entrar com Google
+      </a>
+
+      <div class="create-account-link">
+        Não tem uma conta? <router-link to="/registrar">Crie uma aqui</router-link>
+      </div>
     </div>
   </div>
-
-  <div class="divider">
-  <span>OU</span>
-</div>
-
-<a href="https://hubsabia-backend-vdl8.onrender.com/api/auth/google" class="google-login-button">
-  <!-- Você pode adicionar um ícone do Google aqui se quiser -->
-  Entrar com Google
-</a>
 </template>
 
 <script setup>
@@ -63,25 +64,20 @@ const handleLogin = async () => {
     errorMessage.value = "Por favor, preencha o e-mail e a senha.";
     return;
   }
-
   isLoading.value = true;
   errorMessage.value = "";
-
   try {
     const response = await apiClient.post('/auth/login', { 
       email: email.value, 
       password: password.value 
     });
-    
     const data = response.data;
-
     if (data.token) {
       localStorage.setItem('authToken', data.token);
       router.push("/dashboard");
     } else {
       throw new Error('Token não recebido da API.');
     }
-
   } catch (error) {
     console.error("Falha no login:", error);
     const errorMsg = error.response?.data?.msg || 'Erro ao fazer login. Verifique suas credenciais.';
@@ -93,43 +89,6 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 20px 0;
-  color: #888;
-}
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #ddd;
-}
-.divider span {
-  padding: 0 10px;
-}
-
-.google-login-button {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  padding: 12px;
-  background-color: #4285F4;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-.google-login-button:hover {
-  background-color: #357ae8;
-}
-
 .login-view {
   width: 100%;
   display: flex;
@@ -235,6 +194,46 @@ const handleLogin = async () => {
   cursor: not-allowed;
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #888;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.google-login-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.google-login-button:hover {
+  background-color: #357ae8;
+}
+
 .create-account-link {
   margin-top: 25px;
   font-size: 0.9rem;
@@ -270,12 +269,8 @@ const handleLogin = async () => {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-message {

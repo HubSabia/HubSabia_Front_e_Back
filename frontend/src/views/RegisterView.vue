@@ -42,6 +42,14 @@
           </ul>
         </div>
         
+        <div class="divider">
+        <span>OU</span>
+      </div>
+
+      <a href="https://hubsabia-backend-vdl8.onrender.com/api/auth/google" class="google-login-button">
+        Entrar com Google
+      </a>
+
         <div class="form-actions">
            <!-- Botão agora usa 'isFormInvalid' para ser desabilitado -->
            <button type="submit" class="btn btn-primary register-button" :disabled="isLoading || isFormInvalid">
@@ -63,15 +71,6 @@
       </form>
     </div>
   </div>
-
-  <div class="divider">
-  <span>OU</span>
-</div>
-
-<a href="https://hubsabia-backend-vdl8.onrender.com/api/auth/google" class="google-login-button">
-  <!-- Você pode adicionar um ícone do Google aqui se quiser -->
-  Entrar com Google
-</a>
 </template>
 
 <script setup>
