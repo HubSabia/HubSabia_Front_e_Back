@@ -30,17 +30,6 @@
           <input type="password" id="confirmPassword" v-model="form.confirmarSenha" required placeholder="Confirme sua senha">
           <p v-if="confirmarSenhaError" class="error-text">{{ confirmarSenhaError }}</p>
         </div>
-
-        <!-- Guia de requisitos de senha em tempo real -->
-        <div class="password-requirements">
-          <h4>A senha deve conter:</h4>
-          <ul>
-            <li :class="{ 'valid': passwordRequirements.minLength.value }">Pelo menos 8 caracteres</li>
-            <li :class="{ 'valid': passwordRequirements.hasUppercase.value }">Uma letra maiúscula</li>
-            <li :class="{ 'valid': passwordRequirements.hasLowercase.value }">Uma letra minúscula</li>
-            <li :class="{ 'valid': passwordRequirements.hasNumber.value }">Pelo menos um número</li>
-          </ul>
-        </div>
         
         <div class="divider">
         <span>OU</span>
