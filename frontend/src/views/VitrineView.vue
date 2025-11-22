@@ -13,22 +13,40 @@
       <p>Nenhuma campanha ativa encontrada no momento. Volte mais tarde!</p>
     </div>
 
-    <div v-else class="campaigns-grid">
-
+    <div v-else class="campaigns-list">
       <div v-for="campanha in campanhas" :key="campanha._id" class="campaign-card">
+        <!-- Imagem da Campanha -->
+        <div class="card-image">
+          <img 
+            v-if="campanha.imagemUrl" 
+            :src="campanha.imagemUrl" 
+            :alt="campanha.nome"
+          >
+          <div v-else class="placeholder-image"></div>
+        </div>
+
+        <!-- Conteúdo do Card -->
         <div class="card-content">
-          <h2 class="card-title">{{ campanha.nome }}</h2>
-          <p class="card-creator">Criado por: {{ campanha.criador.nome }}</p>
-          <p class="card-dates">
+          <div class="card-info">
+            <p><strong>Nome da Campanha:</strong> {{ campanha.nome }}</p>
+            <p><strong>Criador:</strong> {{ campanha.criador?.nome || 'Não informado' }}</p>
+            <p><strong>Descrição:</strong> {{ campanha.descricao || 'Sem descrição' }}</p>
+          </div>
+
+          <!-- Botão de Chat -->
+          <router-link 
+            v-if="campanha.chatbot" 
+            :to="`/chat-publico/${campanha.chatbot}`" 
+            class="chat-button"
+          >
+            conversar com o bot
+          </router-link>
+          <span v-else class="no-chatbot">Chatbot não disponível</span>
+
+          <!-- Período -->
+          <p class="card-period">
             Período: {{ formatarData(campanha.periodo_inicio) }} a {{ formatarData(campanha.periodo_fim) }}
           </p>
-          <p class="card-description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
-          
-          <!-- Botão só aparece se houver um chatbot associado -->
-          <router-link v-if="campanha.chatbot" :to="`/chat-publico/${campanha.chatbot}`" class="chat-button">
-            Conversar com Assistente
-          </router-link>
-          <p v-else class="no-chatbot">Chatbot não disponível</p>
         </div>
       </div>
     </div>
@@ -54,15 +72,18 @@ onMounted(async () => {
 });
 
 function formatarData(dataString) {
-  if (!dataString) return '';
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dataString).toLocaleDateString('pt-BR', options);
+  if (!dataString) return '00/00/0000';
+  const date = new Date(dataString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 </script>
 
 <style scoped>
 .vitrine-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
@@ -71,17 +92,17 @@ function formatarData(dataString) {
   text-align: center;
   margin-bottom: 3rem;
 }
+
 .page-header h1 {
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: #1e293b;
 }
+
 .page-header p {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #64748b;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
 .status-message {
@@ -91,127 +112,128 @@ function formatarData(dataString) {
   font-size: 1.1rem;
 }
 
-.campaigns-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+.campaigns-list {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
+/* === CARD DA CAMPANHA === */
 .campaign-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
   display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-top: 5px solid #28a745;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
 }
 
 .campaign-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
+/* Imagem do Card */
+.card-image {
+  width: 150px;
+  min-width: 150px;
+  height: 150px;
+  background-color: #dee2e6;
+  flex-shrink: 0;
+}
 
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  background-color: #dee2e6;
+}
+
+/* Conteúdo do Card */
 .card-content {
-  padding: 2rem;
+  flex: 1;
+  padding: 1rem 1.5rem;
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  justify-content: center;
 }
 
-.card-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
+.card-info {
+  margin-bottom: 0.75rem;
 }
 
-.card-creator {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0 0 1rem 0;
-  font-weight: 500;
+.card-info p {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.4;
 }
 
-.card-dates {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: #f1f5f9;
-  border-radius: 6px;
-  border-left: 4px solid var(--primary-color, #28a745);
+.card-info strong {
+  color: #212529;
 }
 
-.card-description {
-  flex-grow: 1;
-  color: #475569;
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-}
-
+/* Botão de Chat */
 .chat-button {
-  display: block;
-  padding: 0.875rem;
-  background-color: var(--primary-color, #28a745);
+  display: inline-block;
+  width: fit-content;
+  padding: 0.6rem 1.5rem;
+  background-color: #28a745;
   color: white;
-  text-align: center;
   text-decoration: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: background-color 0.2s, transform 0.2s;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  margin-bottom: 0.75rem;
 }
 
 .chat-button:hover {
-  background-color: var(--primary-color-hover, #218838);
-  transform: scale(1.02);
+  background-color: #218838;
 }
 
 .no-chatbot {
-  text-align: center;
-  padding: 0.875rem;
-  background-color: #f8f9fa;
+  display: inline-block;
+  width: fit-content;
+  padding: 0.6rem 1.5rem;
+  background-color: #e9ecef;
   color: #6c757d;
-  border-radius: 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-style: italic;
-  border: 1px dashed #dee2e6;
+  margin-bottom: 0.75rem;
 }
 
-/* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
-
-/* Telas médias (tablets) */
-@media (min-width: 640px) {
-  .vitrine-container {
-    padding: 2rem;
-  }
-  .campaigns-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Período */
+.card-period {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
 }
 
-/* Telas grandes (desktops) */
-@media (min-width: 1024px) {
-  .page-header h1 {
-    font-size: 2.5rem;
+/* === RESPONSIVIDADE === */
+@media (max-width: 576px) {
+  .campaign-card {
+    flex-direction: column;
   }
-  .campaigns-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
 
-/* Telas extra grandes */
-@media (min-width: 1280px) {
-  .campaigns-grid {
-    grid-template-columns: repeat(4, 1fr);
+  .card-image {
+    width: 100%;
+    height: 180px;
+  }
+
+  .card-content {
+    padding: 1rem;
+  }
+
+  .chat-button,
+  .no-chatbot {
+    width: 100%;
+    text-align: center;
   }
 }
 </style>

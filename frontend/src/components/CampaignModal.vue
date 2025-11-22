@@ -17,6 +17,30 @@
           <label for="descricao-campanha">Descrição</label>
           <textarea id="descricao-campanha" v-model="formData.descricao" rows="3"></textarea>
         </div>
+
+        <!-- NOVO: Campo para URL da Imagem -->
+        <div class="form-group full-width">
+          <label for="imagem-campanha">URL da Imagem (opcional)</label>
+          <input 
+            type="url" 
+            id="imagem-campanha" 
+            v-model="formData.imagemUrl" 
+            placeholder="https://exemplo.com/imagem.jpg"
+          >
+          <small class="help-text">Cole o link de uma imagem da internet (Google Drive, Imgur, etc.)</small>
+          
+          <!-- Preview da Imagem -->
+          <div v-if="formData.imagemUrl" class="image-preview">
+            <img 
+              :src="formData.imagemUrl" 
+              alt="Preview" 
+              @error="handleImageError"
+              @load="imageLoadSuccess = true"
+            >
+            <p v-if="imageLoadSuccess" class="preview-success">✓ Imagem carregada</p>
+            <p v-if="imageError" class="preview-error">✗ Não foi possível carregar a imagem</p>
+          </div>
+        </div>
         
         <div class="form-group-row">
           <div class="form-group">
@@ -83,6 +107,10 @@ const isLoadingEditais = ref(false);
 const isLoadingSubmit = ref(false);
 const toast = useToast();
 
+// Estados para preview da imagem
+const imageError = ref(false);
+const imageLoadSuccess = ref(false);
+
 const buscarEditaisDisponiveis = async () => {
   isLoadingEditais.value = true;
   try {
@@ -97,6 +125,11 @@ const buscarEditaisDisponiveis = async () => {
 
 const closeModal = () => { 
   emit('update:modelValue', false); 
+};
+
+const handleImageError = () => {
+  imageError.value = true;
+  imageLoadSuccess.value = false;
 };
 
 const handleSubmit = async () => {
@@ -125,15 +158,26 @@ const formatDateForInput = (dateString) => {
   return date.toISOString().split('T')[0];
 };
 
+// Reset dos estados de imagem quando a URL muda
+watch(() => formData.value.imagemUrl, () => {
+  imageError.value = false;
+  imageLoadSuccess.value = false;
+});
+
 watch(() => props.modelValue, (isOpening) => {
   if (isOpening) {
     buscarEditaisDisponiveis();
+    // Reset estados de imagem
+    imageError.value = false;
+    imageLoadSuccess.value = false;
+    
     if (isEditMode.value) {
       formData.value = {
         ...props.campaignToEdit,
         periodo_inicio: formatDateForInput(props.campaignToEdit.periodo_inicio),
         periodo_fim: formatDateForInput(props.campaignToEdit.periodo_fim),
-        editais: props.campaignToEdit.editais?.map(e => e._id || e) || []
+        editais: props.campaignToEdit.editais?.map(e => e._id || e) || [],
+        imagemUrl: props.campaignToEdit.imagemUrl || ''
       };
     } else {
       formData.value = {
@@ -143,7 +187,8 @@ watch(() => props.modelValue, (isOpening) => {
         periodo_fim: '',
         publico_alvo: '',
         status: 'Planejada',
-        editais: []
+        editais: [],
+        imagemUrl: ''
       };
     }
   }
@@ -151,20 +196,8 @@ watch(() => props.modelValue, (isOpening) => {
 </script>
 
 <style scoped>
-.image-preview {
-  max-width: 200px;
-  height: auto;
-  margin-top: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-.upload-status {
-  font-size: 0.9rem;
-  color: #007bff;
-  margin-top: 0.5rem;
-}
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background-color: white; padding: 1.5rem 2rem; border-radius: 8px; width: 100%; max-width: 600px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
+.modal-content { background-color: white; padding: 1.5rem 2rem; border-radius: 8px; width: 100%; max-width: 600px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6c757d; }
 .form-group { margin-bottom: 1rem; }
@@ -182,34 +215,61 @@ watch(() => props.modelValue, (isOpening) => {
 .edital-checkbox-item input { margin-right: 0.5rem; width: auto; }
 .no-editals-message { font-size: 0.9rem; color: #6c757d; padding: 0.5rem; background-color: #f8f9fa; border-radius: 4px; text-align: center; }
 
+/* Estilos para o campo de imagem */
+.help-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.image-preview {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.image-preview img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 4px;
+  display: block;
+  object-fit: cover;
+}
+
+.preview-success {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #28a745;
+}
+
+.preview-error {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #dc3545;
+}
+
 @media (max-width: 767px) {
   .modal-content {
-    /* Faz o modal ocupar quase toda a tela */
-    width: 95vw; /* 95% da largura da tela */
-    height: 90vh; /* 90% da altura da tela */
-    max-width: none; /* Remove qualquer limite de largura máxima */
-    
-    padding: 1.5rem 1rem; /* Reduz o padding interno */
-    
-    /* Adiciona scroll se o conteúdo for muito grande */
+    width: 95vw;
+    height: 90vh;
+    max-width: none;
+    padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Controla o scroll no container do formulário */
+    overflow: hidden;
   }
-
-  /* Faz o formulário ser a área de scroll, não o modal inteiro */
   .modal-content form {
     overflow-y: auto;
     flex-grow: 1;
-    padding-right: 10px; /* Espaço para a barra de rolagem */
+    padding-right: 10px;
   }
-
-  /* Empilha os campos que ficavam lado a lado */
   .form-group-row {
     flex-direction: column;
     gap: 1rem;
   }
-
   .modal-footer {
     margin-top: 1.5rem;
   }
