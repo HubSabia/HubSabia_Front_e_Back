@@ -1,5 +1,3 @@
-// backend/server.js - CORREÇÃO DO CORS
-
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -18,7 +16,7 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
     'https://hub-sabia-front-e-back.vercel.app',
     'http://localhost:5174',
-    'http://localhost:5173', // ✅ Adicionado 5173
+    'http://localhost:5173',
     'http://127.0.0.1:5173'
 ];
 
@@ -38,7 +36,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// ✅ Middleware de erro para CORS (opcional, mas recomendado)
+//Middleware de erro para CORS (opcional, mas recomendado)
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     return res.status(403).json({
@@ -61,7 +59,7 @@ app.use(
             collectionName: 'sessions'
         }),
         cookie: {
-            secure: process.env.NODE_ENV === 'production', // ✅ HTTPS em produção
+            secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 // 24 horas
         }
@@ -89,7 +87,6 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/upload', uploadRoutes);
 
-// ✅ Tratamento de erro global
 app.use((err, req, res, next) => {
   console.error('Erro não tratado:', err);
   res.status(err.status || 500).json({

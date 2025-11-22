@@ -1,19 +1,19 @@
-import express from 'express';
-import multer from 'multer';
-import cloudinary from 'cloudinary';
-import { authenticate } from '../middleware/auth.js';
+// backend/routes/upload.js - COMMONJS VERSION
+const express = require('express');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-// Configurar Multer para upload na memória
+// Configurar Multer
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
-    // Validar tipos de arquivo
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -23,22 +23,21 @@ const upload = multer({
 });
 
 // Configurar Cloudinary
-cloudinary.v2.config({
+cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // Rota de upload
-router.post('/upload-image', authenticate, upload.single('image'), async (req, res) => {
+router.post('/upload-image', auth, upload.single('image'), async (req, res) => {
   try {
     console.log('📤 Iniciando upload no backend...');
-    
-    // Verificar se arquivo foi enviado
+
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Nenhuma imagem enviada.' 
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma imagem enviada.'
       });
     }
 
@@ -49,10 +48,13 @@ router.post('/upload-image', authenticate, upload.single('image'), async (req, r
     });
 
     // Verificar configuração do Cloudinary
-    if (!process.env.CLOUDINARY_CLOUD_NAME || 
-        !process.env.CLOUDINARY_API_KEY || 
-        !process.env.CLOUDINARY_API_SECRET) {
-      throw new Error('Configuração do Cloudinary não encontrada no backend.');
+    if (!process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'Configuração do Cloudinary não encontrada no backend.'
+      });
     }
 
     // Converter buffer para base64
@@ -62,9 +64,9 @@ router.post('/upload-image', authenticate, upload.single('image'), async (req, r
     console.log('☁️ Fazendo upload para Cloudinary...');
 
     // Fazer upload para Cloudinary
-    const result = await cloudinary.v2.uploader.upload(dataURI, {
+    const result = await cloudinary.uploader.upload(dataURI, {
       folder: 'hub-sabia',
-      upload_preset: 'hub-sabia-unsigned', // Use o preset unsigned
+      upload_preset: 'hub-sabia-unsigned',
       resource_type: 'auto'
     });
 
@@ -78,9 +80,9 @@ router.post('/upload-image', authenticate, upload.single('image'), async (req, r
 
   } catch (error) {
     console.error('💥 ERRO NO BACKEND:', error);
-    
+
     let errorMessage = 'Erro ao fazer upload da imagem.';
-    
+
     if (error.message.includes('Configuração do Cloudinary')) {
       errorMessage = 'Configuração do Cloudinary incompleta no servidor.';
     } else if (error.message.includes('Upload preset')) {
@@ -95,4 +97,4 @@ router.post('/upload-image', authenticate, upload.single('image'), async (req, r
   }
 });
 
-export default router;
+module.exports = router;

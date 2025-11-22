@@ -135,34 +135,43 @@ import { useToast } from "vue-toastification";
 
 const uploadToCloudinary = async (file) => {
   try {
-    uploading.value = true;
-    uploadError.value = '';
-    
     console.log('📤 Iniciando upload via backend...');
-    
-    // Cria FormData
+
     const formData = new FormData();
-    formData.append('file', file);
-    
-    // Envia para o backend
-    const response = await apiClient.post('/upload/upload-image', formData, {
+    formData.append('image', file);
+
+    const response = await fetch('/api/upload/upload-image', {
+      method: 'POST',
+      body: formData,
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'x-auth-token': localStorage.getItem('token')
       }
     });
-    
-    if (response.data.success) {
-      console.log('✅ Upload concluído:', response.data.url);
-      return response.data.url;
-    } else {
-      throw new Error('Resposta inválida do servidor');
+
+    console.log('📡 Status da resposta:', response.status);
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+      throw new Error(errorData.message || `Erro ${response.status}`);
     }
+
+    const result = await response.json();
     
+    if (result.success) {
+      console.log('✅ Upload via backend bem-sucedido!');
+      return result.imageUrl;
+    } else {
+      throw new Error(result.message || 'Upload falhou');
+    }
+
   } catch (error) {
     console.error('❌ Erro no upload:', error);
-    throw new Error(error.response?.data?.msg || 'Erro ao fazer upload da imagem');
-  } finally {
-    uploading.value = false;
+    throw new Error(error.message || 'Erro ao fazer upload da imagem');
   }
 };
 
