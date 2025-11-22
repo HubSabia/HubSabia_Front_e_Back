@@ -156,8 +156,8 @@ const uploadToCloudinary = async (file) => {
     }
 
     // VERIFICAR VARIÁVEIS DE AMBIENTE
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName = 'durify2v9';
+    const uploadPreset = 'hub-sabia-unsigned';
 
     console.log('🔑 Variáveis de ambiente:');
     console.log('   Cloud Name:', cloudName);
