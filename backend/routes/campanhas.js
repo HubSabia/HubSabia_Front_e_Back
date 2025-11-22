@@ -1,21 +1,46 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
+const adminMiddleware = require('../middlewares/admin');
 const Campanha = require('../models/Campanha');
 const { validateObjectId } = require('../utils/validation');
 
-// ROTA PARA LISTAR (GET)
+// ROTA PARA LISTAR CAMPANHAS DO USUÁRIO LOGADO (GET /)
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const campanhas = await Campanha.find({ criador: req.usuario.id })
+        // Se for admin, retorna TODAS as campanhas
+        // Se for usuário comum, retorna apenas as dele
+        const filtro = req.usuario.role === 'admin' 
+            ? {} 
+            : { criador: req.usuario.id };
+
+        const campanhas = await Campanha.find(filtro)
             .populate('editais', 'titulo')
             .populate('chatbot', 'nome status')
+            .populate('criador', 'nome email') // Popula info do criador para admin ver
             .sort({ createdAt: -1 })
             .lean();
         
         res.json(campanhas);
     } catch (err) {
         console.error("Erro ao listar campanhas:", err.message);
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// ROTA PARA ADMIN LISTAR TODAS AS CAMPANHAS (GET /todas)
+router.get('/todas', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+        const campanhas = await Campanha.find({})
+            .populate('editais', 'titulo')
+            .populate('chatbot', 'nome status')
+            .populate('criador', 'nome email')
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        res.json(campanhas);
+    } catch (err) {
+        console.error("Erro ao listar todas as campanhas:", err.message);
         res.status(500).send('Erro no servidor.');
     }
 });
@@ -67,7 +92,14 @@ router.post('/', authMiddleware, async (req, res) => {
             criador: req.usuario.id
         });
         const campanhaSalva = await novaCampanha.save();
-        res.status(201).json(campanhaSalva);
+        
+        // Popula os dados antes de retornar
+        const campanhaPopulada = await Campanha.findById(campanhaSalva._id)
+            .populate('editais', 'titulo')
+            .populate('chatbot', 'nome status')
+            .populate('criador', 'nome email');
+            
+        res.status(201).json(campanhaPopulada);
     } catch (err) {
         console.error("Erro ao criar campanha:", err.message);
         res.status(500).send('Erro no servidor.');
@@ -82,6 +114,7 @@ router.delete('/:id', authMiddleware, validateObjectId, async (req, res) => {
             return res.status(404).json({ msg: 'Campanha não encontrada.' });
         }
 
+        // Verifica permissão: dono OU admin
         if (campanha.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') {
             return res.status(401).json({ msg: 'Ação não autorizada.' });
         }
@@ -144,6 +177,7 @@ router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
             return res.status(404).json({ msg: 'Campanha não encontrada.' }); 
         }
 
+        // Verifica permissão: dono OU admin
         if (campanha.criador.toString() !== req.usuario.id && req.usuario.role !== 'admin') { 
             return res.status(401).json({ msg: 'Ação não autorizada.' }); 
         }
@@ -152,7 +186,11 @@ router.put('/:id', authMiddleware, validateObjectId, async (req, res) => {
             req.params.id,
             { $set: camposAtualizados },
             { new: true }
-        );
+        )
+        .populate('editais', 'titulo')
+        .populate('chatbot', 'nome status')
+        .populate('criador', 'nome email');
+        
         res.json(campanha);
     } catch (err) {
         console.error("Erro ao editar campanha:", err.message);

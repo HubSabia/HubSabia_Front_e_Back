@@ -1,7 +1,10 @@
 <template>
   <div class="campaigns-view">
     <header class="view-header">
-      <h1>Gestão de Campanhas</h1>
+      <div>
+        <h1>Gestão de Campanhas</h1>
+        <p v-if="isAdmin" class="admin-badge">👑 Modo Administrador - Visualizando todas as campanhas</p>
+      </div>
       <button @click="abrirModalParaCriar" class="btn-add">Adicionar Campanha</button>
     </header>
 
@@ -15,6 +18,7 @@
       <thead>
         <tr>
           <th>Nome</th>
+          <th v-if="isAdmin">Criador</th>
           <th>Período</th>
           <th>Status</th>
           <th>Ações</th>
@@ -23,17 +27,37 @@
       <tbody>
         <tr v-for="campanha in campanhas" :key="campanha._id">
           <td>{{ campanha.nome }}</td>
+          <td v-if="isAdmin" class="creator-cell">
+            {{ campanha.criador?.nome || 'Desconhecido' }}
+          </td>
           <td>{{ formatarData(campanha.periodo_inicio) }} - {{ formatarData(campanha.periodo_fim) }}</td>
           <td><span :class="['status-badge', campanha.status.toLowerCase()]">{{ campanha.status }}</span></td>
           <td class="actions-cell">
-            <button @click="abrirModalParaEditar(campanha)" class="btn-edit">Editar</button>
-            <button @click="pedirConfirmacaoExclusao(campanha)" class="btn-delete">Excluir</button>
+            <!-- Botões aparecem baseado nas permissões -->
+            <button 
+              v-if="canEdit(campanha)" 
+              @click="abrirModalParaEditar(campanha)" 
+              class="btn-edit"
+            >
+              Editar
+            </button>
+            <button 
+              v-if="canDelete(campanha)" 
+              @click="pedirConfirmacaoExclusao(campanha)" 
+              class="btn-delete"
+            >
+              Excluir
+            </button>
+            <!-- Indicador de propriedade para admin -->
+            <span v-if="isAdmin && isOwner(campanha)" class="owner-badge">
+              (Sua)
+            </span>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <!-- O Modal (CORREÇÃO AQUI) -->
+    <!-- Modal de Campanha -->
     <CampaignModal 
       v-model="showModal"
       :campaign-to-edit="campanhaSelecionada"
@@ -45,7 +69,7 @@
     <ConfirmModal 
       :isVisible="showConfirmModal"
       title="Confirmar Exclusão"
-      message="Você tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita."
+      :message="mensagemExclusao"
       @confirm="confirmarExclusao"
       @cancel="showConfirmModal = false"
     />
@@ -53,9 +77,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import apiClient from '@/services/api';
 import { useToast } from 'vue-toastification';
+import { usePermissions } from '@/composables/usePermissions';
 
 // Importa os componentes de modal
 import CampaignModal from '@/components/CampaignModal.vue';
@@ -65,16 +90,34 @@ const campanhas = ref([]);
 const loading = ref(true);
 const toast = useToast();
 
+// Usa o composable de permissões
+const { canEdit, canDelete, isAdmin, isOwner } = usePermissions();
+
 // --- ESTADO PARA CONTROLE DOS MODAIS ---
 const showModal = ref(false);
 const campanhaSelecionada = ref(null);
 const showConfirmModal = ref(false);
 const campanhaParaExcluir = ref(null);
 
+// Mensagem dinâmica para exclusão
+const mensagemExclusao = computed(() => {
+  if (!campanhaParaExcluir.value) return '';
+  
+  const isOwnCampaign = isOwner(campanhaParaExcluir.value);
+  
+  if (isAdmin.value && !isOwnCampaign) {
+    return `Você está prestes a excluir a campanha "${campanhaParaExcluir.value.nome}" do usuário ${campanhaParaExcluir.value.criador?.nome || 'desconhecido'}. Esta ação não pode ser desfeita.`;
+  }
+  
+  return `Você tem certeza que deseja excluir a campanha "${campanhaParaExcluir.value.nome}"? Esta ação não pode ser desfeita.`;
+});
+
 // --- FUNÇÕES DE API ---
 const buscarCampanhas = async () => {
   loading.value = true;
   try {
+    // O backend já retorna todas as campanhas para admin
+    // e apenas as do usuário para usuários comuns
     const response = await apiClient.get('/campanhas');
     campanhas.value = response.data;
   } catch (error) {
@@ -101,7 +144,6 @@ const abrirModalParaEditar = (campanha) => {
 // --- FUNÇÕES DE CALLBACK DO MODAL ---
 const adicionarCampanhaNaLista = (novaCampanha) => {
   campanhas.value.unshift(novaCampanha);
-  toast.success('Campanha criada com sucesso!');
 };
 
 const atualizarCampanhaNaLista = (campanhaAtualizada) => {
@@ -109,7 +151,6 @@ const atualizarCampanhaNaLista = (campanhaAtualizada) => {
   if (index !== -1) {
     campanhas.value[index] = campanhaAtualizada;
   }
-  toast.success('Campanha atualizada com sucesso!');
 };
 
 // --- FUNÇÕES DE EXCLUSÃO ---
@@ -119,13 +160,15 @@ const pedirConfirmacaoExclusao = (campanha) => {
 };
 
 const confirmarExclusao = async () => {
+  if (!campanhaParaExcluir.value) return;
+  
   try {
     await apiClient.delete(`/campanhas/${campanhaParaExcluir.value._id}`);
     campanhas.value = campanhas.value.filter(c => c._id !== campanhaParaExcluir.value._id);
     toast.success('Campanha excluída com sucesso!');
   } catch (error) {
     console.error('Erro ao excluir campanha:', error);
-    toast.error('Erro ao excluir campanha.');
+    toast.error(error.response?.data?.msg || 'Erro ao excluir campanha.');
   } finally {
     showConfirmModal.value = false;
     campanhaParaExcluir.value = null;
@@ -148,7 +191,7 @@ const formatarData = (dataString) => {
 .view-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
 }
 
@@ -156,6 +199,17 @@ const formatarData = (dataString) => {
   font-size: 2rem;
   font-weight: 700;
   color: #333;
+  margin: 0;
+}
+
+.admin-badge {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: #856404;
+  background-color: #fff3cd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .btn-add {
@@ -211,9 +265,16 @@ const formatarData = (dataString) => {
   border-bottom: none;
 }
 
+.creator-cell {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
 .actions-cell {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn-edit,
@@ -240,6 +301,18 @@ const formatarData = (dataString) => {
 .btn-edit:hover,
 .btn-delete:hover {
   opacity: 0.85;
+}
+
+.owner-badge {
+  font-size: 0.75rem;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.no-permission {
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 .status-badge {
@@ -291,6 +364,7 @@ const formatarData = (dataString) => {
 
   .actions-cell {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   .btn-edit,
