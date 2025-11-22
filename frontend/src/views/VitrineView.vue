@@ -14,16 +14,8 @@
     </div>
 
     <div v-else class="campaigns-grid">
-      <!-- Card da Campanha -->
+
       <div v-for="campanha in campanhas" :key="campanha._id" class="campaign-card">
-        
-        <!-- Imagem do Card -->
-        <div class="card-image">
-          <!-- Usamos uma imagem de placeholder por enquanto. No futuro, aqui entrará a campanha.imagemUrl -->
-          <img src="https://via.placeholder.com/400x220/E2E8F0/4A5568?text=Campanha" alt="Imagem da campanha">
-        </div>
-        
-        <!-- Conteúdo de Texto do Card -->
         <div class="card-content">
           <h2 class="card-title">{{ campanha.nome }}</h2>
           <p class="card-creator">Criado por: {{ campanha.criador.nome }}</p>
@@ -33,9 +25,10 @@
           <p class="card-description">{{ campanha.descricao || 'Nenhuma descrição fornecida.' }}</p>
           
           <!-- Botão só aparece se houver um chatbot associado -->
-          <router-link v-if="campanha.chatbot" :to="`/chat-publico/${campanha.chatbot._id}`" class="chat-button">
+          <router-link v-if="campanha.chatbot" :to="`/chat-publico/${campanha.chatbot}`" class="chat-button">
             Conversar com Assistente
           </router-link>
+          <p v-else class="no-chatbot">Chatbot não disponível</p>
         </div>
       </div>
     </div>
@@ -49,7 +42,6 @@ import apiClient from '@/services/api';
 const campanhas = ref([]);
 const loading = ref(true);
 
-// Função para buscar os dados da API
 onMounted(async () => {
   try {
     const response = await apiClient.get('/public/campanhas');
@@ -61,7 +53,6 @@ onMounted(async () => {
   }
 });
 
-// Função para formatar as datas de forma legível
 function formatarData(dataString) {
   if (!dataString) return '';
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -73,7 +64,7 @@ function formatarData(dataString) {
 .vitrine-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 1rem; /* Padding menor para telas pequenas */
+  padding: 2rem 1rem;
 }
 
 .page-header {
@@ -81,9 +72,10 @@ function formatarData(dataString) {
   margin-bottom: 3rem;
 }
 .page-header h1 {
-  font-size: 2.25rem; /* Menor em telas pequenas */
+  font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  color: #1e293b;
 }
 .page-header p {
   font-size: 1.1rem;
@@ -101,7 +93,7 @@ function formatarData(dataString) {
 
 .campaigns-grid {
   display: grid;
-  grid-template-columns: 1fr; /* Começa com uma coluna para mobile */
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
@@ -113,29 +105,26 @@ function formatarData(dataString) {
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-top: 5px solid #28a745;
 }
+
 .campaign-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
-.card-image img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover; /* Garante que a imagem cubra o espaço sem distorcer */
-}
 
 .card-content {
-  padding: 1.5rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* Faz esta área crescer para ocupar o espaço disponível */
+  flex-grow: 1;
 }
 
 .card-title {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #1e293b;
 }
 
@@ -143,43 +132,58 @@ function formatarData(dataString) {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0 0 1rem 0;
+  font-weight: 500;
 }
 
 .card-dates {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #475569;
   margin-bottom: 1rem;
-  padding-left: 1rem;
-  border-left: 3px solid var(--primary-color, #28a745);
+  padding: 0.75rem;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  border-left: 4px solid var(--primary-color, #28a745);
 }
 
 .card-description {
-  flex-grow: 1; /* Empurra o botão para o final do card */
+  flex-grow: 1;
   color: #475569;
   margin-bottom: 1.5rem;
   line-height: 1.6;
-  /* Limita o texto a 3 linhas */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
 }
 
 .chat-button {
   display: block;
-  padding: 0.75rem;
+  padding: 0.875rem;
   background-color: var(--primary-color, #28a745);
   color: white;
   text-align: center;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
-  transition: background-color 0.2s;
+  font-size: 1rem;
+  transition: background-color 0.2s, transform 0.2s;
 }
+
 .chat-button:hover {
   background-color: var(--primary-color-hover, #218838);
+  transform: scale(1.02);
+}
+
+.no-chatbot {
+  text-align: center;
+  padding: 0.875rem;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border-radius: 8px;
+  font-style: italic;
+  border: 1px dashed #dee2e6;
 }
 
 /* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
@@ -190,7 +194,7 @@ function formatarData(dataString) {
     padding: 2rem;
   }
   .campaigns-grid {
-    grid-template-columns: repeat(2, 1fr); /* Duas colunas */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -200,14 +204,14 @@ function formatarData(dataString) {
     font-size: 2.5rem;
   }
   .campaigns-grid {
-    grid-template-columns: repeat(3, 1fr); /* Três colunas */
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 /* Telas extra grandes */
 @media (min-width: 1280px) {
   .campaigns-grid {
-    grid-template-columns: repeat(4, 1fr); /* Quatro colunas */
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>

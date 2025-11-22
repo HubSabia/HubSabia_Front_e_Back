@@ -7,66 +7,7 @@
       </header>
       
       <form @submit.prevent="handleSubmit" class="campaign-form">
-        <!-- SEÇÃO DE UPLOAD DE IMAGEM - NOVA -->
-        <div class="form-group full-width">
-          <label for="imagem-campanha">Imagem da Campanha</label>
-          
-          <!-- Área de Upload -->
-          <div v-if="!formData.imagemUrl" 
-               class="upload-area"
-               @click="triggerFileInput"
-               @drop="handleDrop"
-               @dragover="handleDragOver"
-               @dragleave="handleDragLeave"
-               :class="{ 'drag-over': dragOver }">
-            <div class="upload-content">
-              <CloudUploadIcon class="upload-icon" />
-              <div class="upload-text">
-                <span class="upload-main-text">Clique para fazer upload</span>
-                <span class="upload-sub-text">ou arraste uma imagem aqui</span>
-              </div>
-              <input 
-                ref="fileInput"
-                type="file" 
-                class="file-input"
-                accept="image/*"
-                @change="handleImageUpload"
-              >
-            </div>
-            <p class="upload-hint">PNG, JPG, GIF ou WebP (até 10MB)</p>
-          </div>
 
-          <!-- Preview da Imagem -->
-          <div v-else class="image-preview-container">
-            <div class="image-wrapper">
-              <img :src="formData.imagemUrl" :alt="formData.nome" class="image-preview">
-              <div class="image-overlay">
-                <button type="button" class="image-btn change-btn" @click="triggerFileInput" title="Alterar imagem">
-                  <RefreshIcon class="btn-icon" />
-                </button>
-                <button type="button" class="image-btn remove-btn" @click="removeImage" title="Remover imagem">
-                  <TrashIcon class="btn-icon" />
-                </button>
-              </div>
-            </div>
-            <p class="image-hint">Clique na imagem para alterar</p>
-          </div>
-
-          <!-- Status do Upload -->
-          <div v-if="uploading" class="upload-status">
-            <div class="upload-loading">
-              <div class="loading-spinner"></div>
-              <span>Fazendo upload da imagem...</span>
-            </div>
-          </div>
-
-          <!-- Mensagem de Erro -->
-          <div v-if="uploadError" class="upload-error">
-            {{ uploadError }}
-          </div>
-        </div>
-
-        <!-- Campos existentes mantidos -->
         <div class="form-group">
           <label for="nome-campanha">Nome da Campanha</label>
           <input type="text" id="nome-campanha" v-model="formData.nome" required>
@@ -118,7 +59,7 @@
         
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
-          <button type="submit" class="btn-primary" :disabled="isLoadingSubmit || uploading">
+          <button type="submit" class="btn-primary" :disabled="isLoadingSubmit">
             {{ isLoadingSubmit ? 'Salvando...' : (isEditMode ? 'Atualizar Campanha' : 'Criar Campanha') }}
           </button>
         </footer>
@@ -128,134 +69,20 @@
 </template>
 
 <script setup>
-
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed } from 'vue';
 import apiClient from '@/services/api';
 import { useToast } from "vue-toastification";
-
-const uploadToCloudinary = async (file) => {
-  try {
-    console.log('📤 Iniciando upload via backend...');
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await apiClient.post('/upload/upload-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    console.log('📡 Status da resposta:', response.status);
-
-    const result = response.data;
-    
-    if (result.success) {
-      console.log('✅ Upload via backend bem-sucedido!');
-      return result.imageUrl;
-    } else {
-      throw new Error(result.message || 'Upload falhou');
-    }
-
-  } catch (error) {
-    console.error('❌ Erro no upload:', error);
-    throw new Error(error.response?.data?.message || error.message || 'Erro ao fazer upload da imagem');
-  }
-};
-
-// Ícones (substitua pelos seus componentes reais)
-const CloudUploadIcon = { template: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>' };
-const RefreshIcon = { template: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>' };
-const TrashIcon = { template: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>' };
 
 const props = defineProps({ modelValue: Boolean, campaignToEdit: Object });
 const emit = defineEmits(['update:modelValue', 'campaign-created', 'campaign-updated']);
 
 const formData = ref({});
-const fileInput = ref(null);
 const isEditMode = computed(() => !!props.campaignToEdit);
 const listaDeEditais = ref([]);
 const isLoadingEditais = ref(false);
 const isLoadingSubmit = ref(false);
-const uploading = ref(false);
-const dragOver = ref(false);
-const uploadError = ref('');
 const toast = useToast();
 
-// Funções de upload
-const triggerFileInput = () => {
-  fileInput.value?.click();
-};
-
-const handleImageUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  await processImageUpload(file);
-};
-
-const handleDrop = (event) => {
-  event.preventDefault();
-  dragOver.value = false;
-  
-  const files = event.dataTransfer.files;
-  if (files.length > 0) {
-    const file = files[0];
-    if (file.type.startsWith('image/')) {
-      processImageUpload(file);
-    } else {
-      uploadError.value = 'Por favor, selecione apenas imagens.';
-    }
-  }
-};
-
-const handleDragOver = (event) => {
-  event.preventDefault();
-  dragOver.value = true;
-};
-
-const handleDragLeave = (event) => {
-  event.preventDefault();
-  dragOver.value = false;
-};
-
-const removeImage = () => {
-  formData.value.imagemUrl = '';
-  uploadError.value = '';
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
-};
-
-const processImageUpload = async (file) => {
-  try {
-    uploading.value = true;
-    uploadError.value = '';
-    
-    console.log('Iniciando upload do arquivo:', file.name);
-    
-    const imageUrl = await uploadToCloudinary(file);
-    
-    console.log('Upload concluído. URL:', imageUrl);
-    formData.value.imagemUrl = imageUrl;
-    
-    toast.success("Imagem carregada com sucesso!");
-    
-  } catch (error) {
-    console.error('Erro no upload:', error);
-    uploadError.value = error.message;
-    toast.error(error.message || "Erro ao fazer upload da imagem");
-    
-    // Limpar input de arquivo
-    if (fileInput.value) {
-      fileInput.value.value = '';
-    }
-  } finally {
-    uploading.value = false;
-  }
-};
-
-// Funções existentes mantidas
 const buscarEditaisDisponiveis = async () => {
   isLoadingEditais.value = true;
   try {
@@ -270,10 +97,6 @@ const buscarEditaisDisponiveis = async () => {
 
 const closeModal = () => { 
   emit('update:modelValue', false); 
-  // Resetar estados de upload
-  uploading.value = false;
-  dragOver.value = false;
-  uploadError.value = '';
 };
 
 const handleSubmit = async () => {
@@ -310,8 +133,7 @@ watch(() => props.modelValue, (isOpening) => {
         ...props.campaignToEdit,
         periodo_inicio: formatDateForInput(props.campaignToEdit.periodo_inicio),
         periodo_fim: formatDateForInput(props.campaignToEdit.periodo_fim),
-        editais: props.campaignToEdit.editais?.map(e => e._id || e) || [],
-        imagemUrl: props.campaignToEdit.imagemUrl || '' // Manter imagem existente
+        editais: props.campaignToEdit.editais?.map(e => e._id || e) || []
       };
     } else {
       formData.value = {
@@ -321,22 +143,9 @@ watch(() => props.modelValue, (isOpening) => {
         periodo_fim: '',
         publico_alvo: '',
         status: 'Planejada',
-        editais: [],
-        imagemUrl: ''
+        editais: []
       };
     }
-    
-    // Resetar estados de upload
-    uploading.value = false;
-    dragOver.value = false;
-    uploadError.value = '';
-    
-    // Limpar input de arquivo
-    nextTick(() => {
-      if (fileInput.value) {
-        fileInput.value.value = '';
-      }
-    });
   }
 });
 </script>
