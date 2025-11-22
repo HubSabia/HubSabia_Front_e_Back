@@ -20,6 +20,11 @@ const ChatbotSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: true
+    },
+    geminiApiKey: {
+        type: String,
+        trim: true,
+        default: ''
     }
 }, { timestamps: true });
 

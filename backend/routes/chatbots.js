@@ -71,7 +71,6 @@ router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, asy
             return res.status(400).json({ msg: 'Nenhuma chave de API do Google AI foi configurada. Por favor, adicione sua chave na sua página de perfil.' });
         }
         
-        const genAI = new GoogleGenerativeAI(usuario.geminiApiKey);
         const chatbot = await Chatbot.findById(req.params.id).populate({
             path: 'campanha',
             populate: { path: 'editais', model: 'Edital' }
@@ -81,6 +80,14 @@ router.post('/:id/interagir', authMiddleware, validateObjectId, chatLimiter, asy
             return res.status(404).json({ msg: 'Configuração do chatbot ou campanha associada não encontrada.' });
         }
 
+        const apiKey = chatbot.geminiApiKey || usuario.geminiApiKey;
+    
+    if (!apiKey) {
+      return res.status(400).json({ 
+        msg: 'Nenhuma chave de API do Google AI foi configurada. Configure uma chave no chatbot ou no seu perfil.' 
+      });
+    }
+        const genAI = new GoogleGenerativeAI(apiKey);
         const contexto = chatbot.campanha.editais.map(e => `Título: ${e.titulo}\nConteúdo: ${e.conteudo}`).join('\n\n---\n\n');
         const hoje = new Date();
         const dataFormatada = hoje.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });

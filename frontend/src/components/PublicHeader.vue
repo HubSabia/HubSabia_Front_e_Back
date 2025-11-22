@@ -1,25 +1,27 @@
-<!-- frontend/src/components/PublicHeader.vue -->
 <template>
   <header class="public-header">
     <div class="logo-area">
-      <!-- O link no logo leva para a página inicial (Vitrine) -->
       <router-link to="/">
-        <!-- Substitua por seu logo real em 'src/assets' se tiver um -->
-        <!-- <img src="@/assets/logo.svg" alt="Hub-Sabiá Logo" class="logo"> -->
         <span class="app-name">Hub-Sabiá</span>
       </router-link>
     </div>
     <nav class="navigation">
-      <!-- O botão leva para a página de login -->
-      <router-link to="/login" class="login-button">
+      <router-link v-if="!isLoggedIn" to="/login" class="login-button">
         Fazer Login
+      </router-link>
+      <router-link v-else to="/dashboard" class="dashboard-button">
+        Ir para Dashboard
       </router-link>
     </nav>
   </header>
 </template>
 
 <script setup>
-// Este componente é tão simples que não precisa de lógica JavaScript
+import { computed } from 'vue';
+
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('authToken');
+});
 </script>
 
 <style scoped>
@@ -41,28 +43,35 @@
   color: #1a202c;
 }
 
-.logo {
-  height: 40px;
-  margin-right: 12px;
-}
-
 .app-name {
   font-size: 1.5rem;
   font-weight: 700;
 }
 
-.login-button {
+.login-button, .dashboard-button {
   padding: 0.6rem 1.2rem;
   border: 1px solid transparent;
   border-radius: 8px;
   text-decoration: none;
-  background-color: #28a745;
-  color: #ffffff;
   font-weight: 600;
   transition: background-color 0.2s ease-in-out;
 }
 
+.login-button {
+  background-color: #28a745;
+  color: #ffffff;
+}
+
 .login-button:hover {
   background-color: #218838;
+}
+
+.dashboard-button {
+  background-color: #007bff;
+  color: #ffffff;
+}
+
+.dashboard-button:hover {
+  background-color: #0056b3;
 }
 </style>
