@@ -140,27 +140,15 @@ const uploadToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch('/api/upload/upload-image', {
-      method: 'POST',
-      body: formData,
+    const response = await apiClient.post('/upload/upload-image', formData, {
       headers: {
-        'x-auth-token': localStorage.getItem('token')
+        'Content-Type': 'multipart/form-data'
       }
     });
 
     console.log('📡 Status da resposta:', response.status);
 
-    if (!response.ok) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch {
-        throw new Error(`Erro ${response.status}: ${response.statusText}`);
-      }
-      throw new Error(errorData.message || `Erro ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = response.data;
     
     if (result.success) {
       console.log('✅ Upload via backend bem-sucedido!');
@@ -171,7 +159,7 @@ const uploadToCloudinary = async (file) => {
 
   } catch (error) {
     console.error('❌ Erro no upload:', error);
-    throw new Error(error.message || 'Erro ao fazer upload da imagem');
+    throw new Error(error.response?.data?.message || error.message || 'Erro ao fazer upload da imagem');
   }
 };
 
