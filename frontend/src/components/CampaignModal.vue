@@ -158,6 +158,7 @@ const uploadToCloudinary = async (file) => {
     // VERIFICAR VARIÁVEIS DE AMBIENTE
     const cloudName = 'durify2v9';
     const uploadPreset = 'hub-sabia-unsigned';
+    url: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`; 
 
     console.log('🔑 Variáveis de ambiente:');
     console.log('   Cloud Name:', cloudName);
