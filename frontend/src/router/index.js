@@ -98,28 +98,21 @@ const router = createRouter({
 // Guard de navegação
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
-  
-  // Log para debug (remova em produção)
-  console.log(`[Router] Navegando para: ${to.path}, public: ${to.meta.public}, requiresAuth: ${to.meta.requiresAuth}, hasToken: ${!!token}`);
 
   // 1. Se a rota é pública, SEMPRE permite acesso
   if (to.meta.public) {
     // Exceção: se está logado e tenta acessar login/registro, vai para dashboard
     if (token && (to.name === 'Login' || to.name === 'Register')) {
-      console.log('[Router] Usuário logado tentando acessar login/registro, redirecionando para dashboard');
       return next({ name: 'Dashboard' });
     }
-    // Permite acesso à rota pública
     return next();
   }
 
   // 2. Se a rota requer autenticação
   if (to.meta.requiresAuth) {
     if (!token) {
-      console.log('[Router] Rota protegida sem token, redirecionando para login');
       return next({ name: 'Login' });
     }
-    // Tem token, permite acesso
     return next();
   }
 
