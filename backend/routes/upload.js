@@ -2,7 +2,7 @@
 const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/auth');
 
 const router = express.Router();
 
