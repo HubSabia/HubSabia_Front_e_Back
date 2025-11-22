@@ -1,74 +1,98 @@
-const express = require('express');
+import express from 'express';
+import multer from 'multer';
+import cloudinary from 'cloudinary';
+import { authenticate } from '../middleware/auth.js';
+
 const router = express.Router();
-const authMiddleware = require('../middlewares/auth');
-const cloudinary = require('cloudinary').v2;
-const multer = require('multer');
 
-// Configurar Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Configurar Multer para memória (não salva no disco)
+// Configurar Multer para upload na memória
+const storage = multer.memoryStorage();
 const upload = multer({ 
-  storage: multer.memoryStorage(),
+  storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    // Validar tipos de arquivo
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas!'), false);
+    }
   }
 });
 
-// ROTA: Upload de imagem
-router.post('/upload-image', authMiddleware, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ msg: 'Nenhum arquivo foi enviado.' });
-    }
+// Configurar Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-    // Validar tipo de arquivo
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(req.file.mimetype)) {
+// Rota de upload
+router.post('/upload-image', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    console.log('📤 Iniciando upload no backend...');
+    
+    // Verificar se arquivo foi enviado
+    if (!req.file) {
       return res.status(400).json({ 
-        msg: 'Tipo de arquivo não suportado. Use JPEG, PNG, GIF ou WebP.' 
+        success: false, 
+        message: 'Nenhuma imagem enviada.' 
       });
     }
 
-    // Upload para Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'campanhas',
-          resource_type: 'image',
-          transformation: [
-            { width: 1200, crop: 'limit' }, // Limita largura máxima
-            { quality: 'auto:good' }, // Compressão automática
-            { fetch_format: 'auto' } // Formato otimizado
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-
-      uploadStream.end(req.file.buffer);
+    console.log('📁 Arquivo recebido:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
     });
 
-    // Retorna a URL da imagem
+    // Verificar configuração do Cloudinary
+    if (!process.env.CLOUDINARY_CLOUD_NAME || 
+        !process.env.CLOUDINARY_API_KEY || 
+        !process.env.CLOUDINARY_API_SECRET) {
+      throw new Error('Configuração do Cloudinary não encontrada no backend.');
+    }
+
+    // Converter buffer para base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+    console.log('☁️ Fazendo upload para Cloudinary...');
+
+    // Fazer upload para Cloudinary
+    const result = await cloudinary.v2.uploader.upload(dataURI, {
+      folder: 'hub-sabia',
+      upload_preset: 'hub-sabia-unsigned', // Use o preset unsigned
+      resource_type: 'auto'
+    });
+
+    console.log('✅ Upload backend concluído:', result.secure_url);
+
     res.json({
       success: true,
-      url: result.secure_url,
-      public_id: result.public_id
+      imageUrl: result.secure_url,
+      publicId: result.public_id
     });
 
   } catch (error) {
-    console.error('Erro no upload:', error);
-    res.status(500).json({ 
-      msg: 'Erro ao fazer upload da imagem.',
-      error: error.message 
+    console.error('💥 ERRO NO BACKEND:', error);
+    
+    let errorMessage = 'Erro ao fazer upload da imagem.';
+    
+    if (error.message.includes('Configuração do Cloudinary')) {
+      errorMessage = 'Configuração do Cloudinary incompleta no servidor.';
+    } else if (error.message.includes('Upload preset')) {
+      errorMessage = 'Preset de upload não configurado corretamente.';
+    }
+
+    res.status(500).json({
+      success: false,
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
-module.exports = router;
+export default router;
