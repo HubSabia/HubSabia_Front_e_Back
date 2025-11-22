@@ -135,79 +135,34 @@ import { useToast } from "vue-toastification";
 
 const uploadToCloudinary = async (file) => {
   try {
-    console.log('🔧 Iniciando upload para Cloudinary...');
-    console.log('📁 Arquivo:', file.name, 'Tipo:', file.type, 'Tamanho:', file.size);
+    uploading.value = true;
+    uploadError.value = '';
     
-    // Validar o arquivo
-    if (!file) {
-      throw new Error('Nenhum arquivo selecionado');
-    }
-
-    // Validar tipo de arquivo
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      throw new Error('Tipo de arquivo não suportado. Use JPEG, PNG, GIF ou WebP.');
-    }
-
-    // Validar tamanho (10MB máximo)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      throw new Error('A imagem deve ter menos de 10MB.');
-    }
-
-    // VERIFICAR VARIÁVEIS DE AMBIENTE
-    const cloudName = 'durify2v9';
-    const uploadPreset = 'hub-sabia-unsigned';
-    url: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`; 
-
-    console.log('🔑 Variáveis de ambiente:');
-    console.log('   Cloud Name:', cloudName);
-    console.log('   Upload Preset:', uploadPreset);
-
-    if (!cloudName || !uploadPreset) {
-      throw new Error('Configuração do Cloudinary não encontrada. Verifique as variáveis de ambiente.');
-    }
-
-    // Preparar form data
+    console.log('📤 Iniciando upload via backend...');
+    
+    // Cria FormData
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
     
-    // URL do Cloudinary
-    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-    console.log('🌐 URL da API:', cloudinaryUrl);
-
-    // Fazer upload
-    const response = await fetch(cloudinaryUrl, {
-      method: 'POST',
-      body: formData
-    });
-
-    console.log('📡 Status da resposta:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = `Upload falhou: ${response.status}`;
-      
-      try {
-        const errorData = await response.json();
-        console.error('❌ Erro detalhado do Cloudinary:', errorData);
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch (parseError) {
-        console.error('❌ Erro ao parsear resposta:', parseError);
+    // Envia para o backend
+    const response = await apiClient.post('/upload/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-      
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    console.log('✅ Upload concluído com sucesso!');
-    console.log('📷 URL da imagem:', data.secure_url);
+    });
     
-    return data.secure_url;
-
+    if (response.data.success) {
+      console.log('✅ Upload concluído:', response.data.url);
+      return response.data.url;
+    } else {
+      throw new Error('Resposta inválida do servidor');
+    }
+    
   } catch (error) {
-    console.error('💥 Erro completo no upload:', error);
-    throw new Error(error.message || 'Erro ao fazer upload da imagem');
+    console.error('❌ Erro no upload:', error);
+    throw new Error(error.response?.data?.msg || 'Erro ao fazer upload da imagem');
+  } finally {
+    uploading.value = false;
   }
 };
 

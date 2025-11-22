@@ -7,6 +7,7 @@ const cors = require('cors');
 const passport = require('passport');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const uploadRoutes = require('./routes/upload');
 
 dotenv.config();
 const app = express();
@@ -86,6 +87,7 @@ app.use('/api/profile', require('./routes/profile'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/usuarios', require('./routes/usuarios'));
+app.use('/api/upload', uploadRoutes);
 
 // ✅ Tratamento de erro global
 app.use((err, req, res, next) => {
